@@ -1,10 +1,16 @@
 import { SidebarItems } from "@/lib/constants";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React from "react";
 
 const Sidebar = () => {
+  const router = useRouter();
   return (
-    <div className="w-40 h-screen hidden md:flex fixed bg-quaternary border px-5 shadow-sm flex-col">
+    <div
+      className={`w-40 h-screen hidden ${
+        !router.pathname.includes("/auth/login") && "md:flex"
+      } fixed bg-quaternary border px-5 shadow-sm flex-col`}
+    >
       {/* Render Items */}
       <div className="flex flex-col mt-10">
         {SidebarItems.map((item, index) => {
