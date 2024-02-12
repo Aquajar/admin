@@ -1,4 +1,4 @@
-import { SideBarItem } from "@/types/types";
+import { IPaymentMethod, SideBarItem } from "@/types/types";
 import { RxDashboard } from "react-icons/rx";
 import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
@@ -6,7 +6,7 @@ import { IoMdSettings } from "react-icons/io";
 import { FaShop } from "react-icons/fa6";
 import { FaFileInvoice } from "react-icons/fa";
 
-export const SidebarItems: SideBarItem[] = [
+const SidebarItems: SideBarItem[] = [
   {
     name: "Dashboard",
     icon: RxDashboard,
@@ -39,3 +39,24 @@ export const SidebarItems: SideBarItem[] = [
     href: "/invoices",
   },
 ];
+
+const paymentMethods: IPaymentMethod[] = [
+  {
+    value: "cash",
+    label: "Cash",
+  },
+  {
+    value: "due",
+    label: "Due",
+  },
+  {
+    value: "upi",
+    label: "Online (UPI)",
+  },
+  {
+    value: "account",
+    label: "Account",
+  },
+];
+
+export { SidebarItems, paymentMethods };

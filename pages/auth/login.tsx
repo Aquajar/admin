@@ -72,7 +72,7 @@ const Login = () => {
         success: (res) => {
           // Set cookies
           setCookie("accessToken", res.data.accessToken, {
-            maxAge: 4 * 60 * 60,
+            maxAge: 28 * 24 * 60 * 60,
           });
           setCookie("refreshToken", res.data.refreshToken, {
             maxAge: 365 * 24 * 60 * 60,
