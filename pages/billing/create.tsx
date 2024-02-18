@@ -41,8 +41,7 @@ const Invoice = () => {
   const [recentInvoices, setRecentInvoices] = useState<
     RecentCard[] | [] | null
   >(null);
-
-  console.log(recentInvoices);
+  const [products, setProducts] = useState<Product[] | undefined>(undefined);
 
   // Assign invoice Id
   useEffect(() => {
@@ -135,35 +134,6 @@ const Invoice = () => {
     setItems(newItems);
   };
 
-  // GET ALL PRODUCTS
-  const {
-    data: products,
-    isLoading: productsLoading,
-    error: productsError,
-    status: productsStatus,
-  } = useQuery<Product[]>(
-    "fetchProducts",
-    async () => {
-      const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
-      const res = await axios.get(URL);
-      setItems([
-        {
-          name: res.data.products[0].name,
-          quantity: 0,
-          price: parseInt(res.data.products[0].price.retail),
-          total: 0,
-        },
-      ]);
-      return res.data.products;
-    },
-    {
-      refetchInterval: 600000,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      refetchOnWindowFocus: false,
-    }
-  );
-
   // Generate Bill
   const handleGenerateBill = async () => {
     if (phoneNumber.length !== 10) {
@@ -229,8 +199,6 @@ const Invoice = () => {
       paymentMethod: paymentMethod,
     };
 
-    console.log("payload", payload);
-
     const URL = process.env.NEXT_PUBLIC_API_URL + "/invoice/generate";
 
     const token = getCookie("accessToken");
@@ -290,6 +258,46 @@ const Invoice = () => {
       toast.error("Failed to generate invoice");
     }
   };
+
+  // Fetch products
+  useEffect(() => {
+    if (!products) {
+      // Fetch products from cookies
+      const cookieProducts = getCookie("products");
+      if (cookieProducts) {
+        console.log("Fetching products from cookies");
+        setProducts(JSON.parse(cookieProducts));
+        setItems([
+          {
+            name: JSON.parse(cookieProducts)[0].name,
+            quantity: 0,
+            price: JSON.parse(cookieProducts)[0].price.retail,
+            total: 0,
+          },
+        ]);
+      } else {
+        // Fetch products
+        console.log("Fetching products from API");
+        const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
+
+        axios.get(URL).then((res) => {
+          const products = res.data.products;
+          setProducts(products);
+          setCookie("products", JSON.stringify(products), {
+            maxAge: 60 * 60 * 24 * 7,
+          });
+          setItems([
+            {
+              name: JSON.parse(products)[0].name,
+              quantity: 0,
+              price: JSON.parse(products)[0].price.retail,
+              total: 0,
+            },
+          ]);
+        });
+      }
+    }
+  }, [products]);
 
   return (
     <Wrapper name="Create Invoice">
