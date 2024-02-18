@@ -13,8 +13,6 @@ export default async function middleware(req: NextRequest) {
   const accessToken = getCookie("accessToken", { req, res });
   const refreshToken = getCookie("refreshToken", { req, res });
 
-  console.log({ accessToken: accessToken });
-
   // CHECK IF COOKIES EXIST
   if (accessToken && refreshToken) {
     try {
@@ -61,18 +59,17 @@ export default async function middleware(req: NextRequest) {
         setCookie("accessToken", data.accessToken, {
           res,
           req,
-          maxAge: 28 * 24 * 60 * 60,
         });
         setCookie("refreshToken", data.refreshToken, {
           res,
           req,
-          maxAge: 365 * 24 * 60 * 60,
         });
 
         console.log("Tokens refreshed successfully.");
 
         return res;
       } catch (err) {
+        console.log(err);
         return NextResponse.redirect(process.env.NEXTAUTH_URL + "/auth/login");
       }
     }

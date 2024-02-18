@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setCookie } from "cookies-next";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
@@ -71,12 +72,8 @@ const Login = () => {
         loading: "Verifying OTP",
         success: (res) => {
           // Set cookies
-          setCookie("accessToken", res.data.accessToken, {
-            maxAge: 28 * 24 * 60 * 60,
-          });
-          setCookie("refreshToken", res.data.refreshToken, {
-            maxAge: 365 * 24 * 60 * 60,
-          });
+          setCookie("accessToken", res.data.accessToken);
+          setCookie("refreshToken", res.data.refreshToken);
 
           router.replace("/");
           return "OTP verified successfully";
@@ -100,7 +97,16 @@ const Login = () => {
   return (
     <div className="flex  justify-center h-screen px-5 md:px-0 ">
       <div className="p-5 bg-white flex flex-col w-full md:w-1/4 h-fit mt-40 rounded-lg">
-        <h1 className="text-2xl font-medium text-center w-full">Admin Login</h1>
+        <div className="flex w-full items-center mb-2">
+          <Image
+            src="/images/logo.png"
+            priority
+            alt="logo"
+            width={50}
+            height={50}
+          />
+          <h1 className="text-2xl font-medium ml-5 w-full">Admin Login</h1>
+        </div>
         {hasSentOTP ? (
           <OTPInput
             value={otp}

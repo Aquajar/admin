@@ -1,4 +1,5 @@
 import { jwtVerify } from "jose";
+import axios from "axios";
 
 export const getJwtSecretKey = () => {
   const secret = process.env.ACCESS_TOKEN_SECRET;
@@ -9,6 +10,7 @@ export const getJwtSecretKey = () => {
   return secret;
 };
 
+// Verify JWT Token
 export const verifyJWTToken = async (token: string) => {
   try {
     return jwtVerify(token, new TextEncoder().encode(getJwtSecretKey()));
@@ -17,12 +19,35 @@ export const verifyJWTToken = async (token: string) => {
   }
 };
 
+// Generate a random string
 function randomString(length: number) {
   return Math.round(
     Math.pow(36, length + 1) - Math.random() * Math.pow(36, length)
   )
     .toString(36)
     .slice(1);
+}
+
+class axiosRequest {
+  constructor() {
+    this.get = this.get.bind
+  }
+
+  async get(url: string) {
+    return await axios.get(url);
+  }
+
+  async post(url: string, data: any) {
+    return await axios.post(url, data);
+  }
+
+  async put(url: string, data: any) {
+    return await axios.put(url, data);
+  }
+
+  async delete(url: string) {
+    return await axios.delete(url);
+  }
 }
 
 export { randomString };
