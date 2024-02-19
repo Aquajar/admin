@@ -10,10 +10,11 @@ import DeliveryDetails from "@/components/billing/DeliveryDetails";
 import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
-import { useQuery } from "react-query";
 import { Customer, Item, Product, RecentCard } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import Card from "@/components/Recents/Card";
+import { useSession } from "next-auth/react";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 
 interface ItemProps {
   id: string;
@@ -42,6 +43,18 @@ const Invoice = () => {
     RecentCard[] | [] | null
   >(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
+
+  const { data: session } = useSession();
+
+  // Create an axios instance with the user's access token
+  const axiosInstance = axios.create({
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.user.accessToken}`,
+    },
+  });
+
+  useRefreshTokenRotation(axiosInstance);
 
   // Assign invoice Id
   useEffect(() => {
@@ -111,8 +124,6 @@ const Invoice = () => {
   // Handle order type change
   const handleOrderType = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setOrderType(e.target.value);
-    console.log(e.target.value);
-    console.log(items);
 
     // reset jar price
     const newItems = [...items];
@@ -201,16 +212,9 @@ const Invoice = () => {
 
     const URL = process.env.NEXT_PUBLIC_API_URL + "/invoice/generate";
 
-    const token = getCookie("accessToken");
-
     try {
       setIsloading(true);
-      const res = await axios.post(URL, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
-      });
+      const res = await axiosInstance.post(URL, payload);
 
       // Update recent invoices
       let _recentInvoices = recentInvoices ? recentInvoices : [];
@@ -280,7 +284,7 @@ const Invoice = () => {
         console.log("Fetching products from API");
         const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
 
-        axios.get(URL).then((res) => {
+        axiosInstance.get(URL).then((res) => {
           const products = res.data.products;
           setProducts(products);
           setCookie("products", JSON.stringify(products), {

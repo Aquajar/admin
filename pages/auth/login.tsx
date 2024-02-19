@@ -1,5 +1,6 @@
 import axios from "axios";
 import { setCookie } from "cookies-next";
+import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
@@ -52,17 +53,10 @@ const Login = () => {
 
   //  VERIFY OTP REQUEST TO SERVER
   const handleOnVerifyOtp = async () => {
-    const URL = process.env.NEXT_PUBLIC_API_URL + "/auth/verify";
-
-    const payload = {
+    const promise = signIn("credentials", {
       phone: phone,
       otp: otp,
-    };
-
-    const promise = axios.post(URL, payload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
+      redirect: false,
     });
 
     // Handle promise lifecycle
@@ -71,19 +65,12 @@ const Login = () => {
       {
         loading: "Verifying OTP",
         success: (res) => {
-          // Set cookies
-          setCookie("accessToken", res.data.accessToken);
-          setCookie("refreshToken", res.data.refreshToken);
-
-          router.replace("/");
+          router.push("/");
           return "OTP verified successfully";
         },
         error: (err) => {
           console.log(err);
-
-          const message = JSON.parse(err.response.request.response).error
-            .message;
-          return message;
+          return err.message;
         },
       },
       {
