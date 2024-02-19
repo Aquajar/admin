@@ -18,6 +18,7 @@ interface Customer {
   phone: string;
   invoices: string[];
   address?: CustomerAddress;
+  createdAt: string;
 }
 
 type Product = {
