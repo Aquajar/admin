@@ -183,6 +183,14 @@ const Invoice = () => {
     const dueDate = new Date();
     dueDate.setDate(28);
 
+    if (dueDate.getDate() < new Date().getDate()) {
+      dueDate.setMonth(dueDate.getMonth() + 1);
+    }
+
+    if (paymentMethod !== "due") {
+      dueDate.setDate(new Date().getDate());
+    }
+
     // create user object
     let user = {
       name: billTo,
