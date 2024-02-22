@@ -49,3 +49,28 @@ export type RecentCard = {
   date: string;
   id?: string;
 };
+
+export interface Invoice {
+  user: {
+    name: string;
+    phone: string;
+    address: {
+      text: string | null;
+      landmark: string | null;
+    };
+    invoices: string[];
+  };
+  invoiceID: invoiceId;
+  invoiceDate: number;
+  customerID: string | undefined;
+  vehicleID: string | null;
+  total: number;
+  products: newProducts;
+  address: sting | null;
+  landmark: sting | null;
+  dueDate: number;
+  status: string;
+  paymentMethod: string;
+  due: number;
+  paymentDate?: number | null;
+}

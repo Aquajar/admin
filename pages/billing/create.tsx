@@ -10,7 +10,13 @@ import DeliveryDetails from "@/components/billing/DeliveryDetails";
 import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
-import { Customer, Item, Product, RecentCard } from "@/types/types";
+import {
+  Customer,
+  Invoice as InvoiceType,
+  Item,
+  Product,
+  RecentCard,
+} from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import Card from "@/components/Recents/Card";
 import { useSession } from "next-auth/react";
@@ -206,7 +212,7 @@ const Invoice = () => {
     };
 
     // create payload
-    let payload = {
+    let payload: InvoiceType = {
       user: user,
       invoiceID: invoiceId,
       invoiceDate: +startDate,

@@ -9,6 +9,9 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-center pt-10 text-primary">
         Welcome to the admin panel
       </h1>
+      <button className="" onClick={() => signOut()}>
+        Logout
+      </button>
     </main>
   );
 }

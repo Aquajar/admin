@@ -1,7 +1,6 @@
 import Wrapper from "@/components/Wrapper";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
-import { Customer } from "@/types/types";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import React, { useEffect } from "react";
@@ -21,7 +20,6 @@ const Customers = () => {
 
   // Fetch customers
   const getCustomers = async () => {
-    console.log("Fetching customers");
     try {
       const { data } = await axiosInstance.get(
         process.env.NEXT_PUBLIC_API_URL + "/user/all"

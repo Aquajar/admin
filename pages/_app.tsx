@@ -1,5 +1,6 @@
 import Sidebar from "@/components/Sidebar";
-import { StoreProvider } from "@/store/customers.store";
+import { StoreProvider as CustomerStoreProvider } from "@/store/customers.store";
+import { StoreProvider as InvoiceStoreProvider } from "@/store/invoices.store";
 import "@/styles/globals.css";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
@@ -15,18 +16,20 @@ export default function App({
 
   return (
     <SessionProvider session={session}>
-      <StoreProvider>
-        <QueryClientProvider client={queryClient}>
-          <div className="bg-quaternary">
-            <Toaster position="top-center" reverseOrder={false} />
-            <Sidebar />
-            <Component {...pageProps} />;
-          </div>
-          {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </QueryClientProvider>
-      </StoreProvider>
+      <CustomerStoreProvider>
+        <InvoiceStoreProvider>
+          <QueryClientProvider client={queryClient}>
+            <div className="bg-quaternary">
+              <Toaster position="top-center" reverseOrder={false} />
+              <Sidebar />
+              <Component {...pageProps} />;
+            </div>
+            {process.env.NODE_ENV === "development" && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </QueryClientProvider>
+        </InvoiceStoreProvider>
+      </CustomerStoreProvider>
     </SessionProvider>
   );
 }

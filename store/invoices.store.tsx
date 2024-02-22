@@ -1,11 +1,11 @@
-import { Customer } from "@/types/types";
+import { Invoice } from "@/types/types";
 import React, { createContext, useContext, useState } from "react";
 
 // Define the type for your store data
 type StoreData = {
-  customers: Customer[] | null | undefined;
-  setCustomers: React.Dispatch<
-    React.SetStateAction<Customer[] | null | undefined>
+  invoices: null | undefined | Invoice[];
+  setInvoices: React.Dispatch<
+    React.SetStateAction<Invoice[] | null | undefined>
   >;
 };
 
@@ -13,7 +13,7 @@ type StoreData = {
 const StoreContext = createContext<StoreData | undefined>(undefined);
 
 // Create a custom hook to access the store
-export const useCustomersStore = (): StoreData => {
+export const useInvoicesStore = (): StoreData => {
   const store = useContext(StoreContext);
   if (!store) {
     throw new Error("useStore must be used within a StoreProvider");
@@ -27,16 +27,14 @@ interface StoreProviderProps {
 
 // Create a provider component to wrap your app with the store
 export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
-  const [customers, setCustomers] = useState<Customer[] | null | undefined>(
+  const [invoices, setInvoices] = useState<Invoice[] | null | undefined>(
     undefined
   );
 
   const store: StoreData = {
-    customers,
-    setCustomers,
+    invoices,
+    setInvoices,
   };
-
-  
 
   return (
     <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
