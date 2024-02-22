@@ -15,6 +15,7 @@ import { getCookie, setCookie } from "cookies-next";
 import Card from "@/components/Recents/Card";
 import { useSession } from "next-auth/react";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
+import { DebounceInput } from "react-debounce-input";
 
 interface ItemProps {
   id: string;
@@ -43,6 +44,10 @@ const Invoice = () => {
     RecentCard[] | [] | null
   >(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
+  const [discount, setDiscount] = useState<string>("0");
+  const [partialPayment, setPartialPayment] = useState<string>("0");
+  const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
+  const [customersResults, setCustomersResults] = useState<Customer[] | []>([]);
 
   const { data: session } = useSession();
 
@@ -147,10 +152,8 @@ const Invoice = () => {
 
   // Generate Bill
   const handleGenerateBill = async () => {
-    if (phoneNumber.length !== 10) {
-      return toast.error("Please enter a valid phone number");
-    } else if (billTo === "") {
-      return toast.error("Please enter the name of the customer");
+    if (phoneNumber.length !== 10 && billTo === "") {
+      return toast.error("Please enter any identity detail");
     } else if (total === 0) {
       return toast.error("Please add items to the invoice");
     } else if (orderType === "delivery" && address === "" && landmark === "") {
@@ -194,7 +197,7 @@ const Invoice = () => {
     // create user object
     let user = {
       name: billTo,
-      phone: phoneNumber,
+      phone: phoneNumber || Math.floor(Math.random() * 10000000000).toString(),
       address: {
         text: address ? address : null,
         landmark: landmark ? landmark : null,
@@ -214,8 +217,19 @@ const Invoice = () => {
       address: orderType === "delivery" ? address : null,
       landmark: orderType === "delivery" ? landmark : null,
       dueDate: +dueDate,
-      status: paymentMethod === "due" ? "pending" : "paid",
+      status:
+        paymentMethod === "due"
+          ? "pending"
+          : isPartialPayment
+          ? "pending"
+          : "paid",
       paymentMethod: paymentMethod,
+      due:
+        paymentMethod === "due" && !isPartialPayment
+          ? total
+          : isPartialPayment
+          ? total - parseFloat(partialPayment)
+          : 0,
     };
 
     const URL = process.env.NEXT_PUBLIC_API_URL + "/invoice/generate";
@@ -264,11 +278,38 @@ const Invoice = () => {
       setStartDate(new Date());
       setPaymentMethod("");
       setInvoiceId(randomString(8).toUpperCase());
+      setIsPartialPayment(false);
+      setPartialPayment("0");
+      setDiscount("0");
+      setTotal(0);
+      setSubTotal(0);
+      setTax(0);
     } catch (err) {
       console.log(err);
       setIsloading(false);
       toast.error("Failed to generate invoice");
     }
+  };
+
+  const searchCustomer = (keyword: string) => {
+    const value = keyword;
+
+    if (value.length < 2) {
+      setCustomersResults([]);
+      return;
+    }
+
+    const URL = process.env.NEXT_PUBLIC_API_URL + "/user/find-by-name/" + value;
+
+    axiosInstance
+      .get(URL)
+      .then((res) => {
+        console.log(res.data.user);
+        setCustomersResults(res.data.user);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   // Fetch products
@@ -368,13 +409,46 @@ const Invoice = () => {
                       : ""}
                   </span>
                 </label>
-                <input
+                <DebounceInput
+                  minLength={2}
+                  debounceTimeout={800}
                   disabled={isLoading}
-                  onChange={(e) => setBillTo(e.target.value)}
+                  onChange={(e) => {
+                    setBillTo(e.target.value);
+                    searchCustomer(e.target.value);
+                  }}
                   value={billTo}
                   type="text"
                   className="border disabled:bg-gray-200 rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
                 />
+                {customersResults.length > 0 && (
+                  <div className="absolute top-20 bg-white w-fit z-50 border rounded-md shadow-md">
+                    {customersResults.map(
+                      (customer: Customer, index: number) => {
+                        return (
+                          <div
+                            key={index}
+                            className="p-3 hover:bg-gray-100 cursor-pointer"
+                          >
+                            <p
+                              className="text-md font-medium text-gray-700"
+                              onClick={() => {
+                                setCustomer(customer);
+                                setBillTo(customer.name as string);
+                                setPhoneNumber(customer.phone);
+                                setAddress(customer?.address?.text || "");
+                                setLandmark(customer.address?.landmark || "");
+                                setCustomersResults([]);
+                              }}
+                            >
+                              {customer.name}
+                            </p>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                )}
                 <span className="text-xs text-slate-400 mt-1 text-right w-full">
                   Name on the invoice
                 </span>
@@ -578,8 +652,15 @@ const Invoice = () => {
 
           {/* Summary */}
           <Summary
+            isPartialPayment={isPartialPayment}
+            setIsPartialPayment={setIsPartialPayment}
+            partialPayment={partialPayment}
+            setPartialPayment={setPartialPayment}
             handleGenerateBill={handleGenerateBill}
             total={total}
+            discount={discount}
+            setDiscount={setDiscount}
+            setTotal={setTotal}
             isLoading={isLoading}
             subTotal={subTotal}
             tax={tax}
