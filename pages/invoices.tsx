@@ -13,10 +13,11 @@ Modal.setAppElement("#__next");
 const Invoices = () => {
   const { data: session } = useSession();
   const { invoices, setInvoices } = useInvoicesStore();
-  const { customers, setCustomers } = useCustomersStore();
+  const { customers } = useCustomersStore();
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(
     null
   );
+  const [paymentDate, setPaymentDate] = React.useState<Date | null>(null);
 
   // Create axios instance
   const axiosInstance = axios.create({
@@ -155,7 +156,9 @@ const Invoices = () => {
               </label>
               <input
                 type={selectedInvoice?.status === "paid" ? "text" : "date"}
+                // @ts-ignore
                 value={formatDate(selectedInvoice?.paymentDate as any)}
+                onChange={(e) => setPaymentDate(new Date(e.target.value))}
                 id="paymentDate"
                 name="paymentDate"
                 className="mt-1 p-2 border border-gray-300 rounded-md"
@@ -173,6 +176,13 @@ const Invoices = () => {
           </form>
         </div>
       </Modal>
+      <button
+        onClick={getInvoices}
+        className="absolute right-10 bg-white px-3 shadow-sm py-1 rounded-md text-gray-900"
+      >
+        refresh
+      </button>
+
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
