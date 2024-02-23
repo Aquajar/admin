@@ -1,41 +1,20 @@
 import Wrapper from "@/components/Wrapper";
+import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useCustomers from "@/lib/hooks/useCustomers";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
-import axios from "axios";
 import { useSession } from "next-auth/react";
-import React, { useEffect } from "react";
 
 const Customers = () => {
-  const { customers, setCustomers } = useCustomersStore();
+  const { customers } = useCustomersStore();
   const { data: session } = useSession();
 
   // Create axios instance
-  const axiosInstance = axios.create({
-    headers: {
-      Authorization: `Bearer ${session?.user.accessToken}`,
-    },
-  });
+  const axiosInstance = useAxiosInstance(session);
 
+  // Hooks
   useRefreshTokenRotation(axiosInstance);
-
-  // Fetch customers
-  const getCustomers = async () => {
-    try {
-      const { data } = await axiosInstance.get(
-        process.env.NEXT_PUBLIC_API_URL + "/user/all"
-      );
-      if (data?.users.length === 0) return setCustomers(null);
-      setCustomers(data?.users);
-    } catch (error) {
-      setCustomers(null);
-      console.log(error);
-    }
-  };
-
-  // Fetch customers on page load
-  useEffect(() => {
-    if (session && customers === undefined) getCustomers();
-  }, [session, customers]);
+  useCustomers(axiosInstance, session);
 
   return (
     <Wrapper name="Cutomers">

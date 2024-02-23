@@ -51,6 +51,7 @@ export type RecentCard = {
 };
 
 export interface Invoice {
+  _id?: string;
   user: {
     name: string;
     phone: string;

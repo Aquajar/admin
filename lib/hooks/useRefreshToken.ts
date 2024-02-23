@@ -42,7 +42,18 @@ const useRefreshTokenRotation = (axiosInstance: AxiosInstance) => {
             // @ts-ignore
             return axiosInstance(originalRequest);
           } catch (signInError) {
-            console.log("Error refreshing token", signInError);
+            try {
+              await axios.delete(
+                process.env.NEXT_PUBLIC_API_URL + "/auth/logout",
+                {
+                  data: {
+                    refreshToken: session?.user.refreshToken,
+                  },
+                }
+              );
+            } catch (e) {
+              console.error("Error while logging out", e);
+            }
             signOut();
             throw signInError;
           }
