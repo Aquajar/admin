@@ -83,7 +83,7 @@ const Login = () => {
 
   return (
     <div className="flex  justify-center h-screen px-5 md:px-0 ">
-      <div className="p-5 bg-white flex flex-col w-full md:w-1/4 h-fit mt-40 rounded-lg">
+      <div className="p-5 bg-white flex flex-col w-full md:w-[30%] font-mono h-fit mt-40 rounded-lg">
         <div className="flex w-full items-center mb-2">
           <Image
             src="/images/logo.png"
@@ -126,7 +126,7 @@ const Login = () => {
             />
           </div>
         )}
-        <span className="text-sm text-gray-500 w-full text-center mt-1">
+        <span className="text-xs text-gray-500 w-full text-center mt-1">
           {hasSentOTP
             ? "Enter the OTP sent to your phone number"
             : "You will receive an OTP on the given number"}
