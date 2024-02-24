@@ -1,5 +1,6 @@
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
@@ -48,6 +49,7 @@ const Invoices = () => {
   // Hooks
   useRefreshTokenRotation(axiosInstance);
   useInvoice(axiosInstance, session);
+  useCustomers(axiosInstance, session);
 
   // Fetch invoices
   const refreshInvoice = async () => {
