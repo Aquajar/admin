@@ -8,8 +8,9 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Line, Pie } from "react-chartjs-2";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
@@ -20,6 +21,7 @@ import { signOut, useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
 import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
+import Card from "@/components/dashboard/Card";
 
 ChartJS.register(
   CategoryScale,
@@ -27,6 +29,9 @@ ChartJS.register(
   PointElement,
   LineElement,
   Title,
+  Tooltip,
+  Legend,
+  ArcElement,
   Tooltip,
   Legend
 );
@@ -56,6 +61,9 @@ export default function Home() {
   const [Salesdata, setSalesData] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [DueData, setDueData] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [itemsQuantity, setItemsQuantity] = useState([0, 0, 0, 0, 0, 0, 0]);
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalDues, setTotalDues] = useState(0);
+  const [totalCollected, setTotalCollected] = useState(0);
 
   const last7Days: string[] = getLastNDays(7);
 
@@ -92,8 +100,67 @@ export default function Home() {
     ],
   };
 
+  const todaySalesData = {
+    labels: ["Due", "Collected"],
+    datasets: [
+      {
+        label: "Rupees",
+        data: [
+          invoices?.reduce((acc, invoice) => {
+            let invoiceDate = new Date(
+              invoice.invoiceDate
+            ).toLocaleDateString();
+            if (
+              invoice.status === "pending" &&
+              invoiceDate === new Date().toLocaleDateString()
+            ) {
+              return acc + invoice.due;
+            }
+            return acc;
+          }, 0),
+          invoices?.reduce((acc, invoice) => {
+            let invoiceDate = new Date(
+              invoice.invoiceDate
+            ).toLocaleDateString();
+            if (
+              invoice.status === "paid" &&
+              invoiceDate === new Date().toLocaleDateString()
+            )
+              return acc + invoice.total;
+            return acc;
+          }, 0),
+        ],
+        backgroundColor: ["rgb(255,82,82)", "#1E90FF"],
+        borderWidth: 1,
+      },
+    ],
+  };
+
   useEffect(() => {
     if (invoices) {
+      //  get total sales
+      setTotalSales(
+        invoices?.reduce((acc, invoice) => {
+          return acc + invoice.total;
+        }, 0)
+      );
+
+      //  get total dues
+      setTotalDues(
+        invoices?.reduce((acc, invoice) => {
+          if (invoice.status === "paid") return acc;
+          return acc + invoice.total;
+        }, 0)
+      );
+
+      // get total collected
+      setTotalCollected(
+        invoices?.reduce((acc, invoice) => {
+          if (invoice.status === "pending") return acc;
+          return acc + invoice.total;
+        }, 0)
+      );
+
       //  get paid sales for each day in the last 7 days
       const salesData = last7Days.map((date) => {
         const sales = invoices.reduce((acc, invoice) => {
@@ -126,8 +193,6 @@ export default function Home() {
         return sales;
       });
 
-      setDueData(dueData);
-
       // get an array of number of invoices generated each day in last 7 days
       const itemsQuantity = last7Days.map((date) => {
         const items = invoices.reduce((acc, invoice) => {
@@ -142,7 +207,7 @@ export default function Home() {
       });
 
       setItemsQuantity(itemsQuantity);
-
+      setDueData(dueData);
       setSalesData(salesData);
     }
   }, [invoices]);
@@ -152,90 +217,110 @@ export default function Home() {
       {/* <button className="" onClick={() => signOut()}>
       Logout
     </button> */}
-      <div className="grid grid-cols-1 w-full md:grid-cols-4 gap-8">
-        {/* Total Sales */}
-        <div className="p-6 bg-blue-200 rounded-lg flex flex-col w-full shadow-sm">
-          <span className="text-md text-gray-800 mb-5">Total Sales</span>
-
-          <CurrencyFormat
-            value={invoices?.reduce((acc, invoice) => {
-              return acc + invoice.total;
-            }, 0)}
-            displayType={"text"}
-            thousandSeparator={true}
-            prefix={"₹"}
-            decimalScale={0}
-            fixedDecimalScale={true}
-            renderText={(value) => (
-              <p className="text-3xl font-semibold text-gray-800">{value}</p>
-            )}
-          />
+      <div className="flex flex-col md:flex-row w-full mb-20">
+        <div className="flex flex-col w-full md:w-[60%]">
+          {/*
+           * TOTAL SALES, TOTAL DUES, TOTAL COLLECTED, TOTAL CUSTOMERS
+           */}
+          <div className="grid grid-cols-1 w-full md:grid-cols-2 md:grid-rows-2 gap-3">
+            {/* Total Sales */}
+            <Card title="Total Sales">
+              <CurrencyFormat
+                value={totalSales}
+                displayType={"text"}
+                thousandSeparator={true}
+                prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-4xl font-normal ">{value}</p>
+                )}
+              />
+            </Card>
+            {/* Total Dues */}
+            <Card title="Total Dues">
+              <div className="flex justify-between items-start">
+                <CurrencyFormat
+                  value={totalDues}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={"₹"}
+                  decimalScale={0}
+                  fixedDecimalScale={true}
+                  renderText={(value) => (
+                    <p className="text-4xl font-normal ">{value}</p>
+                  )}
+                />
+                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-4 py-1 rounded-2xl inline-flex items-center text-red-500">
+                  {((totalDues / totalSales) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </Card>
+            {/* Total Collected */}
+            <Card title="Total Collected">
+              <CurrencyFormat
+                value={totalCollected}
+                displayType={"text"}
+                thousandSeparator={true}
+                prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-4xl font-normal ">{value}</p>
+                )}
+              />
+            </Card>
+            {/* Total Customers */}
+            <Card title="Total Customers">
+              <CurrencyFormat
+                value={customers?.length}
+                displayType={"text"}
+                thousandSeparator={true}
+                // prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-4xl font-normal ">{value}</p>
+                )}
+              />
+            </Card>
+          </div>
+          {/*
+           * SALES CHART
+           */}
+          <div className="w-full mt-6 rounded-2xl shadow p-5 bg-white">
+            <span className="text-2xl font-semibold ">
+              Sales in the last 7 days
+            </span>
+            <Line data={dataChart1} options={options} />
+          </div>
         </div>
-        {/* Total Dues */}
-        <div className="p-6 bg-red-200 rounded-lg flex flex-col w-full shadow-sm">
-          <span className="text-md text-gray-800 mb-5">Total Dues</span>
-          <CurrencyFormat
-            value={invoices?.reduce((acc, invoice) => {
-              if (invoice.status === "paid") return acc;
-              return acc + invoice.total;
-            }, 0)}
-            displayType={"text"}
-            thousandSeparator={true}
-            prefix={"₹"}
-            decimalScale={0}
-            fixedDecimalScale={true}
-            renderText={(value) => (
-              <p className="text-3xl font-semibold text-gray-800">{value}</p>
-            )}
-          />
-        </div>
-        {/* Total Collected */}
-        <div className="p-6 bg-green-200 rounded-lg flex flex-col w-full shadow-sm">
-          <span className="text-md text-gray-800 mb-5">Total Collected</span>
-          <CurrencyFormat
-            value={invoices?.reduce((acc, invoice) => {
-              if (invoice.status === "pending") return acc;
-              return acc + invoice.total;
-            }, 0)}
-            displayType={"text"}
-            thousandSeparator={true}
-            prefix={"₹"}
-            decimalScale={0}
-            fixedDecimalScale={true}
-            renderText={(value) => (
-              <p className="text-3xl font-semibold text-gray-800">{value}</p>
-            )}
-          />
-        </div>
-        {/* Total Customers */}
-        <div className="p-6 bg-zinc-300 rounded-lg flex flex-col w-full shadow-sm">
-          <span className="text-md text-gray-800 mb-5">Total Customers</span>
-
-          <CurrencyFormat
-            value={customers?.length}
-            displayType={"text"}
-            thousandSeparator={true}
-            // prefix={"₹"}
-            decimalScale={0}
-            fixedDecimalScale={true}
-            renderText={(value) => (
-              <p className="text-3xl font-semibold text-gray-800">{value}</p>
-            )}
-          />
-        </div>
-      </div>
-      <div className="flex flex-col w-9/12 mt-5">
+        <div className="flex flex-col w-full md:w-[40%]">
+          {/*
+           * PIE CHART
+           */}
+          <div className="w-full mt-5 md:ml-5 md:mt-0">
+            <div className="w-full rounded-2xl shadow p-5 bg-white">
+              <span className="text-2xl font-semibold ">Sales today</span>
+              <Pie
+                style={{
+                  height: "60%",
+                }}
+                data={todaySalesData}
+                options={options}
+              />
+            </div>
+          </div>
+          {/*
+           * SALES CHART
+           */}
+          {/* 
         <div className="w-full mt-10 rounded-2xl shadow p-5 bg-white">
-          <span className="text-2xl font-semibold text-gray-800">
-            Sales in the last 7 days
-          </span>
-          <Line data={dataChart1} options={options} />
-        </div>
-        <div className="w-full mt-10 rounded-2xl shadow p-5 bg-white">
-          <span className="text-2xl font-semibold text-gray-800">
+          <span className="text-2xl font-semibold ">
             Items sold in the last 7 days
           </span>
           <Line data={dataChart2} options={options} />
+        </div> */}
         </div>
       </div>
     </Wrapper>
