@@ -98,8 +98,14 @@ export default function Home() {
       const salesData = last7Days.map((date) => {
         const sales = invoices.reduce((acc, invoice) => {
           let invoiceDate = new Date(invoice.invoiceDate).toLocaleDateString();
-          if (invoiceDate === date && invoice.status === "paid") {
-            return acc + invoice.total;
+          if (invoiceDate === date) {
+            let t: number = 0;
+            if (invoice.status === "pending") {
+              t = invoice.total - invoice.due;
+            } else if (invoice.status === "paid") {
+              t = invoice.total;
+            }
+            return acc + t;
           }
           return acc;
         }, 0);
@@ -112,7 +118,7 @@ export default function Home() {
         const sales = invoices.reduce((acc, invoice) => {
           let invoiceDate = new Date(invoice.invoiceDate).toLocaleDateString();
           if (invoiceDate === date && invoice.status === "pending") {
-            return acc + invoice.total;
+            return acc + invoice.due;
           }
           return acc;
         }, 0);
