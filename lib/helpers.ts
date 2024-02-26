@@ -28,26 +28,15 @@ function randomString(length: number) {
     .slice(1);
 }
 
-class axiosRequest {
-  constructor() {
-    this.get = this.get.bind
+export function getLastNDays(n: number): string[] {
+  const dates: string[] = [];
+  const today: Date = new Date(); // Get current date
+  for (let i = 0; i < n; i++) {
+    const date: Date = new Date(today);
+    date.setDate(today.getDate() - i); // Subtract i days from current date
+    dates.push(date.toLocaleDateString());
   }
-
-  async get(url: string) {
-    return await axios.get(url);
-  }
-
-  async post(url: string, data: any) {
-    return await axios.post(url, data);
-  }
-
-  async put(url: string, data: any) {
-    return await axios.put(url, data);
-  }
-
-  async delete(url: string) {
-    return await axios.delete(url);
-  }
+  return dates;
 }
 
 export { randomString };

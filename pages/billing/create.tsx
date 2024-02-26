@@ -361,7 +361,7 @@ const Invoice = () => {
   return (
     <Wrapper name="Create Invoice">
       <div className="flex flex-col">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col md:flex-row justify-between items-start">
           {/* Form */}
           <div className="bg-white p-8 relative rounded-md shadow-sm flex flex-col w-full md:w-9/12">
             {/* Invoice ID */}
@@ -370,7 +370,7 @@ const Invoice = () => {
             </span>
 
             {/* Credentials */}
-            <div className="grid gap-8 grid-cols-2 relative items-start mt-5 justify-between">
+            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 relative items-center md:items-start mt-5 justify-between">
               {isLoading && (
                 <div className="rounded-md absolute top-[40%] right-[2%] z-50">
                   <RiLoader5Line className="w-8 h-8 animate-spin" />
@@ -461,7 +461,7 @@ const Invoice = () => {
               </div>
             </div>
             {/* Order Detail */}
-            <div className="grid gap-8 grid-cols-2 items-start my-3 justify-between">
+            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 items-start my-3 justify-between">
               {/* Order Type */}
               <div className="flex flex-col">
                 <label className="text-md font-medium text-gray-700">
@@ -679,7 +679,7 @@ const Invoice = () => {
        * RECENT INVOICES
        */}
       {recentInvoices?.length != undefined && recentInvoices.length > 0 && (
-        <div className="pb-24 mt-8">
+        <div className="pb-24 mt-8 hidden md:block">
           <p className="text-xl font-normal capitalize text-black">Recents</p>
           <div className="grid grid-cols-4 gap-5 mt-5 overflow-x-auto">
             {recentInvoices?.map((invoice: RecentCard, index: number) => {
