@@ -21,7 +21,7 @@ const Sidebar = () => {
         className={`w-72 md:w-40 h-screen ${
           isOpen ? "translate-x-0" : "-translate-x-72"
         } z-50 md:translate-x-0 ${
-          !router.pathname.includes("/auth/login") && "md:flex"
+          !router.pathname.includes("/auth/login") ? "md:flex" : "hidden"
         } fixed bg-quaternary border px-5 shadow-sm flex-col`}
       >
         {/* Render Items */}
