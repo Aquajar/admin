@@ -267,7 +267,7 @@ const Invoices = () => {
           toast.loading("Refreshing...");
           refreshInvoice();
         }}
-        className="absolute right-10 bg-white px-3 shadow-sm py-1 rounded-md text-gray-900"
+        className="absolute right-20 md:right-10 bg-white px-3 shadow-sm py-1 rounded-md text-gray-900"
       >
         refresh
       </button>
