@@ -1,4 +1,5 @@
 import { SidebarItems } from "@/lib/constants";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
@@ -6,15 +7,16 @@ import { GiHamburgerMenu } from "react-icons/gi";
 
 const Sidebar = () => {
   const router = useRouter();
-
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <GiHamburgerMenu
-        className="w-8 h-8 mt-5 md:hidden absolute right-4 z-10 cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
-      />
+      {!router.pathname.includes("/auth/login") && (
+        <GiHamburgerMenu
+          className="w-8 h-8 mt-5 md:hidden absolute right-4 z-10 cursor-pointer "
+          onClick={() => setIsOpen(!isOpen)}
+        />
+      )}
       <div
         className={`w-72 md:w-40 h-screen ${
           isOpen ? "translate-x-0" : "-translate-x-72"
