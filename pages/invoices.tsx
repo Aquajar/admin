@@ -273,8 +273,8 @@ const Invoices = () => {
       </button>
 
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <table className="w-full text-sm text-left text-gray-500 ">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">
               <th scope="col" className="px-6 py-3">
                 Invoice ID
@@ -308,7 +308,7 @@ const Invoices = () => {
                 return (
                   <tr
                     key={invoice.invoiceID}
-                    className="bg-white  border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    className="bg-white  border-b  hover:bg-gray-50"
                   >
                     <th scope="row" className="px-6 py-4 font-normal">
                       {invoice.invoiceID}
@@ -345,7 +345,7 @@ const Invoices = () => {
                           openModal();
                           setSelectedInvoice(invoice);
                         }}
-                        className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                        className="font-medium text-blue-600 hover:underline"
                       >
                         Edit
                       </button>
@@ -354,7 +354,7 @@ const Invoices = () => {
                           openDeleteModal();
                           setSelectedInvoice(invoice);
                         }}
-                        className="font-medium text-red-600 dark:text-red-500 hover:underline ms-3"
+                        className="font-medium text-red-600  hover:underline ms-3"
                       >
                         Remove
                       </button>

@@ -19,6 +19,7 @@ interface Customer {
   invoices: string[];
   address?: CustomerAddress;
   createdAt: string;
+  userID: Number;
 }
 
 type Product = {

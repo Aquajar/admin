@@ -17,7 +17,7 @@ import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
 import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";

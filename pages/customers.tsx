@@ -35,6 +35,9 @@ const Customers = () => {
                 </div>
               </th>
               <th scope="col" className="px-6 py-3">
+                ID
+              </th>
+              <th scope="col" className="px-6 py-3">
                 Name
               </th>
               <th scope="col" className="px-6 py-3">
@@ -46,9 +49,7 @@ const Customers = () => {
               <th scope="col" className="px-6 py-3">
                 Address
               </th>
-              <th scope="col" className="px-6 py-3">
-                ID
-              </th>
+
               <th scope="col" className="px-6 py-3">
                 Action
               </th>
@@ -76,6 +77,9 @@ const Customers = () => {
                           checkbox
                         </label>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-900 font-medium">
+                      {customer.userID.toString()}
                     </td>
                     <th
                       scope="row"
