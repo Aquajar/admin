@@ -4,10 +4,46 @@ import useCustomers from "@/lib/hooks/useCustomers";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useSession } from "next-auth/react";
+import { useState } from "react";
+import Modal from "react-modal";
+import { MdCancelPresentation } from "react-icons/md";
+
+Modal.setAppElement("#__next");
+
+const customStyles = {
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+  },
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    width: "100%",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+    height: "100%",
+    padding: "1rem",
+    background: "none",
+    alignItems: "center",
+    justifyContent: "center",
+    display: "flex",
+  },
+};
 
 const Customers = () => {
   const { customers } = useCustomersStore();
   const { data: session } = useSession();
+  const [modalIsOpen, setIsOpen] = useState(false);
+  const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
+
+  function openModal() {
+    setIsOpen(true);
+  }
+
+  function closeModal() {
+    setIsOpen(false);
+  }
 
   // Create axios instance
   const axiosInstance = useAxiosInstance(session);
@@ -18,6 +54,26 @@ const Customers = () => {
 
   return (
     <Wrapper name="Cutomers">
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        style={customStyles}
+        contentLabel="Summary Modal"
+      >
+        <div className="bg-white h-[90%] relative md:h-10/12 w-full md:w-1/3 rounded-lg">
+          <MdCancelPresentation
+            onClick={closeModal}
+            className="absolute top-2 right-2 cursor-pointer text-4xl text-black"
+          />
+          <iframe
+            className="rounded-xl"
+            src={`https://link.aquajar.in/bills/${selectedCustomerID}`}
+            width="100%"
+            height="100%"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </Modal>
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -98,7 +154,6 @@ const Customers = () => {
                         ", " +
                         customer.address?.text}
                     </td>
-                    <td className="px-6 py-4">{customer._id}</td>
                     <td className="flex items-center px-6 py-4">
                       <a
                         href="#"
@@ -106,6 +161,15 @@ const Customers = () => {
                       >
                         Edit
                       </a>
+                      <span
+                        onClick={() => {
+                          setSelectedCustomerID(customer.userID);
+                          openModal();
+                        }}
+                        className="font-medium cursor-pointer text-green-600 hover:underline ms-3"
+                      >
+                        Summary
+                      </span>
                       <a
                         href="#"
                         className="font-medium text-red-600 hover:underline ms-3"
