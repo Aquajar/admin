@@ -7,7 +7,7 @@ import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
 import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
@@ -36,11 +36,10 @@ const Invoices = () => {
   const { data: session } = useSession();
   const { invoices, setInvoices } = useInvoicesStore();
   const { customers } = useCustomersStore();
-  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(
-    null
-  );
-  const [modalIsOpen, setIsOpen] = React.useState(false);
-  const [deleteModalIsOpen, setDeleteModalIsOpen] = React.useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [modalIsOpen, setIsOpen] = useState(false);
+  const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
+  const [dueAmount, setDueAmount] = useState(0);
 
   // Create axios instance
   const axiosInstance = useAxiosInstance(session);
@@ -81,10 +80,14 @@ const Invoices = () => {
     try {
       const URL =
         process.env.NEXT_PUBLIC_API_URL + `/invoice/update/${invoice._id}`;
+      if (!selectedInvoice) return;
+      let due =
+        parseInt(selectedInvoice?.due.toString()) -
+        parseInt(dueAmount.toString());
       const { data } = await axiosInstance.put(URL, {
         paymentDate: new Date(),
-        status: "paid",
-        due: 0,
+        status: due === 0 ? "paid" : "pending",
+        due: due,
       });
       setInvoices((invoices) => {
         if (!invoices) return [];
@@ -95,6 +98,7 @@ const Invoices = () => {
         updatedInvoices[index] = data.invoice;
         return updatedInvoices;
       });
+      toast.success("Invoice updated successfully");
       closeModal();
     } catch (error) {
       console.log(error);
@@ -185,6 +189,19 @@ const Invoices = () => {
             </div>
             <div className="flex flex-col">
               <label htmlFor="total" className="text-sm font-medium">
+                Total Amount
+              </label>
+              <CurrencyFormat
+                value={selectedInvoice?.total}
+                displayType={"input"}
+                disabled
+                thousandSeparator={true}
+                prefix={"₹"}
+                className="mt-1 p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor="total" className="text-sm font-medium">
                 Due
               </label>
               <CurrencyFormat
@@ -196,6 +213,18 @@ const Invoices = () => {
                 className="mt-1 p-2 border border-gray-300 rounded-md"
               />
             </div>
+            <div className="flex flex-col">
+              <label htmlFor="total" className="text-sm font-medium">
+                Paying Amount
+              </label>
+              <input
+                type="number"
+                value={dueAmount}
+                onChange={(e) => setDueAmount(+e.target.value)}
+                className="mt-1 p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            {/* Payment Date */}
             <div className="flex flex-col">
               <label htmlFor="invoiceDate" className="text-sm font-medium">
                 Payment Date
@@ -343,6 +372,7 @@ const Invoices = () => {
                         onClick={() => {
                           openModal();
                           setSelectedInvoice(invoice);
+                          setDueAmount(invoice.due as number);
                         }}
                         className="font-medium text-blue-600 hover:underline"
                       >
@@ -352,6 +382,7 @@ const Invoices = () => {
                         onClick={() => {
                           openDeleteModal();
                           setSelectedInvoice(invoice);
+                          setDueAmount(invoice.due as number);
                         }}
                         className="font-medium text-red-600  hover:underline ms-3"
                       >

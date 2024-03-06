@@ -17,7 +17,7 @@ import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
 import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
@@ -101,7 +101,7 @@ export default function Home() {
   };
 
   const todaySalesData = {
-    labels: ["Due", "Collected"],
+    labels: ["Due Sale", "Paid Sale", "Due Collected"],
     datasets: [
       {
         label: "Rupees",
@@ -129,8 +129,20 @@ export default function Home() {
               return acc + invoice.total;
             return acc;
           }, 0),
+          // due payments collected today
+          invoices?.reduce((acc, invoice) => {
+            let paymentDate = new Date(
+              invoice.paymentDate as number
+            ).toLocaleDateString();
+            if (
+              invoice.status === "pending" &&
+              paymentDate === new Date().toLocaleDateString()
+            )
+              return acc + invoice.due;
+            return acc;
+          }, 0),
         ],
-        backgroundColor: ["rgb(255,82,82)", "#1E90FF"],
+        backgroundColor: ["rgb(255,82,82)", "#1E90FF", "#A8E4AO"],
         borderWidth: 1,
       },
     ],
