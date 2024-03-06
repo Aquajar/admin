@@ -4,7 +4,7 @@ import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
 import { FaShop } from "react-icons/fa6";
-import { FaFileInvoice } from "react-icons/fa";
+import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -32,6 +32,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Settings",
     icon: IoMdSettings,
     href: "/settings",
+  },
+  {
+    name: "Reports",
+    icon: FaFileAlt,
+    href: "/reports",
   },
   {
     name: "Invoices",

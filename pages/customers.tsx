@@ -36,6 +36,7 @@ const Customers = () => {
   const { data: session } = useSession();
   const [modalIsOpen, setIsOpen] = useState(false);
   const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
+  const [showSummary, setShowSummary] = useState(false);
 
   function openModal() {
     setIsOpen(true);
@@ -65,13 +66,19 @@ const Customers = () => {
             onClick={closeModal}
             className="absolute top-2 right-2 cursor-pointer text-4xl text-black"
           />
-          <iframe
-            className="rounded-xl"
-            src={`https://link.aquajar.in/bills/${selectedCustomerID}`}
-            width="100%"
-            height="100%"
-            allowFullScreen
-          ></iframe>
+          {!showSummary ? (
+            <div className="flex flex-col w-full">
+              
+            </div>
+          ) : (
+            <iframe
+              className="rounded-xl"
+              src={`https://link.aquajar.in/bills/${selectedCustomerID}`}
+              width="100%"
+              height="100%"
+              allowFullScreen
+            ></iframe>
+          )}
         </div>
       </Modal>
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -155,14 +162,19 @@ const Customers = () => {
                         customer.address?.text}
                     </td>
                     <td className="flex items-center px-6 py-4">
-                      <a
-                        href="#"
-                        className="font-medium text-blue-600  hover:underline"
-                      >
-                        Edit
-                      </a>
                       <span
                         onClick={() => {
+                          setShowSummary(false);
+                          setSelectedCustomerID(customer.userID);
+                          openModal();
+                        }}
+                        className="font-medium text-blue-600 cursor-pointer  hover:underline"
+                      >
+                        Edit
+                      </span>
+                      <span
+                        onClick={() => {
+                          setShowSummary(true);
                           setSelectedCustomerID(customer.userID);
                           openModal();
                         }}

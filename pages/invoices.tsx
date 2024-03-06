@@ -6,7 +6,6 @@ import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
 import { Invoice } from "@/types/types";
-import axios from "axios";
 import { useSession } from "next-auth/react";
 import React, { useEffect } from "react";
 import CurrencyFormat from "react-currency-format";
