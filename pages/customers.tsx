@@ -4,10 +4,14 @@ import useCustomers from "@/lib/hooks/useCustomers";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
 import { MdCancelPresentation } from "react-icons/md";
 import toast from "react-hot-toast";
+import SearchBar from "@/components/Customer/SearchBar";
+import useInvoice from "@/lib/hooks/useInvoice";
+import { useInvoicesStore } from "@/store/invoices.store";
+import CurrencyFormat from "react-currency-format";
 
 Modal.setAppElement("#__next");
 
@@ -39,6 +43,8 @@ const Customers = () => {
   const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
   const [showSummary, setShowSummary] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
+  const { invoices, setInvoices } = useInvoicesStore();
+  const [customersState, setCustomersState] = useState(customers);
 
   function openModal() {
     setIsOpen(true);
@@ -54,6 +60,7 @@ const Customers = () => {
   // Hooks
   useRefreshTokenRotation(axiosInstance);
   useCustomers(axiosInstance, session);
+  useInvoice(axiosInstance, session);
 
   // Update Customer Details
   const handleSave = () => {
@@ -81,6 +88,39 @@ const Customers = () => {
       error: "Error Updating Customer",
     });
   };
+
+  // Handle Search Trigger
+  const handleOnsearch = (searchTerm: string, searchBy: "id" | "name") => {
+    if (!searchTerm) {
+      setCustomersState(customers);
+    }
+    if (!searchTerm) {
+      setCustomersState((prev) => {
+        if (!prev) return;
+        return prev;
+      });
+    } else {
+      setCustomersState((prev) => {
+        if (!prev) return;
+        return prev.filter((customer) => {
+          if (searchBy === "id") {
+            return customer.userID.toString().includes(searchTerm);
+          } else {
+            if (!customer.name) return;
+            return customer.name
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase());
+          }
+        });
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (customers) {
+      setCustomersState(customers);
+    }
+  }, [customers]);
 
   return (
     <Wrapper name="Cutomers">
@@ -179,7 +219,8 @@ const Customers = () => {
           )}
         </div>
       </Modal>
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <SearchBar onSearch={handleOnsearch} />
+      <div className="relative overflow-x-auto mt-5 shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">
@@ -208,6 +249,9 @@ const Customers = () => {
                 CreatedAt
               </th>
               <th scope="col" className="px-6 py-3">
+                Total Due
+              </th>
+              <th scope="col" className="px-6 py-3">
                 Address
               </th>
 
@@ -217,8 +261,20 @@ const Customers = () => {
             </tr>
           </thead>
           <tbody>
-            {customers &&
-              customers.map((customer) => {
+            {customersState &&
+              customersState.map((customer) => {
+                if (!invoices) return null;
+                let totalDue = invoices
+                  .filter(
+                    (invoice) =>
+                      invoice.customerID === customer._id &&
+                      invoice.status === "pending"
+                  )
+                  .reduce((acc, curr) => acc + curr.due, 0)
+                  .toFixed(2)
+                  .toString()
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  .split(".")[0];
                 return (
                   <tr
                     key={customer._id}
@@ -253,6 +309,18 @@ const Customers = () => {
                     </td>
                     <td className="px-6 py-4">
                       {new Date(customer.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      {totalDue !== "0" ? (
+                        <CurrencyFormat
+                          value={totalDue}
+                          displayType={"text"}
+                          thousandSeparator={true}
+                          prefix={"₹"}
+                        />
+                      ) : (
+                        "---"
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       {customer.address?.landmark === customer.address?.text
