@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Modal from "react-modal";
 import { MdCancelPresentation } from "react-icons/md";
+import toast from "react-hot-toast";
 
 Modal.setAppElement("#__next");
 
@@ -32,11 +33,12 @@ const customStyles = {
 };
 
 const Customers = () => {
-  const { customers } = useCustomersStore();
+  const { customers, setCustomers } = useCustomersStore();
   const { data: session } = useSession();
   const [modalIsOpen, setIsOpen] = useState(false);
   const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
   const [showSummary, setShowSummary] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>();
 
   function openModal() {
     setIsOpen(true);
@@ -53,6 +55,33 @@ const Customers = () => {
   useRefreshTokenRotation(axiosInstance);
   useCustomers(axiosInstance, session);
 
+  // Update Customer Details
+  const handleSave = () => {
+    const payload = selectedCustomer;
+
+    const URL = process.env.NEXT_PUBLIC_API_URL + "/user/update";
+    const promise = axiosInstance.put(URL, payload);
+
+    toast.promise(promise, {
+      loading: "Updating Customer",
+      success: (res) => {
+        // Update the customer in the store
+        setCustomers((prev) => {
+          if (!prev) return;
+          const index = prev.findIndex(
+            (customer) => customer.userID === selectedCustomer.userID
+          );
+          prev[index] = selectedCustomer;
+          return prev;
+        });
+
+        closeModal();
+        return res.data.message;
+      },
+      error: "Error Updating Customer",
+    });
+  };
+
   return (
     <Wrapper name="Cutomers">
       <Modal
@@ -67,8 +96,77 @@ const Customers = () => {
             className="absolute top-2 right-2 cursor-pointer text-4xl text-black"
           />
           {!showSummary ? (
-            <div className="flex flex-col w-full">
-              
+            <div className="flex flex-col w-full px-6 md:px-10 pt-16">
+              <label htmlFor="name" className="text-gray-600">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={selectedCustomer?.name}
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    name: e.target.value,
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              />
+              <label htmlFor="phone" className="text-gray-600 mt-5">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                id="phone"
+                name="phone"
+                value={selectedCustomer?.phone}
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    phone: e.target.value,
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              />
+              <label htmlFor="address" className="text-gray-600 mt-5">
+                Area
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={selectedCustomer?.address?.text}
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    address: { text: e.target.value },
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              />
+              <label htmlFor="landmark" className="text-gray-600 mt-5">
+                Landmark
+              </label>
+              <input
+                type="text"
+                id="landmark"
+                name="landmark"
+                value={selectedCustomer?.address?.landmark}
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    address: { landmark: e.target.value },
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              />
+
+              <button
+                onClick={handleSave}
+                className="w-full p-2 mt-10 bg-blue-600 text-white rounded-lg"
+              >
+                Save
+              </button>
             </div>
           ) : (
             <iframe
@@ -157,14 +255,17 @@ const Customers = () => {
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
-                      {customer.address?.landmark +
-                        ", " +
-                        customer.address?.text}
+                      {customer.address?.landmark === customer.address?.text
+                        ? customer.address?.text
+                        : customer.address?.landmark +
+                          ", " +
+                          customer.address?.text}
                     </td>
                     <td className="flex items-center px-6 py-4">
                       <span
                         onClick={() => {
                           setShowSummary(false);
+                          setSelectedCustomer(customer);
                           setSelectedCustomerID(customer.userID);
                           openModal();
                         }}
