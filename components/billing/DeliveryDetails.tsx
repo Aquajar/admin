@@ -1,3 +1,4 @@
+import { Area } from "@/types/types";
 import React, { FC } from "react";
 
 interface IProps {
@@ -7,6 +8,7 @@ interface IProps {
   landmark: string;
   vehicle: string;
   setVehicle: (value: string) => void;
+  areas: Area[] | undefined;
 }
 
 const DeliveryDetails: FC<IProps> = ({
@@ -16,17 +18,28 @@ const DeliveryDetails: FC<IProps> = ({
   address,
   landmark,
   vehicle,
+  areas,
 }) => {
+  console.log(areas)
   return (
     <div className={`flex flex-col mb-6 border-t`}>
       {/* Address */}
       <label className="text-md mt-4 font-medium text-gray-700">Address</label>
-      <textarea
+      <select
         onChange={(e) => setAddress(e.target.value)}
-        value={address}
-        className="border rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
-        rows={2}
-      ></textarea>
+        className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
+      >
+        {areas?.map((area) => (
+          <option
+            disabled={!area.serviceable}
+            key={area._id}
+            selected={address === area.name}
+            value={area.name}
+          >
+            {area.name}
+          </option>
+        ))}
+      </select>
       <div className="grid mt-6 gap-8 grid-cols-2 items-start my-3 justify-between">
         {/* Land Mark */}
         <div className="flex flex-col">

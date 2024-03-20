@@ -8,10 +8,12 @@ import { useEffect, useState } from "react";
 import Modal from "react-modal";
 import { MdCancelPresentation } from "react-icons/md";
 import toast from "react-hot-toast";
-import SearchBar from "@/components/Customer/SearchBar";
+import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
 import CurrencyFormat from "react-currency-format";
+import { Area, Customer } from "@/types/types";
+import { getCookie, setCookie } from "cookies-next";
 
 Modal.setAppElement("#__next");
 
@@ -45,6 +47,7 @@ const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
   const { invoices, setInvoices } = useInvoicesStore();
   const [customersState, setCustomersState] = useState(customers);
+  const [areas, setAreas] = useState<Area[] | undefined>(undefined);
 
   function openModal() {
     setIsOpen(true);
@@ -89,6 +92,31 @@ const Customers = () => {
     });
   };
 
+  // Fetch Areas
+  useEffect(() => {
+    if (!areas) {
+      // Fetch products from cookies
+      const cookieAreas = getCookie("areas");
+      if (cookieAreas) {
+        console.log("Fetching areas from cookies");
+        let areas: Area[] = JSON.parse(cookieAreas);
+        setAreas(areas);
+      } else {
+        // Fetch products
+        console.log("Fetching products from API");
+        const URL = process.env.NEXT_PUBLIC_API_URL + "/area/all";
+
+        axiosInstance.get(URL).then((res) => {
+          const areas: Area[] = res.data;
+          setAreas(areas);
+          setCookie("areas", JSON.stringify(areas), {
+            maxAge: 60 * 60 * 24 * 7,
+          });
+        });
+      }
+    }
+  }, [areas]);
+
   // Handle Search Trigger
   const handleOnsearch = (searchTerm: string, searchBy: "id" | "name") => {
     if (!searchTerm) {
@@ -118,7 +146,22 @@ const Customers = () => {
 
   useEffect(() => {
     if (customers) {
-      setCustomersState(customers);
+      // add new property to customers
+      const c = customers.map((customer) => {
+        let totalDue = invoices
+          ?.filter(
+            (invoice) =>
+              invoice.customerID === customer._id &&
+              invoice.status === "pending"
+          )
+          .reduce((acc, curr) => acc + curr.due, 0)
+          .toFixed(2)
+          .toString()
+          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          .split(".")[0];
+        return { ...customer, totalDue };
+      });
+      setCustomersState(c);
     }
   }, [customers]);
 
@@ -171,8 +214,7 @@ const Customers = () => {
               <label htmlFor="address" className="text-gray-600 mt-5">
                 Area
               </label>
-              <input
-                type="text"
+              <select
                 id="address"
                 name="address"
                 value={selectedCustomer?.address?.text}
@@ -183,7 +225,18 @@ const Customers = () => {
                   })
                 }
                 className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              />
+              >
+                {areas?.map((area) => (
+                  <option
+                    disabled={area.serviceable === false}
+                    selected={area.name === selectedCustomer?.address?.text}
+                    key={area._id}
+                    value={area.name}
+                  >
+                    {area.name}
+                  </option>
+                ))}
+              </select>
               <label htmlFor="landmark" className="text-gray-600 mt-5">
                 Landmark
               </label>
@@ -219,8 +272,19 @@ const Customers = () => {
           )}
         </div>
       </Modal>
-      <SearchBar onSearch={handleOnsearch} />
+      {/*
+       * Render Search Bar
+       */}
+      <HeaderMenu
+        onSearch={handleOnsearch}
+        customers={customersState}
+        setCustomers={setCustomersState}
+      />
+
       <div className="relative overflow-x-auto mt-5 shadow-md sm:rounded-lg">
+        {/*
+         * Render Table
+         */}
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">
@@ -311,9 +375,11 @@ const Customers = () => {
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
-                      {totalDue !== "0" ? (
+                      {/* @ts-ignore */}
+                      {customer?.totalDue !== "0" ? (
                         <CurrencyFormat
-                          value={totalDue}
+                          // @ts-ignore
+                          value={customer?.totalDue}
                           displayType={"text"}
                           thousandSeparator={true}
                           prefix={"₹"}
@@ -322,13 +388,7 @@ const Customers = () => {
                         "---"
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      {customer.address?.landmark === customer.address?.text
-                        ? customer.address?.text
-                        : customer.address?.landmark +
-                          ", " +
-                          customer.address?.text}
-                    </td>
+                    <td className="px-6 py-4">{customer.address?.text}</td>
                     <td className="flex items-center px-6 py-4">
                       <span
                         onClick={() => {

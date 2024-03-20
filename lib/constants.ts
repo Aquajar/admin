@@ -5,6 +5,7 @@ import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
 import { FaShop } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
+import { TbLocationFilled } from "react-icons/tb";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -29,19 +30,26 @@ const SidebarItems: SideBarItem[] = [
     href: "/customers",
   },
   {
-    name: "Settings",
-    icon: IoMdSettings,
-    href: "/settings",
+    name: "Invoices",
+    icon: FaFileInvoice,
+    href: "/invoices",
   },
+
   {
     name: "Reports",
     icon: FaFileAlt,
     href: "/reports",
   },
+
   {
-    name: "Invoices",
-    icon: FaFileInvoice,
-    href: "/invoices",
+    name: "Areas",
+    icon: TbLocationFilled,
+    href: "/area",
+  },
+  {
+    name: "Settings",
+    icon: IoMdSettings,
+    href: "/settings",
   },
 ];
 
@@ -64,4 +72,15 @@ const paymentMethods: IPaymentMethod[] = [
   },
 ];
 
-export { SidebarItems, paymentMethods };
+const sortByOptions = [
+  {
+    id: 1,
+    name: "Highest due",
+  },
+  {
+    id: 2,
+    name: "Lowest due",
+  },
+];
+
+export { SidebarItems, paymentMethods, sortByOptions };

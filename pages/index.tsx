@@ -101,7 +101,7 @@ export default function Home() {
   };
 
   const todaySalesData = {
-    labels: ["Due Sale", "Paid Sale", "Due Collected"],
+    labels: ["Due Sale", "Paid Sale"],
     datasets: [
       {
         label: "Rupees",
@@ -130,19 +130,20 @@ export default function Home() {
             return acc;
           }, 0),
           // due payments collected today
-          invoices?.reduce((acc, invoice) => {
-            let paymentDate = new Date(
-              invoice.paymentDate as number
-            ).toLocaleDateString();
-            if (
-              invoice.status === "pending" &&
-              paymentDate === new Date().toLocaleDateString()
-            )
-              return acc + invoice.due;
-            return acc;
-          }, 0),
+          // invoices?.reduce((acc, invoice) => {
+          //   let paymentDate = new Date(
+          //     invoice.paymentDate as number
+          //   ).toLocaleDateString();
+          //   if (
+          //     invoice.status === "pending" &&
+          //     paymentDate === new Date().toLocaleDateString()
+          //   ) {
+          //     return acc + (invoice.total - invoice.due);
+          //   }
+          //   return acc;
+          // }, 0),
         ],
-        backgroundColor: ["rgb(255,82,82)", "#1E90FF", "#A8E4AO"],
+        backgroundColor: ["rgb(255,82,82)", "#1E90FF"],
         borderWidth: 1,
       },
     ],

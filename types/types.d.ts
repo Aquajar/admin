@@ -39,6 +39,12 @@ interface Item {
   total: number;
 }
 
+export interface Area {
+  _id: string;
+  name: string;
+  serviceable: boolean;
+}
+
 export interface IPaymentMethod {
   value: string;
   label: string;

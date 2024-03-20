@@ -1,13 +1,24 @@
-import React, { useState } from "react";
+import { sortByOptions } from "@/lib/constants";
+import { Customer, Invoice } from "@/types/types";
+import React, { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 
-interface SearchBarProps {
+interface HeaderMenuProps {
   onSearch: (searchTerm: string, searchBy: "id" | "name") => void;
+  customers: Customer[] | null | undefined;
+  setCustomers: React.Dispatch<
+    React.SetStateAction<Customer[] | null | undefined>
+  >;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
+const HeaderMenu: React.FC<HeaderMenuProps> = ({
+  onSearch,
+  customers,
+  setCustomers,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
+  const [sortBy, setSortBy] = useState<number>(1);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -23,8 +34,31 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
     setSearchBy(event.target.value as "id" | "name");
   };
 
+  const handleSortByChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    let sortBy = parseInt(event.target.value);
+    setSortBy(sortBy);
+
+    if (sortBy === 1) {
+      // sort by totaldue
+      const sortedCustomers = customers?.sort((a, b) => {
+        // @ts-ignore
+        return a?.totaldue - b?.totaldue;
+      });
+      setCustomers(sortedCustomers);
+    }
+  };
+
+  useEffect(() => {
+    if (customers) {
+      // sort by totaldue
+    }
+  }, [customers]);
+
   return (
     <div className="flex flex-col md:flex-row items-center ">
+      {/*
+       * Search Bar
+       */}
       <div className="relative w-full max-w-md">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <FaSearch className="w-5 h-5 text-gray-500" />
@@ -44,7 +78,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           Search
         </button>
       </div>
-      <div className="md:ml-6 flex items-center w-full md:w-fit mt-5 md:mt-0 flex-row-reverse md:flex-row">
+      {/*
+       * Filter by
+       */}
+      <div className="md:ml-6 flex items-center w-full md:w-fit mt-5 md:mt-0 flex-row md:flex-row">
         <label
           htmlFor="searchBy"
           className="mr-2 ml-3 md:ml-0 text-sm font-medium text-gray-900"
@@ -60,9 +97,27 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           <option value="name">Name</option>
           <option value="id">ID</option>
         </select>
+        <label
+          htmlFor="sortBy"
+          className="mr-2 ml-3 md:ml-8 text-sm font-medium text-gray-900"
+        >
+          Sort by
+        </label>
+        <select
+          id="sortBy"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5"
+          value={sortBy}
+          onChange={handleSortByChange}
+        >
+          {sortByOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
 };
 
-export default SearchBar;
+export default HeaderMenu;

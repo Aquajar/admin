@@ -22,7 +22,7 @@ export default function App({
             <div className="bg-quaternary">
               <Toaster position="top-center" reverseOrder={false} />
               <Sidebar />
-              <Component {...pageProps} />;
+              <Component {...pageProps} />
             </div>
             {process.env.NODE_ENV === "development" && (
               <ReactQueryDevtools initialIsOpen={false} />

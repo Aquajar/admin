@@ -11,6 +11,7 @@ import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
 import {
+  Area,
   Customer,
   Invoice as InvoiceType,
   Item,
@@ -50,6 +51,7 @@ const Invoice = () => {
     RecentCard[] | [] | null
   >(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
+  const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [discount, setDiscount] = useState<string>("0");
   const [partialPayment, setPartialPayment] = useState<string>("0");
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
@@ -162,7 +164,7 @@ const Invoice = () => {
       return toast.error("Please enter any identity detail");
     } else if (total === 0) {
       return toast.error("Please add items to the invoice");
-    } else if (orderType === "delivery" && address === "" && landmark === "") {
+    } else if (orderType === "delivery" && address === "") {
       return toast.error("Please enter the address");
     } else if (paymentMethod === "") {
       return toast.error("Please select a payment method");
@@ -266,7 +268,7 @@ const Invoice = () => {
       setPhoneNumber("");
       setBillTo("");
       setCustomer(undefined);
-      setAddress("");
+      setAddress(areas ? areas[0].name : "");
       setLandmark("");
       setItems([
         {
@@ -297,6 +299,7 @@ const Invoice = () => {
     }
   };
 
+  // Search customer with name keyword
   const searchCustomer = (keyword: string) => {
     const value = keyword;
 
@@ -358,6 +361,33 @@ const Invoice = () => {
     }
   }, [products]);
 
+  // Fetch Areas
+  useEffect(() => {
+    if (!areas) {
+      // Fetch products from cookies
+      const cookieAreas = getCookie("areas");
+      if (cookieAreas) {
+        console.log("Fetching areas from cookies");
+        let areas: Area[] = JSON.parse(cookieAreas);
+        setAreas(areas);
+        setAddress(areas[0].name);
+      } else {
+        // Fetch products
+        console.log("Fetching products from API");
+        const URL = process.env.NEXT_PUBLIC_API_URL + "/area/all";
+
+        axiosInstance.get(URL).then((res) => {
+          const areas: Area[] = res.data;
+          setAreas(areas);
+          setAddress(areas[0].name);
+          setCookie("areas", JSON.stringify(areas), {
+            maxAge: 60 * 60 * 24 * 7,
+          });
+        });
+      }
+    }
+  }, [areas]);
+
   return (
     <Wrapper name="Create Invoice">
       <div className="flex flex-col">
@@ -387,7 +417,7 @@ const Invoice = () => {
                     setPhoneNumber(e.target.value);
                     setCustomer(undefined);
                     setBillTo("");
-                    setAddress("");
+                    setAddress(areas ? areas[0].name : "");
                     setLandmark("");
                   }}
                   value={phoneNumber}
@@ -442,7 +472,7 @@ const Invoice = () => {
                                 setCustomer(customer);
                                 setBillTo(customer.name as string);
                                 setPhoneNumber(customer.phone);
-                                setAddress(customer?.address?.text || "");
+                                setAddress(customer.address?.text || "");
                                 setLandmark(customer.address?.landmark || "");
                                 setCustomersResults([]);
                               }}
@@ -646,6 +676,7 @@ const Invoice = () => {
             {/* Deliver Details */}
             {orderType === "retail" ? null : (
               <DeliveryDetails
+                areas={areas}
                 setAddress={setAddress}
                 setVehicle={setVehicle}
                 vehicle={vehicle}
