@@ -128,9 +128,9 @@ const Customers = () => {
         return prev;
       });
     } else {
-      setCustomersState((prev) => {
-        if (!prev) return;
-        return prev.filter((customer) => {
+      if (!customers) return;
+      setCustomersState(
+        customers.filter((customer) => {
           if (searchBy === "id") {
             return customer.userID.toString().includes(searchTerm);
           } else {
@@ -139,8 +139,8 @@ const Customers = () => {
               .toLowerCase()
               .includes(searchTerm.toLowerCase());
           }
-        });
-      });
+        })
+      );
     }
   };
 
@@ -312,9 +312,7 @@ const Customers = () => {
               <th scope="col" className="px-6 py-3">
                 CreatedAt
               </th>
-              <th scope="col" className="px-6 py-3">
-                Total Due
-              </th>
+
               <th scope="col" className="px-6 py-3">
                 Address
               </th>
@@ -328,17 +326,6 @@ const Customers = () => {
             {customersState &&
               customersState.map((customer) => {
                 if (!invoices) return null;
-                let totalDue = invoices
-                  .filter(
-                    (invoice) =>
-                      invoice.customerID === customer._id &&
-                      invoice.status === "pending"
-                  )
-                  .reduce((acc, curr) => acc + curr.due, 0)
-                  .toFixed(2)
-                  .toString()
-                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  .split(".")[0];
                 return (
                   <tr
                     key={customer._id}
@@ -373,20 +360,6 @@ const Customers = () => {
                     </td>
                     <td className="px-6 py-4">
                       {new Date(customer.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      {/* @ts-ignore */}
-                      {customer?.totalDue !== "0" ? (
-                        <CurrencyFormat
-                          // @ts-ignore
-                          value={customer?.totalDue}
-                          displayType={"text"}
-                          thousandSeparator={true}
-                          prefix={"₹"}
-                        />
-                      ) : (
-                        "---"
-                      )}
                     </td>
                     <td className="px-6 py-4">{customer.address?.text}</td>
                     <td className="flex items-center px-6 py-4">

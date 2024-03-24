@@ -1,6 +1,6 @@
 import { sortByOptions } from "@/lib/constants";
 import { Customer, Invoice } from "@/types/types";
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 
 interface HeaderMenuProps {
@@ -24,28 +24,17 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
     setSearchTerm(event.target.value);
   };
 
-  const handleSearch = () => {
+  // Handle search bar
+  const handleSearch = (e: ChangeEvent<HTMLFormElement>) => {
+    e.preventDefault();
     onSearch(searchTerm, searchBy);
   };
 
+  // Handle search label change
   const handleSearchByChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
     setSearchBy(event.target.value as "id" | "name");
-  };
-
-  const handleSortByChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    let sortBy = parseInt(event.target.value);
-    setSortBy(sortBy);
-
-    if (sortBy === 1) {
-      // sort by totaldue
-      const sortedCustomers = customers?.sort((a, b) => {
-        // @ts-ignore
-        return a?.totaldue - b?.totaldue;
-      });
-      setCustomers(sortedCustomers);
-    }
   };
 
   useEffect(() => {
@@ -59,7 +48,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
       {/*
        * Search Bar
        */}
-      <div className="relative w-full max-w-md">
+      <form onSubmit={handleSearch} className="relative w-full max-w-md">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <FaSearch className="w-5 h-5 text-gray-500" />
         </div>
@@ -71,13 +60,12 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           onChange={handleInputChange}
         />
         <button
-          type="button"
+          type="submit"
           className="absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white bg-blue-600 hover:bg-indigo-700"
-          onClick={handleSearch}
         >
           Search
         </button>
-      </div>
+      </form>
       {/*
        * Filter by
        */}
@@ -96,24 +84,6 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         >
           <option value="name">Name</option>
           <option value="id">ID</option>
-        </select>
-        <label
-          htmlFor="sortBy"
-          className="mr-2 ml-3 md:ml-8 text-sm font-medium text-gray-900"
-        >
-          Sort by
-        </label>
-        <select
-          id="sortBy"
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5"
-          value={sortBy}
-          onChange={handleSortByChange}
-        >
-          {sortByOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.name}
-            </option>
-          ))}
         </select>
       </div>
     </div>
