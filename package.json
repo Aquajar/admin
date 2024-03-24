@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@szhsin/react-menu": "^4.1.0",
     "axios": "^1.6.7",
     "chart.js": "^4.4.1",
     "cookies-next": "^4.1.1",
@@ -24,6 +25,7 @@
     "react-datepicker": "^5.0.0",
     "react-debounce-input": "^3.3.0",
     "react-dom": "^18",
+    "react-easy-export": "^1.0.1",
     "react-export-table-to-excel": "^1.0.6",
     "react-hot-toast": "^2.4.1",
     "react-icons": "^5.0.1",
@@ -31,7 +33,8 @@
     "react-otp-input": "^3.1.1",
     "react-query": "^3.39.3",
     "sheetjs-style": "^0.15.8",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.1/xlsx-0.20.1.tgz"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
