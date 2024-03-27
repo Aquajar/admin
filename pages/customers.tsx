@@ -60,8 +60,6 @@ const Customers = () => {
   // Create axios instance
   const axiosInstance = useAxiosInstance(session);
 
-  console.log("session", session);
-
   // Hooks
   useRefreshTokenRotation(axiosInstance);
   useCustomers(axiosInstance, session);

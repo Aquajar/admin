@@ -42,10 +42,12 @@ const Invoice = () => {
   const [vehicle, setVehicle] = useState<string>("WB73E3666");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [searchByPhone, setSearchByPhone] = useState<boolean>(false);
   const [billTo, setBillTo] = useState<string>("");
   const [customer, setCustomer] = useState<undefined | null | Customer>(
     undefined
   );
+  const [customerID, setCustomerID] = useState<string>("");
   const [isLoading, setIsloading] = useState(false);
   const [recentInvoices, setRecentInvoices] = useState<
     RecentCard[] | [] | null
@@ -108,19 +110,42 @@ const Invoice = () => {
     }
   }, [recentInvoices]);
 
-  // Fetch customer details when phone number is entered
+  // Auto Fetch customer details by phone number/customer ID
   useEffect(() => {
-    if (customer === undefined && phoneNumber.length === 10) {
-      console.log("Fetching user details");
+    if (customer === undefined && searchByPhone && phoneNumber.length === 10) {
       setIsloading(true);
       const URL =
         process.env.NEXT_PUBLIC_API_URL + "/user/find-by-phone/" + phoneNumber;
       axios
         .get(URL)
         .then((res) => {
-          console.log(res.data);
           const customer: Customer = res.data.user;
           setCustomer(customer);
+          customer.userID && setCustomerID(customer.userID.toString());
+          customer?.name && setBillTo(customer.name);
+          customer.address?.text && setAddress(customer.address.text);
+          customer.address?.landmark && setLandmark(customer.address.landmark);
+          setIsloading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setCustomer(null);
+          setIsloading(false);
+        });
+    } else if (
+      customer === undefined &&
+      !searchByPhone &&
+      customerID.length === 4
+    ) {
+      setIsloading(true);
+      const URL =
+        process.env.NEXT_PUBLIC_API_URL + "/user/find-by-userid/" + customerID;
+      axios
+        .get(URL)
+        .then((res) => {
+          const customer: Customer = res.data.user;
+          setCustomer(customer);
+          customer.phone && setPhoneNumber(customer.phone);
           customer?.name && setBillTo(customer.name);
           customer.address?.text && setAddress(customer.address.text);
           customer.address?.landmark && setLandmark(customer.address.landmark);
@@ -132,7 +157,7 @@ const Invoice = () => {
           setIsloading(false);
         });
     }
-  }, [phoneNumber, customer]);
+  }, [phoneNumber, customer, customerID, searchByPhone]);
 
   // Handle order type change
   const handleOrderType = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -156,6 +181,39 @@ const Invoice = () => {
     });
 
     setItems(newItems);
+  };
+
+  // Reset page state
+  const resetBilling = () => {
+    setPhoneNumber("");
+    setBillTo("");
+    setCustomer(undefined);
+    setAddress(areas ? areas[0].name : "");
+    setLandmark("");
+    setItems([
+      {
+        name: products ? products[0].name : "jar",
+        quantity: 0,
+        price: products
+          ? orderType === "retail"
+            ? parseInt(products[0].price.retail)
+            : parseInt(products[0].price.delivery)
+          : 25,
+        total: 0,
+      },
+    ]);
+    setCustomerID("");
+    setSearchByPhone(false);
+    setOrderType("retail");
+    setStartDate(new Date());
+    setPaymentMethod("");
+    setInvoiceId(randomString(8).toUpperCase());
+    setIsPartialPayment(false);
+    setPartialPayment("0");
+    setDiscount("0");
+    setTotal(0);
+    setSubTotal(0);
+    setTax(0);
   };
 
   // Generate Bill
@@ -265,33 +323,7 @@ const Invoice = () => {
       });
 
       // reset form
-      setPhoneNumber("");
-      setBillTo("");
-      setCustomer(undefined);
-      setAddress(areas ? areas[0].name : "");
-      setLandmark("");
-      setItems([
-        {
-          name: products ? products[0].name : "jar",
-          quantity: 0,
-          price: products
-            ? orderType === "retail"
-              ? parseInt(products[0].price.retail)
-              : parseInt(products[0].price.delivery)
-            : 25,
-          total: 0,
-        },
-      ]);
-      setOrderType("retail");
-      setStartDate(new Date());
-      setPaymentMethod("");
-      setInvoiceId(randomString(8).toUpperCase());
-      setIsPartialPayment(false);
-      setPartialPayment("0");
-      setDiscount("0");
-      setTotal(0);
-      setSubTotal(0);
-      setTax(0);
+      resetBilling();
     } catch (err) {
       console.log(err);
       setIsloading(false);
@@ -313,7 +345,6 @@ const Invoice = () => {
     axiosInstance
       .get(URL)
       .then((res) => {
-        console.log(res.data.user);
         setCustomersResults(res.data.user);
       })
       .catch((err) => {
@@ -327,7 +358,6 @@ const Invoice = () => {
       // Fetch products from cookies
       const cookieProducts = getCookie("products");
       if (cookieProducts) {
-        console.log("Fetching products from cookies");
         setProducts(JSON.parse(cookieProducts));
         setItems([
           {
@@ -339,7 +369,6 @@ const Invoice = () => {
         ]);
       } else {
         // Fetch products
-        console.log("Fetching products from API");
         const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
 
         axiosInstance.get(URL).then((res) => {
@@ -367,13 +396,11 @@ const Invoice = () => {
       // Fetch products from cookies
       const cookieAreas = getCookie("areas");
       if (cookieAreas) {
-        console.log("Fetching areas from cookies");
         let areas: Area[] = JSON.parse(cookieAreas);
         setAreas(areas);
         setAddress(areas[0].name);
       } else {
         // Fetch products
-        console.log("Fetching products from API");
         const URL = process.env.NEXT_PUBLIC_API_URL + "/area/all";
 
         axiosInstance.get(URL).then((res) => {
@@ -408,19 +435,39 @@ const Invoice = () => {
               )}
               {/* Phone */}
               <div className="flex flex-col">
-                <label className="text-md font-medium text-gray-700">
-                  Phone Number
-                </label>
+                <select
+                  onChange={(e) => {
+                    setSearchByPhone(e.target.value !== "ID");
+                    // resetCustomer();
+                  }}
+                  className="rounded-md mt-1.5 w-fit pr-8"
+                >
+                  <option selected={!searchByPhone} value="ID">
+                    Customer ID
+                  </option>
+                  <option selected={searchByPhone} value="phone">
+                    Phone
+                  </option>
+                </select>
                 <input
                   disabled={isLoading}
                   onChange={(e) => {
-                    setPhoneNumber(e.target.value);
+                    searchByPhone
+                      ? setPhoneNumber(e.target.value)
+                      : setCustomerID(e.target.value);
                     setCustomer(undefined);
                     setBillTo("");
                     setAddress(areas ? areas[0].name : "");
                     setLandmark("");
                   }}
-                  value={phoneNumber}
+                  value={
+                    searchByPhone
+                      ? phoneNumber
+                      : customerID === ""
+                      ? ""
+                      : customerID
+                  }
+                  maxLength={searchByPhone ? 10 : 4}
                   type="text"
                   className="border disabled:bg-gray-200 rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
                 />

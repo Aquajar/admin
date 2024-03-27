@@ -20,7 +20,6 @@ const DeliveryDetails: FC<IProps> = ({
   vehicle,
   areas,
 }) => {
-  console.log(areas)
   return (
     <div className={`flex flex-col mb-6 border-t`}>
       {/* Address */}
