@@ -204,7 +204,7 @@ const Invoice = () => {
     ]);
     setCustomerID("");
     setSearchByPhone(false);
-    setOrderType("retail");
+    setOrderType("delivery");
     setStartDate(new Date());
     setPaymentMethod("");
     setInvoiceId(randomString(8).toUpperCase());
@@ -381,7 +381,7 @@ const Invoice = () => {
             {
               name: JSON.parse(products)[0].name,
               quantity: 0,
-              price: JSON.parse(products)[0].price.retail,
+              price: JSON.parse(products)[0].price.delivery,
               total: 0,
             },
           ]);
