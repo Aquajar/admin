@@ -11,11 +11,13 @@ const Login = () => {
   const [phone, setPhone] = useState("");
   const [hasSentOTP, setHasSentOTP] = useState(false);
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
   //   SEND OTP REQUEST TO SERVER
   const handleOnRequestOtp = async () => {
+    setLoading(true);
     const URL = process.env.NEXT_PUBLIC_API_URL + "/auth/code";
 
     const payload = {
@@ -34,8 +36,8 @@ const Login = () => {
       {
         loading: "Sending OTP",
         success: (res) => {
-          console.log(res.data);
           setHasSentOTP(true);
+          setLoading(false);
           return "OTP sent successfully";
         },
         error: (err) => {
@@ -53,6 +55,7 @@ const Login = () => {
 
   //  VERIFY OTP REQUEST TO SERVER
   const handleOnVerifyOtp = async () => {
+    setLoading(true);
     const promise = signIn("credentials", {
       phone: phone,
       otp: otp,
@@ -66,6 +69,7 @@ const Login = () => {
         loading: "Verifying OTP",
         success: (res) => {
           router.push("/");
+          setLoading(false);
           return "OTP verified successfully";
         },
         error: (err) => {
@@ -133,7 +137,7 @@ const Login = () => {
         </span>
         <button
           onClick={hasSentOTP ? handleOnVerifyOtp : handleOnRequestOtp}
-          disabled={hasSentOTP && phone.length !== 10}
+          disabled={hasSentOTP && phone.length !== 10 || loading}
           className="bg-primary text-white rounded-lg p-3 mt-6 disabled:opacity-70"
         >
           {hasSentOTP ? "Verify OTP" : "Send OTP"}
