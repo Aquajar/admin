@@ -31,7 +31,7 @@ interface ItemProps {
 
 const Invoice = () => {
   const [items, setItems] = useState<Item[]>([]);
-  const [orderType, setOrderType] = useState("retail");
+  const [orderType, setOrderType] = useState("delivery");
   const [startDate, setStartDate] = useState(new Date());
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [subTotal, setSubTotal] = useState<number>(0);
@@ -363,7 +363,7 @@ const Invoice = () => {
           {
             name: JSON.parse(cookieProducts)[0].name,
             quantity: 0,
-            price: JSON.parse(cookieProducts)[0].price.retail,
+            price: JSON.parse(cookieProducts)[0].price.delivery,
             total: 0,
           },
         ]);
