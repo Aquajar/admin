@@ -1,5 +1,4 @@
-import { sortByOptions } from "@/lib/constants";
-import { Customer, Invoice } from "@/types/types";
+import { Customer } from "@/types/types";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 

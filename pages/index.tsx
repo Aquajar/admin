@@ -22,6 +22,7 @@ import CurrencyFormat from "react-currency-format";
 import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
 import Card from "@/components/dashboard/Card";
+import useAuthUser from "@/lib/hooks/useAuthUser";
 
 ChartJS.register(
   CategoryScale,

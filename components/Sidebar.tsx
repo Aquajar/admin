@@ -1,13 +1,16 @@
 import { SidebarItems } from "@/lib/constants";
-import { useSession } from "next-auth/react";
+import useAuthUser from "@/lib/hooks/useAuthUser";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
+import { IoPower } from "react-icons/io5";
 
 const Sidebar = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuthUser();
 
   return (
     <>
@@ -24,22 +27,33 @@ const Sidebar = () => {
           !router.pathname.includes("/auth/login") ? "md:flex" : "hidden"
         } fixed bg-quaternary border px-5 shadow-sm flex-col`}
       >
-        {/* Render Items */}
-        <div className="flex flex-col mt-10">
-          {SidebarItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (
-              <Link
-                href={item.href}
-                key={index}
-                onClick={() => setIsOpen(false)}
-                className="flex items-center my-3"
-              >
-                <IconComponent className="w-6 h-6" />
-                <p className="text-lg md:text-sm mt-2 mx-2">{item.name}</p>
-              </Link>
-            );
-          })}
+        <div className="h-full flex flex-col justify-between">
+          {/* Render Items */}
+          <div className="flex flex-col mt-10">
+            {SidebarItems.map((item, index) => {
+              const IconComponent = item.icon;
+              return (
+                <Link
+                  href={item.href}
+                  key={index}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center my-3"
+                >
+                  <IconComponent className="w-6 h-6" />
+                  <p className="text-lg md:text-sm mt-2 mx-2">{item.name}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Logout */}
+          <div
+            className="flex items-center mb-8 w-fit cursor-pointer"
+            onClick={() => signOut()}
+          >
+            <IoPower className="w-6 h-6" />
+            <p className="text-lg md:text-sm mx-2">Logout</p>
+          </div>
         </div>
       </div>
     </>

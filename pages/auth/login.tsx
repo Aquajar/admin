@@ -3,7 +3,7 @@ import { setCookie } from "cookies-next";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
+import React, { ChangeEvent, useState } from "react";
 import toast from "react-hot-toast";
 import OTPInput from "react-otp-input";
 

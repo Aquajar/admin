@@ -25,7 +25,6 @@ export const authOptions = {
               "Content-Type": "application/json",
             },
           });
-
           if (data) {
             return data;
           } else {
