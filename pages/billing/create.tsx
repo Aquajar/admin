@@ -26,6 +26,7 @@ import { DebounceInput } from "react-debounce-input";
 
 interface ItemProps {
   id: string;
+  _id: string;
   quantity: number;
 }
 
@@ -236,12 +237,12 @@ const Invoice = () => {
         (product: Product) => product.name === item.name
       );
 
-      const payload: ItemProps = {
+      const payload = {
         id: product?._id as string,
         quantity: item.quantity,
       };
 
-      newProducts.push(payload);
+      newProducts.push(payload as ItemProps);
     });
 
     customer?.invoices &&
@@ -440,7 +441,7 @@ const Invoice = () => {
                     setSearchByPhone(e.target.value !== "ID");
                     // resetCustomer();
                   }}
-                  className="rounded-md mt-1.5 w-fit pr-8"
+                  className="rounded-md  w-fit pr-8"
                 >
                   <option selected={!searchByPhone} value="ID">
                     Customer ID
@@ -516,6 +517,7 @@ const Invoice = () => {
                             <p
                               className="text-md font-medium text-gray-700"
                               onClick={() => {
+                                setCustomerID(customer.userID.toString());
                                 setCustomer(customer);
                                 setBillTo(customer.name as string);
                                 setPhoneNumber(customer.phone);
