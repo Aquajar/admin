@@ -1,6 +1,7 @@
 import { Customer } from "@/types/types";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
+import { MdOutlineRefresh } from "react-icons/md";
 
 interface HeaderMenuProps {
   onSearch: (searchTerm: string, searchBy: "id" | "name") => void;
@@ -8,12 +9,14 @@ interface HeaderMenuProps {
   setCustomers: React.Dispatch<
     React.SetStateAction<Customer[] | null | undefined>
   >;
+  resetCustomers: () => void;
 }
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
   onSearch,
   customers,
   setCustomers,
+  resetCustomers,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
@@ -85,6 +88,12 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           <option value="id">ID</option>
         </select>
       </div>
+      <button
+        onClick={resetCustomers}
+        className="ml-3 md:ml-6 text-sm font-medium text-gray-900"
+      >
+        <MdOutlineRefresh className="w-5 h-5" />
+      </button>
     </div>
   );
 };

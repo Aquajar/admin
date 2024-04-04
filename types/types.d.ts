@@ -73,7 +73,11 @@ export interface Invoice {
   customerID: string | undefined;
   vehicleID: string | null;
   total: number;
-  products: newProducts;
+   products: {
+    id: string;
+    _id: string;
+    quantity: number;
+  }[];
   address: sting | null;
   landmark: sting | null;
   dueDate: number;

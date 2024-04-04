@@ -11,9 +11,9 @@ import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
-import CurrencyFormat from "react-currency-format";
-import { Area, Customer } from "@/types/types";
+import { Area, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
+import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 
 Modal.setAppElement("#__next");
 
@@ -30,7 +30,7 @@ const customStyles = {
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
     height: "100%",
-    padding: "1rem",
+    padding: "0.5rem",
     background: "none",
     alignItems: "center",
     justifyContent: "center",
@@ -41,21 +41,32 @@ const customStyles = {
 const Customers = () => {
   const { customers, setCustomers } = useCustomersStore();
   const { data: session } = useSession();
-  const [modalIsOpen, setIsOpen] = useState(false);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
   const [showSummary, setShowSummary] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
   const { invoices, setInvoices } = useInvoicesStore();
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
+  const [products, setProducts] = useState<Product[] | undefined>(undefined);
+  const [selectedCustomerInvoices, setSelectedCustomerInvoices] = useState<
+    Invoice[] | undefined
+  >(undefined);
 
   function openModal() {
-    setIsOpen(true);
+    setModalIsOpen(true);
   }
 
   function closeModal() {
-    setIsOpen(false);
+    setModalIsOpen(false);
   }
+
+  const resetCustomerState = () => {
+    setSelectedCustomer(undefined);
+    setCustomersState(customers);
+    setSelectedCustomerID(undefined);
+    toast.success("Data updated successfully");
+  };
 
   // Create axios instance
   const axiosInstance = useAxiosInstance(session);
@@ -117,6 +128,28 @@ const Customers = () => {
     }
   }, [areas]);
 
+  // Fetch products
+  useEffect(() => {
+    if (!products) {
+      // Fetch products from cookies
+      const cookieProducts = getCookie("products");
+      if (cookieProducts) {
+        setProducts(JSON.parse(cookieProducts));
+      } else {
+        // Fetch products
+        const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
+
+        axiosInstance.get(URL).then((res) => {
+          const products = res.data.products;
+          setProducts(products);
+          setCookie("products", JSON.stringify(products), {
+            maxAge: 60 * 60 * 24 * 7,
+          });
+        });
+      }
+    }
+  }, [products]);
+
   // Handle Search Trigger
   const handleOnsearch = (searchTerm: string, searchBy: "id" | "name") => {
     if (!searchTerm) {
@@ -173,10 +206,10 @@ const Customers = () => {
         style={customStyles}
         contentLabel="Summary Modal"
       >
-        <div className="bg-white h-[90%] relative md:h-10/12 w-full md:w-1/3 rounded-lg">
+        <div className="bg-white h-[90%] relative md:h-10/12 w-full md:w-1/2 rounded-lg">
           <MdCancelPresentation
             onClick={closeModal}
-            className="absolute top-2 right-2 cursor-pointer text-4xl text-black"
+            className="absolute top-2 z-50 right-2 cursor-pointer text-4xl text-black"
           />
           {!showSummary ? (
             <div className="flex flex-col w-full px-6 md:px-10 pt-16">
@@ -262,13 +295,14 @@ const Customers = () => {
               </button>
             </div>
           ) : (
-            <iframe
-              className="rounded-xl"
-              src={`https://link.aquajar.in/bills/${selectedCustomerID}`}
-              width="100%"
-              height="100%"
-              allowFullScreen
-            ></iframe>
+            <CustomerInvoicesData
+              resetCustomerState={resetCustomerState}
+              products={products}
+              invoices={selectedCustomerInvoices}
+              setModalIsOpen={setModalIsOpen}
+              setInvoices={setInvoices}
+              selectedCustomerID={selectedCustomerID}
+            />
           )}
         </div>
       </Modal>
@@ -276,6 +310,7 @@ const Customers = () => {
        * Render Search Bar
        */}
       <HeaderMenu
+        resetCustomers={resetCustomerState}
         onSearch={handleOnsearch}
         customers={customersState}
         setCustomers={setCustomersState}
@@ -315,6 +350,10 @@ const Customers = () => {
 
               <th scope="col" className="px-6 py-3">
                 Address
+              </th>
+
+              <th scope="col" className="px-6 py-3">
+                Total Due
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -362,12 +401,22 @@ const Customers = () => {
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">{customer.address?.text}</td>
+                    <td className="px-6 py-4">
+                      {invoices
+                        .filter(
+                          (invoice) =>
+                            invoice.status === "pending" &&
+                            invoice.customerID === customer._id
+                        )
+                        .reduce((acc, curr) => acc + curr.due, 0)
+                        .toString()}
+                    </td>
                     <td className="flex items-center px-6 py-4">
                       <span
-                        onClick={() => {
-                          setShowSummary(false);
-                          setSelectedCustomer(customer);
+                        onClick={async () => {
                           setSelectedCustomerID(customer.userID);
+                          setSelectedCustomer(customer);
+                          setShowSummary(false);
                           openModal();
                         }}
                         className="font-medium text-blue-600 cursor-pointer  hover:underline"
@@ -376,8 +425,13 @@ const Customers = () => {
                       </span>
                       <span
                         onClick={() => {
-                          setShowSummary(true);
                           setSelectedCustomerID(customer.userID);
+                          setShowSummary(true);
+                          setSelectedCustomerInvoices(
+                            invoices.filter(
+                              (invoice) => invoice.customerID === customer._id
+                            )
+                          );
                           openModal();
                         }}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"
