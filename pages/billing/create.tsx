@@ -122,7 +122,7 @@ const Invoice = () => {
         .then((res) => {
           const customer: Customer = res.data.user;
           setCustomer(customer);
-          customer.userID && setCustomerID(customer.userID.toString());
+          customer?.userID && setCustomerID(customer?.userID?.toString());
           customer?.name && setBillTo(customer.name);
           customer.address?.text && setAddress(customer.address.text);
           customer.address?.landmark && setLandmark(customer.address.landmark);
@@ -264,7 +264,7 @@ const Invoice = () => {
     // create user object
     let user = {
       name: billTo,
-      phone: phoneNumber || Math.floor(Math.random() * 10000000000).toString(),
+      phone: phoneNumber || Math.floor(Math.random() * 10000000000)?.toString(),
       address: {
         text: address ? address : null,
         landmark: landmark ? landmark : null,
