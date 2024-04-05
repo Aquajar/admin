@@ -25,7 +25,7 @@ const Sidebar = () => {
           isOpen ? "translate-x-0" : "-translate-x-72"
         } z-50 md:translate-x-0 ${
           !router.pathname.includes("/auth/login") ? "md:flex" : "hidden"
-        } fixed bg-quaternary border px-5 shadow-sm flex-col`}
+        } fixed bg-black px-5 shadow-sm flex-col`}
       >
         <div className="h-full flex flex-col justify-between">
           {/* Render Items */}
@@ -39,8 +39,10 @@ const Sidebar = () => {
                   onClick={() => setIsOpen(false)}
                   className="flex items-center my-3"
                 >
-                  <IconComponent className="w-6 h-6" />
-                  <p className="text-lg md:text-sm mt-2 mx-2">{item.name}</p>
+                  <IconComponent className="w-6 h-6 text-white" />
+                  <p className="text-lg text-white md:text-sm mt-2 mx-2">
+                    {item.name}
+                  </p>
                 </Link>
               );
             })}

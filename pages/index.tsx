@@ -11,7 +11,28 @@ import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
 import Card from "@/components/dashboard/Card";
 import { Invoice } from "@/types/types";
-import { FaCaretLeft, FaCaretRight } from "react-icons/fa";
+import {
+  FaCaretLeft,
+  FaCaretRight,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
+import useAuthUser from "@/lib/hooks/useAuthUser";
+
+const month = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export default function Home() {
   const { data: session } = useSession();
@@ -28,10 +49,18 @@ export default function Home() {
   const [totalSales, setTotalSales] = useState(0);
   const [totalDues, setTotalDues] = useState(0);
   const [totalCollected, setTotalCollected] = useState(0);
+  const [currentMonthSales, setCurrentMonthSales] = useState(0);
+  const [currentMonthDues, setCurrentMonthDues] = useState(0);
+  const [currentMonthCollected, setCurrentMonthCollected] = useState(0);
   const [totalJarSold, setTotalJarSold] = useState(0);
   const [totalJarSoldToday, setTotalJarSoldToday] = useState(0);
   const [todaysInvoice, setTodaysInvoice] = useState<Invoice[]>([]);
   const [summaryDate, setSummaryDate] = useState(new Date().toDateString());
+  const [summaryMonth, setSummaryMonth] = useState(
+    month[new Date().getMonth()] + " " + new Date().getFullYear()
+  );
+
+  const { user } = useAuthUser();
 
   const last7Days: string[] = getLastNDays(7);
 
@@ -47,6 +76,24 @@ export default function Home() {
     const date = new Date(summaryDate);
     date.setDate(date.getDate() + 1);
     setSummaryDate(date.toDateString());
+  };
+
+  // set summary month to previous month and update the summary month
+  const handlePrevMonth = () => {
+    setSummaryMonth(
+      month[month.indexOf(summaryMonth.split(" ")[0]) - 1] +
+        " " +
+        new Date().getFullYear()
+    );
+  };
+
+  // set summary month to next month
+  const handleNextMonth = () => {
+    setSummaryMonth(
+      month[month.indexOf(summaryMonth.split(" ")[0]) + 1] +
+        " " +
+        new Date().getFullYear()
+    );
   };
 
   useEffect(() => {
@@ -136,6 +183,7 @@ export default function Home() {
     }
   }, [invoices]);
 
+  // Get Day wise summary
   useEffect(() => {
     if (invoices) {
       // get all todays invoices
@@ -161,14 +209,147 @@ export default function Home() {
     }
   }, [summaryDate, invoices]);
 
+  // Get Month wise summary
+  useEffect(() => {
+    if (invoices) {
+      // get total sales for the current month
+      setCurrentMonthSales(
+        invoices?.reduce((acc, invoice) => {
+          if (
+            month[new Date(invoice.invoiceDate).getMonth()] ===
+            summaryMonth.split(" ")[0]
+          ) {
+            return acc + invoice.total;
+          }
+          return acc;
+        }, 0)
+      );
+
+      // get total dues for the current month
+      setCurrentMonthDues(
+        invoices?.reduce((acc, invoice) => {
+          if (
+            month[new Date(invoice.invoiceDate).getMonth()] ===
+              summaryMonth.split(" ")[0] &&
+            invoice.status === "pending"
+          ) {
+            return acc + invoice.total;
+          }
+          return acc;
+        }, 0)
+      );
+
+      // get total collected for the current month
+      setCurrentMonthCollected(
+        invoices?.reduce((acc, invoice) => {
+          if (
+            month[new Date(invoice.invoiceDate).getMonth()] ===
+              summaryMonth.split(" ")[0] &&
+            invoice.status === "paid"
+          ) {
+            return acc + invoice.total;
+          }
+          return acc;
+        }, 0)
+      );
+    }
+  }, [summaryMonth, invoices]);
+
   return (
     <Wrapper name="Dashboard">
+      <div className="flex">
+        <div className="flex mb-4 font-medium w-fit">
+          <button onClick={handlePrevMonth}>
+            <FaChevronLeft />
+          </button>
+          <span className={`font-medium mx-3`}>{summaryMonth}</span>
+          <button
+            onClick={handleNextMonth}
+            disabled={
+              summaryMonth ===
+              month[new Date().getMonth()] + " " + new Date().getFullYear()
+            }
+            className="disabled:opacity-0"
+          >
+            <FaChevronRight />
+          </button>
+        </div>
+      </div>
       <div className="flex flex-col md:flex-row w-full mb-20">
+        {/*
+         * LEFT
+         */}
         <div className="flex flex-col w-full md:w-[70%]">
           {/*
-           * TOTAL SALES, TOTAL DUES, TOTAL COLLECTED, TOTAL CUSTOMERS
+           * CARDS SECTION
            */}
-          <div className="grid grid-cols-1 w-full md:grid-cols-2 md:grid-rows-2 gap-3">
+          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3">
+            {/* Total Sales */}
+            <Card title="Total Sales">
+              <CurrencyFormat
+                value={currentMonthSales}
+                displayType={"text"}
+                thousandSeparator={true}
+                prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-3xl font-semibold">{value}</p>
+                )}
+              />
+            </Card>
+            {/* Total Dues */}
+            <Card title="Total Dues">
+              <div className="flex justify-between items-start">
+                <CurrencyFormat
+                  value={currentMonthDues}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={"₹"}
+                  decimalScale={0}
+                  fixedDecimalScale={true}
+                  renderText={(value) => (
+                    <p className="text-3xl font-semibold">{value}</p>
+                  )}
+                />
+                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-2 py-1 rounded-2xl inline-flex items-center text-red-500">
+                  {((totalDues / totalSales) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </Card>
+            {/* Total Collected */}
+            <Card title="Total Collected">
+              <CurrencyFormat
+                value={currentMonthCollected}
+                displayType={"text"}
+                thousandSeparator={true}
+                prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-3xl font-semibold">{value}</p>
+                )}
+              />
+            </Card>
+            {/* Total Customers */}
+            {/* <Card title="Total Customers">
+              <CurrencyFormat
+                value={customers?.length}
+                displayType={"text"}
+                thousandSeparator={true}
+                // prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-3xl font-semibold">{value}</p>
+                )}
+              />
+            </Card> */}
+          </div>
+          <span className="text-lg mt-8 mb-2 text-gray-900 font-semibold">
+            Universal Summary
+          </span>
+          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3">
             {/* Total Sales */}
             <Card title="Total Sales">
               <CurrencyFormat
@@ -179,7 +360,7 @@ export default function Home() {
                 decimalScale={0}
                 fixedDecimalScale={true}
                 renderText={(value) => (
-                  <p className="text-4xl font-normal ">{value}</p>
+                  <p className="text-3xl font-semibold">{value}</p>
                 )}
               />
             </Card>
@@ -194,10 +375,10 @@ export default function Home() {
                   decimalScale={0}
                   fixedDecimalScale={true}
                   renderText={(value) => (
-                    <p className="text-4xl font-normal ">{value}</p>
+                    <p className="text-3xl font-semibold">{value}</p>
                   )}
                 />
-                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-4 py-1 rounded-2xl inline-flex items-center text-red-500">
+                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-2 py-1 rounded-2xl inline-flex items-center text-red-500">
                   {((totalDues / totalSales) * 100).toFixed(1)}%
                 </span>
               </div>
@@ -212,12 +393,12 @@ export default function Home() {
                 decimalScale={0}
                 fixedDecimalScale={true}
                 renderText={(value) => (
-                  <p className="text-4xl font-normal ">{value}</p>
+                  <p className="text-3xl font-semibold">{value}</p>
                 )}
               />
             </Card>
             {/* Total Customers */}
-            <Card title="Total Customers">
+            {/* <Card title="Total Customers">
               <CurrencyFormat
                 value={customers?.length}
                 displayType={"text"}
@@ -226,19 +407,19 @@ export default function Home() {
                 decimalScale={0}
                 fixedDecimalScale={true}
                 renderText={(value) => (
-                  <p className="text-4xl font-normal ">{value}</p>
+                  <p className="text-3xl font-semibold">{value}</p>
                 )}
               />
-            </Card>
+            </Card> */}
           </div>
           {/*
            * SALES CHART
            */}
-          <div className="w-full mt-6 rounded-2xl shadow p-5 bg-white">
+          {/* <div className="w-full mt-6 rounded-2xl shadow p-5 bg-white">
             <span className="text-2xl font-semibold ">
               Sales in the last 7 days
             </span>
-          </div>
+          </div> */}
         </div>
         {/*
          * RIGHT

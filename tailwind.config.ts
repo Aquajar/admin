@@ -20,7 +20,7 @@ const config: Config = {
       primary: "#0c70e8",
       secondary: "#0199fe",
       tertiary: "#1848a0",
-      quaternary: "#EFF3F6",
+      quaternary: "#F5F5F5",
     },
   },
   plugins: [],

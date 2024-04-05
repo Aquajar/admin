@@ -9,8 +9,8 @@ interface IProps {
 const Card: FC<IProps> = ({ children, title }) => {
   return (
     <motion.div
-      whileHover={{ scale: 1.3 }}
-      className="px-4 py-5 bg-white border rounded-lg flex flex-col w-full shadow-sm"
+      whileHover={{ scale: 1.05 }}
+      className="px-4 py-5 bg-white rounded-2xl flex flex-col w-full"
     >
       <span className="text-md text-gray-600 font-light mb-5">{title}</span>
       {children}
