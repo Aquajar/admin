@@ -1,16 +1,4 @@
 import Wrapper from "@/components/Wrapper";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from "chart.js";
-import { Line, Pie } from "react-chartjs-2";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
@@ -22,33 +10,8 @@ import CurrencyFormat from "react-currency-format";
 import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
 import Card from "@/components/dashboard/Card";
-import useAuthUser from "@/lib/hooks/useAuthUser";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  Tooltip,
-  Legend
-);
-
-export const options = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: "top" as const,
-    },
-    title: {
-      display: true,
-      // text: "Chart.js Line Chart",
-    },
-  },
-};
+import { Invoice } from "@/types/types";
+import { FaCaretLeft, FaCaretRight } from "react-icons/fa";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -65,96 +28,40 @@ export default function Home() {
   const [totalSales, setTotalSales] = useState(0);
   const [totalDues, setTotalDues] = useState(0);
   const [totalCollected, setTotalCollected] = useState(0);
+  const [totalJarSold, setTotalJarSold] = useState(0);
+  const [totalJarSoldToday, setTotalJarSoldToday] = useState(0);
+  const [todaysInvoice, setTodaysInvoice] = useState<Invoice[]>([]);
+  const [summaryDate, setSummaryDate] = useState(new Date().toDateString());
 
   const last7Days: string[] = getLastNDays(7);
 
-  const dataChart1 = {
-    labels: last7Days.reverse(),
-    datasets: [
-      {
-        label: "Paid Sales",
-        data: [...Salesdata],
-        fill: false,
-        borderColor: "#0c70e8",
-        tension: 0.1,
-      },
-      {
-        label: "Due Sales",
-        data: [...DueData],
-        fill: false,
-        borderColor: "red",
-        tension: 0.1,
-      },
-    ],
+  // Set summary date to one day before
+  const handlePrevDay = () => {
+    const date = new Date(summaryDate);
+    date.setDate(date.getDate() - 1);
+    setSummaryDate(date.toDateString());
   };
 
-  const dataChart2 = {
-    labels: last7Days,
-    datasets: [
-      {
-        label: "Items",
-        data: [...itemsQuantity],
-        fill: false,
-        borderColor: "0199fe",
-        tension: 0.1,
-      },
-    ],
-  };
-
-  const todaySalesData = {
-    labels: ["Due Sale", "Paid Sale", "Due Collected"],
-    datasets: [
-      {
-        label: "Rupees",
-        data: [
-          invoices?.reduce((acc, invoice) => {
-            let invoiceDate = new Date(
-              invoice.invoiceDate
-            ).toLocaleDateString();
-            if (
-              invoice.status === "pending" &&
-              invoiceDate === new Date().toLocaleDateString()
-            ) {
-              return acc + invoice.due;
-            }
-            return acc;
-          }, 0),
-          invoices?.reduce((acc, invoice) => {
-            let invoiceDate = new Date(
-              invoice.invoiceDate
-            ).toLocaleDateString();
-            if (
-              invoice.status === "paid" &&
-              invoiceDate === new Date().toLocaleDateString()
-            )
-              return acc + invoice.total;
-            return acc;
-          }, 0),
-          // due payments collected today
-          invoices?.reduce((acc, invoice) => {
-            let todayDate = new Date().toLocaleDateString();
-            let paymentDate = new Date(
-              invoice.paymentDate as number
-            ).toLocaleDateString();
-
-            if (
-              invoice.status === "pending" &&
-              paymentDate === new Date().toLocaleDateString()
-            ) {
-              console.log("Matches : ", invoice);
-              return acc + (invoice.total - invoice.due);
-            }
-            return acc;
-          }, 0),
-        ],
-        backgroundColor: ["rgb(255,82,82)", "#1E90FF", "green"],
-        borderWidth: 1,
-      },
-    ],
+  // Set summary date to one day after
+  const handleNextDay = () => {
+    const date = new Date(summaryDate);
+    date.setDate(date.getDate() + 1);
+    setSummaryDate(date.toDateString());
   };
 
   useEffect(() => {
     if (invoices) {
+      //  get total jars sold
+      if (totalJarSold === 0) {
+        let t = 0;
+        invoices?.map((invoice) => {
+          invoice.products.map((product) => {
+            if (product.id === "65c1271bd78bb1922f9b1a63")
+              t += product.quantity;
+          });
+        });
+        setTotalJarSold(t);
+      }
       //  get total sales
       setTotalSales(
         invoices?.reduce((acc, invoice) => {
@@ -229,10 +136,35 @@ export default function Home() {
     }
   }, [invoices]);
 
+  useEffect(() => {
+    if (invoices) {
+      // get all todays invoices
+      const todaysInvoices = invoices.filter(
+        (invoice) =>
+          new Date(invoice.invoiceDate).toDateString() === summaryDate
+      );
+      setTodaysInvoice(todaysInvoices);
+
+      // get total jars sold today
+      let t = 0;
+      invoices?.map((invoice) => {
+        invoice.products.map((product) => {
+          if (
+            product.id === "65c1271bd78bb1922f9b1a63" &&
+            new Date(invoice.invoiceDate).toDateString() === summaryDate
+          )
+            t += product.quantity;
+        });
+      });
+
+      setTotalJarSoldToday(t);
+    }
+  }, [summaryDate, invoices]);
+
   return (
     <Wrapper name="Dashboard">
       <div className="flex flex-col md:flex-row w-full mb-20">
-        <div className="flex flex-col w-full md:w-[60%]">
+        <div className="flex flex-col w-full md:w-[70%]">
           {/*
            * TOTAL SALES, TOTAL DUES, TOTAL COLLECTED, TOTAL CUSTOMERS
            */}
@@ -306,53 +238,165 @@ export default function Home() {
             <span className="text-2xl font-semibold ">
               Sales in the last 7 days
             </span>
-            {/* <Line data={dataChart1} options={options} /> */}
           </div>
         </div>
-        <div className="flex flex-col w-full md:w-[40%]">
+        {/*
+         * RIGHT
+         */}
+        <div className="flex flex-col w-full md:w-[30%]">
           {/*
-           * DAY SUMMARY
+           * DAY SUMMARY SECTION
            */}
-          <div className="w-full mt-5 md:ml-5 md:mt-0">
-            <div className="w-full flex flex-col rounded-2xl shadow p-5 bg-white">
-              <span className="text-2xl font-semibold ">
-                Today&apos;s Summary
-              </span>
-              <div>
-                <span className="text-lg font-medium pt-5">Sales</span>
-                {/* Chart */}
-                {/* <Pie
-                  style={{
-                    height: "60%",
-                  }}
-                  data={todaySalesData}
-                  options={options}
-                /> */}
-              </div>
-              <div>
-                <span className="text-lg font-medium pt-5">Jars Info</span>
-                <span className="text-4xl text-gray-500">
-                  {invoices?.map((invoice) => {
-                    if (invoice.invoiceDate === +new Date()) {
-                      return invoice.products.length;
-                    } else {
-                      return null;
-                    }
-                  }, 0)}
+          <div className="w-full h-full mt-5 md:ml-5 md:mt-0">
+            <div className="w-full h-full flex flex-col rounded-3xl shadow bg-black py-8">
+              {/*
+               * HEADER
+               */}
+              <div className="flex w-full justify-between px-3 items-center">
+                <button onClick={handlePrevDay}>
+                  <FaCaretLeft className="text-gray-300 text-2xl" />
+                </button>
+                <span className={`text-2xl font-semibold text-white`}>
+                  {summaryDate === new Date().toDateString()
+                    ? "Today's"
+                    : summaryDate.split(" ")[1] +
+                      " " +
+                      summaryDate.split(" ")[2]}{" "}
+                  Summary
                 </span>
+                <button
+                  onClick={handleNextDay}
+                  disabled={summaryDate === new Date().toDateString()}
+                  className="disabled:opacity-50"
+                >
+                  <FaCaretRight className="text-gray-300 text-2xl" />
+                </button>
+              </div>
+              {/*
+               * JAR SUMMARY
+               */}
+              <div className="flex flex-col px-8 py-6 w-full">
+                <span className="text-2xl text-white mt-2">
+                  {totalJarSoldToday}
+                  <span className="text-sm text-gray-300 px-2">
+                    refilling processed
+                  </span>
+                </span>
+                <span className="text-xl mt-2 text-white">
+                  {totalJarSoldToday * 20}L
+                  <span className="text-sm text-gray-300 px-2">
+                    water displaced
+                  </span>
+                </span>
+              </div>
+              {/*
+               * SALES DATA
+               */}
+              <div className="flex flex-col mt-4 w-full px-8">
+                {/* Progress Bar */}
+                <div className="w-full h-6 bg-gray-600 rounded-3xl">
+                  <div
+                    className={`h-6 bg-gray-300 rounded-3xl transition-all duration-500 ease-in-out`}
+                    style={{
+                      width: `${
+                        (todaysInvoice
+                          .filter((invoice) => invoice.status === "paid")
+                          .map((invoice) =>
+                            invoice.products
+                              .map((product) => product.quantity)
+                              .reduce((acc, val) => acc + val, 0)
+                          )
+                          .reduce((acc, val) => acc + val, 0) /
+                          todaysInvoice
+                            .map((invoice) =>
+                              invoice.products
+                                .map((product) => product.quantity)
+                                .reduce((acc, val) => acc + val, 0)
+                            )
+                            .reduce((acc, val) => acc + val, 0)) *
+                        100
+                      }%`,
+                    }}
+                  >
+                    {}
+                  </div>
+                </div>
+                {/* Statements */}
+                <div className="mt-5 w-full flex flex-col justify-start">
+                  <div className="flex justify-between items-center">
+                    {/* Collected */}
+                    <span className="text-gray-300 text-sm w-full">
+                      <CurrencyFormat
+                        value={todaysInvoice
+                          .filter((invoice) => invoice.status === "paid")
+                          .map((invoice) => invoice.total)
+                          .reduce((acc, val) => acc + val, 0)}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        renderText={(value) => (
+                          <span className="text-white text-lg mr-2 font-semibold">
+                            {value}
+                          </span>
+                        )}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                      />
+                      Collected
+                    </span>
+                    <span className="h-3 w-3 bg-gray-300 text-sm rounded-full" />
+                  </div>
+                  {/* Due */}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-300 text-sm w-full">
+                      <CurrencyFormat
+                        value={todaysInvoice
+                          .filter((invoice) => invoice.status === "pending")
+                          .map((invoice) => invoice.total)
+                          .reduce((acc, val) => acc + val, 0)}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        renderText={(value) => (
+                          <span className="text-white text-lg mr-2 font-semibold">
+                            {value}
+                          </span>
+                        )}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                      />
+                      Due
+                    </span>
+                    <span className="h-3 w-3 bg-gray-600 text-sm rounded-full" />
+                  </div>
+                </div>
+                <button className="text-gray-800 text-sm w-full mb-3 bg-gray-200 rounded-md py-2 mt-4 px-2 text-start">
+                  <CurrencyFormat
+                    value={todaysInvoice
+                      .map((invoice) => invoice.total)
+                      .reduce((acc, val) => acc + val, 0)}
+                    displayType={"text"}
+                    thousandSeparator={true}
+                    prefix={"Rs. "}
+                    renderText={(value) => (
+                      <span className="text-black text-xl mr-2 font-semibold">
+                        {value}
+                      </span>
+                    )}
+                    decimalScale={0}
+                    fixedDecimalScale={true}
+                  />
+                  in sales{" "}
+                  {summaryDate === new Date().toDateString()
+                    ? "today"
+                    : "on " +
+                      summaryDate.split(" ")[1] +
+                      " " +
+                      summaryDate.split(" ")[2]}
+                </button>
               </div>
             </div>
           </div>
-          {/*
-           * SALES CHART
-           */}
-          {/* 
-        <div className="w-full mt-10 rounded-2xl shadow p-5 bg-white">
-          <span className="text-2xl font-semibold ">
-            Items sold in the last 7 days
-          </span>
-          <Line data={dataChart2} options={options} />
-        </div> */}
         </div>
       </div>
     </Wrapper>
