@@ -137,7 +137,6 @@ export default function Home() {
               invoice.paymentDate as number
             ).toLocaleDateString();
 
-
             if (
               invoice.status === "pending" &&
               paymentDate === new Date().toLocaleDateString()
@@ -232,9 +231,6 @@ export default function Home() {
 
   return (
     <Wrapper name="Dashboard">
-      {/* <button className="" onClick={() => signOut()}>
-      Logout
-    </button> */}
       <div className="flex flex-col md:flex-row w-full mb-20">
         <div className="flex flex-col w-full md:w-[60%]">
           {/*
@@ -310,23 +306,41 @@ export default function Home() {
             <span className="text-2xl font-semibold ">
               Sales in the last 7 days
             </span>
-            <Line data={dataChart1} options={options} />
+            {/* <Line data={dataChart1} options={options} /> */}
           </div>
         </div>
         <div className="flex flex-col w-full md:w-[40%]">
           {/*
-           * PIE CHART
+           * DAY SUMMARY
            */}
           <div className="w-full mt-5 md:ml-5 md:mt-0">
-            <div className="w-full rounded-2xl shadow p-5 bg-white">
-              <span className="text-2xl font-semibold ">Sales today</span>
-              <Pie
-                style={{
-                  height: "60%",
-                }}
-                data={todaySalesData}
-                options={options}
-              />
+            <div className="w-full flex flex-col rounded-2xl shadow p-5 bg-white">
+              <span className="text-2xl font-semibold ">
+                Today&apos;s Summary
+              </span>
+              <div>
+                <span className="text-lg font-medium pt-5">Sales</span>
+                {/* Chart */}
+                {/* <Pie
+                  style={{
+                    height: "60%",
+                  }}
+                  data={todaySalesData}
+                  options={options}
+                /> */}
+              </div>
+              <div>
+                <span className="text-lg font-medium pt-5">Jars Info</span>
+                <span className="text-4xl text-gray-500">
+                  {invoices?.map((invoice) => {
+                    if (invoice.invoiceDate === +new Date()) {
+                      return invoice.products.length;
+                    } else {
+                      return null;
+                    }
+                  }, 0)}
+                </span>
+              </div>
             </div>
           </div>
           {/*

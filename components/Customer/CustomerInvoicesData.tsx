@@ -141,7 +141,7 @@ const CustomerInvoicesData: FC<IProps> = ({
               </thead>
               <tbody className="">
                 {invoices.length > 0 &&
-                  invoices.reverse().map((invoice) => {
+                  invoices.map((invoice) => {
                     return (
                       <tr key={invoice._id} className="bg-white">
                         <td className="px-2 md:px-4 py-4 text-md">
