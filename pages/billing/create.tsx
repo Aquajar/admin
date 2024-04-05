@@ -16,13 +16,14 @@ import {
   Invoice as InvoiceType,
   Item,
   Product,
-  RecentCard,
 } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import Card from "@/components/Recents/Card";
 import { useSession } from "next-auth/react";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { DebounceInput } from "react-debounce-input";
+import useInvoice from "@/lib/hooks/useInvoice";
+import { useInvoicesStore } from "@/store/invoices.store";
 
 interface ItemProps {
   id: string;
@@ -51,7 +52,7 @@ const Invoice = () => {
   const [customerID, setCustomerID] = useState<string>("");
   const [isLoading, setIsloading] = useState(false);
   const [recentInvoices, setRecentInvoices] = useState<
-    RecentCard[] | [] | null
+    InvoiceType[] | [] | null
   >(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
@@ -61,6 +62,7 @@ const Invoice = () => {
   const [customersResults, setCustomersResults] = useState<Customer[] | []>([]);
 
   const { data: session } = useSession();
+  const { setInvoices } = useInvoicesStore();
 
   // Create an axios instance with the user's access token
   const axiosInstance = axios.create({
@@ -103,8 +105,8 @@ const Invoice = () => {
       let parsedDate = rawData ? JSON.parse(rawData) : [];
 
       parsedDate = parsedDate.sort(
-        (a: RecentCard, b: RecentCard) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a: InvoiceType, b: InvoiceType) =>
+          new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
       );
 
       setRecentInvoices(parsedDate);
@@ -305,6 +307,9 @@ const Invoice = () => {
       setIsloading(true);
       const res = await axiosInstance.post(URL, payload);
 
+      // @ts-ignore
+      setInvoices((invoices) => [res.data.invoice, ...invoices]);
+
       // Update recent invoices
       let _recentInvoices = recentInvoices ? recentInvoices : [];
 
@@ -352,6 +357,8 @@ const Invoice = () => {
         console.log(err);
       });
   };
+
+  console.log(recentInvoices);
 
   // Fetch products
   useEffect(() => {
@@ -764,14 +771,14 @@ const Invoice = () => {
         <div className="pb-24 mt-8 hidden md:block">
           <p className="text-xl font-normal capitalize text-black">Recents</p>
           <div className="grid grid-cols-4 gap-5 mt-5 overflow-x-auto">
-            {recentInvoices?.map((invoice: RecentCard, index: number) => {
+            {recentInvoices?.map((invoice: InvoiceType, index: number) => {
               return (
                 <Card
                   key={index}
-                  paid={invoice.paid}
-                  amount={invoice.amount}
-                  date={invoice.date}
-                  id={invoice.id}
+                  paid={invoice?.status === "paid"}
+                  amount={invoice?.total}
+                  date={invoice.invoiceDate?.toString() || ""}
+                  id={invoice?.invoiceID}
                 />
               );
             })}
