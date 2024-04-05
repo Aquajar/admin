@@ -122,7 +122,7 @@ const Invoice = () => {
         .then((res) => {
           const customer: Customer = res.data.user;
           setCustomer(customer);
-          customer?.userID && setCustomerID(customer?.userID?.toString());
+          customer?.userID && setCustomerID(customer?.userID?.toString() || "");
           customer?.name && setBillTo(customer.name);
           customer.address?.text && setAddress(customer.address.text);
           customer.address?.landmark && setLandmark(customer.address.landmark);
@@ -517,7 +517,9 @@ const Invoice = () => {
                             <p
                               className="text-md font-medium text-gray-700"
                               onClick={() => {
-                                setCustomerID(customer.userID.toString());
+                                setCustomerID(
+                                  customer?.userID?.toString() || ""
+                                );
                                 setCustomer(customer);
                                 setBillTo(customer.name as string);
                                 setPhoneNumber(customer.phone);
