@@ -42,7 +42,7 @@ const Customers = () => {
   const { customers, setCustomers } = useCustomersStore();
   const { data: session } = useSession();
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedCustomerID, setSelectedCustomerID] = useState<Number>();
+  const [selectedCustomerID, setSelectedCustomerID] = useState<number>();
   const [showSummary, setShowSummary] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
   const { invoices, setInvoices } = useInvoicesStore();
@@ -101,6 +101,25 @@ const Customers = () => {
       },
       error: "Error Updating Customer",
     });
+  };
+
+  const checkIfUserPurchasedJar = (customerID: string) => {
+    if (!invoices) return false;
+    const customerInvoices = invoices.filter(
+      (invoice) => invoice.customerID === customerID
+    );
+
+    if (customerInvoices.length === 0) return false;
+
+    const purchasedJar = customerInvoices.some((invoice) =>
+      invoice.products.some(
+        (product) =>
+          product.id === "65d39d92e47ffdfd6db8c898" ||
+          product.id === "65d1c8a73a2e530a5997ca57"
+      )
+    );
+
+    return purchasedJar;
   };
 
   // Fetch Areas
@@ -177,6 +196,43 @@ const Customers = () => {
     }
   };
 
+  // handle update regularity
+  const handleUpdateRegularity = (userID: number, isRegular: boolean) => {
+    const URL = process.env.NEXT_PUBLIC_API_URL + "/user/update";
+    const payload = {
+      userID,
+      isRegular: !isRegular,
+    };
+    const promise = axiosInstance.put(URL, payload);
+
+    toast.promise(promise, {
+      loading: "Updating Customer",
+      success: (res) => {
+        // Update the customer in the store
+        setCustomers((prev) => {
+          if (!prev) return;
+          const index = prev.findIndex(
+            (customer) => customer.userID === userID
+          );
+          prev[index].isRegular = !isRegular;
+          return prev;
+        });
+
+        setCustomersState((prev) => {
+          if (!prev) return;
+          const index = prev.findIndex(
+            (customer) => customer.userID === userID
+          );
+          prev[index].isRegular = !isRegular;
+          return prev;
+        });
+
+        return res.data.message;
+      },
+      error: "Error Updating Customer",
+    });
+  };
+
   useEffect(() => {
     if (customers) {
       // add new property to customers
@@ -250,15 +306,21 @@ const Customers = () => {
               <select
                 id="address"
                 name="address"
-                value={selectedCustomer?.address?.text}
+                value={selectedCustomer?.address?.text || "Select Area"}
                 onChange={(e) =>
                   setSelectedCustomer({
                     ...selectedCustomer,
-                    address: { text: e.target.value },
+                    address: {
+                      ...selectedCustomer.address,
+                      text: e.target.value,
+                    },
                   })
                 }
                 className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
               >
+                <option selected={!selectedCustomer?.address?.text} disabled>
+                  Select Area
+                </option>
                 {areas?.map((area) => (
                   <option
                     disabled={area.serviceable === false}
@@ -281,7 +343,10 @@ const Customers = () => {
                 onChange={(e) =>
                   setSelectedCustomer({
                     ...selectedCustomer,
-                    address: { landmark: e.target.value },
+                    address: {
+                      ...selectedCustomer.address,
+                      landmark: e.target.value,
+                    },
                   })
                 }
                 className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
@@ -313,6 +378,7 @@ const Customers = () => {
         resetCustomers={resetCustomerState}
         onSearch={handleOnsearch}
         customers={customersState}
+        MasterCustomersState={customers}
         setCustomers={setCustomersState}
       />
 
@@ -323,17 +389,8 @@ const Customers = () => {
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">
-              <th scope="col" className="p-4">
-                <div className="flex items-center">
-                  <input
-                    id="checkbox-all-search"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-                  />
-                  <label htmlFor="checkbox-all-search" className="sr-only">
-                    checkbox
-                  </label>
-                </div>
+              <th scope="col" className="px-6 py-3">
+                Regular
               </th>
               <th scope="col" className="px-6 py-3">
                 ID
@@ -343,6 +400,9 @@ const Customers = () => {
               </th>
               <th scope="col" className="px-6 py-3">
                 Phone
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Jar Purchased
               </th>
               <th scope="col" className="px-6 py-3">
                 CreatedAt
@@ -365,25 +425,26 @@ const Customers = () => {
             {customersState &&
               customersState.map((customer) => {
                 if (!invoices) return null;
+                let purchasedJar = checkIfUserPurchasedJar(customer._id);
                 return (
                   <tr
                     key={customer._id}
                     className="bg-white  border-b 0  hover:bg-gray-50 "
                   >
-                    <td className="w-4 p-4">
-                      <div className="flex items-center">
-                        <input
-                          id="checkbox-table-search-1"
-                          type="checkbox"
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded "
-                        />
-                        <label
-                          htmlFor="checkbox-table-search-1"
-                          className="sr-only"
-                        >
-                          checkbox
-                        </label>
-                      </div>
+                    <td className="px-6 text-gray-900 w-full h-full mt-6 flex justify-center">
+                      <input
+                        id={`regular-${customer.userID}`}
+                        type="checkbox"
+                        value=""
+                        onChange={() =>
+                          handleUpdateRegularity(
+                            customer.userID,
+                            customer.isRegular
+                          )
+                        }
+                        checked={customer.isRegular}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                      />
                     </td>
                     <td className="px-6 py-4 text-gray-900 font-medium">
                       {customer.userID.toString()}
@@ -397,6 +458,15 @@ const Customers = () => {
                     <td className="px-6 py-4 text-gray-900">
                       {customer.phone}
                     </td>
+
+                    <td
+                      className={`px-6 py-4 font-medium ${
+                        purchasedJar ? "text-green-600" : "text-red-500"
+                      }`}
+                    >
+                      {purchasedJar ? "Yes" : "No"}
+                    </td>
+
                     <td className="px-6 py-4">
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { AiOutlineLoading } from "react-icons/ai";
 
 interface IProps {
-  selectedCustomerID: Number | undefined;
+  selectedCustomerID: number | undefined;
   invoices: Invoice[] | null | undefined;
   setInvoices: React.Dispatch<
     React.SetStateAction<Invoice[] | null | undefined>
@@ -22,7 +22,6 @@ const CustomerInvoicesData: FC<IProps> = ({
   products,
   setInvoices,
   setModalIsOpen,
-  resetCustomerState,
 }) => {
   const [amount, setAmount] = React.useState<string>("");
 
@@ -125,16 +124,19 @@ const CustomerInvoicesData: FC<IProps> = ({
             <table className="w-full text-sm text-left">
               <thead className="text-sm  uppercase bg-gray-100">
                 <tr>
-                  <th scope="col" className="px-2 md:px-4 py-3 rounded-s-lg">
+                  <th scope="col" className="px-2 md:px-4 py-3">
                     Date
                   </th>
                   <th scope="col" className="px-2 md:px-4 py-3">
                     Products
                   </th>
-                  <th scope="col" className="px-2 md:px-4 py-3 rounded-e-lg">
-                    Amount
+                  <th scope="col" className="px-2 md:px-4 py-3 ">
+                    Total
                   </th>
-                  <th scope="col" className="px-2 md:px-4 py-3 rounded-e-lg">
+                  <th scope="col" className="px-2 md:px-4 py-3 ">
+                    Due
+                  </th>
+                  <th scope="col" className="px-2 md:px-4 py-3">
                     Payment Date
                   </th>
                 </tr>
@@ -177,8 +179,19 @@ const CustomerInvoicesData: FC<IProps> = ({
                             })}
                         </td>
                         <td className="px-2 md:px-4 py-4">
+                          {
+                            <CurrencyFormat
+                              value={invoice.total}
+                              displayType={"text"}
+                              thousandSeparator={true}
+                              prefix={"₹"}
+                              renderText={(value) => <div>{value}</div>}
+                            />
+                          }
+                        </td>
+                        <td className="px-2 md:px-4 py-4">
                           {invoice.status === "paid" ? (
-                            "Paid"
+                            <span className="text-green-600">Paid</span>
                           ) : (
                             <CurrencyFormat
                               value={invoice.due}
@@ -190,11 +203,13 @@ const CustomerInvoicesData: FC<IProps> = ({
                           )}
                         </td>
                         <td className="px-2 md:px-4 py-4">
-                          {invoice?.paymentDate
-                            ? new Date(invoice.paymentDate as string | number)
-                                .toLocaleString()
-                                .split(",")[0]
-                            : "Not Paid"}
+                          {invoice?.paymentDate ? (
+                            new Date(invoice.paymentDate as string | number)
+                              .toLocaleString()
+                              .split(",")[0]
+                          ) : (
+                            <span className="text-red-500">Not Paid</span>
+                          )}
                         </td>
                       </tr>
                     );

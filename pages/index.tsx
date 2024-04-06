@@ -18,6 +18,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import useAuthUser from "@/lib/hooks/useAuthUser";
+import CustomerInsight from "@/components/dashboard/CustomerInsight";
 
 const month = [
   "January",
@@ -346,7 +347,7 @@ export default function Home() {
               />
             </Card> */}
           </div>
-          <span className="text-lg mt-8 mb-2 text-gray-900 font-semibold">
+          <span className="text-lg mt-6 mb-2 text-gray-900 font-semibold">
             Universal Summary
           </span>
           <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3">
@@ -413,6 +414,14 @@ export default function Home() {
             </Card> */}
           </div>
           {/*
+           * CUSTOMERS INSIGHT
+           */}
+          <CustomerInsight
+          invoices={invoices}
+            customers={customers}
+            currentMonth={month.indexOf(summaryMonth.split(" ")[0])}
+          />
+          {/*
            * SALES CHART
            */}
           {/* <div className="w-full mt-6 rounded-2xl shadow p-5 bg-white">
@@ -428,8 +437,8 @@ export default function Home() {
           {/*
            * DAY SUMMARY SECTION
            */}
-          <div className="w-full h-full mt-5 md:ml-5 md:mt-0">
-            <div className="w-full h-full flex flex-col rounded-3xl shadow bg-black py-8">
+          <div className="w-full mt-5 md:ml-5 md:mt-0">
+            <div className="w-full h-fit flex flex-col rounded-3xl shadow bg-black py-8">
               {/*
                * HEADER
                */}

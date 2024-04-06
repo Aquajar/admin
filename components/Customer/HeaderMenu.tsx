@@ -6,6 +6,7 @@ import { MdOutlineRefresh } from "react-icons/md";
 interface HeaderMenuProps {
   onSearch: (searchTerm: string, searchBy: "id" | "name") => void;
   customers: Customer[] | null | undefined;
+  MasterCustomersState: Customer[] | null | undefined;
   setCustomers: React.Dispatch<
     React.SetStateAction<Customer[] | null | undefined>
   >;
@@ -17,6 +18,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   customers,
   setCustomers,
   resetCustomers,
+  MasterCustomersState
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
@@ -37,6 +39,12 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
     setSearchBy(event.target.value as "id" | "name");
+  };
+
+  // Handle sort by regularity
+  const handleSortByRegularity = (isRegular: boolean) => {
+    let n = MasterCustomersState?.filter((customer) => isRegular === customer.isRegular);
+    setCustomers(n);
   };
 
   useEffect(() => {
@@ -69,7 +77,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         </button>
       </form>
       {/*
-       * Filter by
+       * Search by
        */}
       <div className="md:ml-6 flex items-center w-full md:w-fit mt-5 md:mt-0 flex-row md:flex-row">
         <label
@@ -88,6 +96,28 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           <option value="id">ID</option>
         </select>
       </div>
+      {/*
+       * Sort by regularity
+       */}
+      <div className="md:ml-6 flex items-center w-full md:w-fit mt-5 md:mt-0 flex-row md:flex-row">
+        <label
+          htmlFor="searchBy"
+          className="mr-2 ml-3 md:ml-0 text-sm font-medium text-gray-900"
+        >
+          Regularity
+        </label>
+        <select
+          id="searchBy"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5"
+          onChange={(e) => handleSortByRegularity(e.target.value === "true")}
+        >
+          <option value="true">Regular</option>
+          <option value="false">Unregular</option>
+        </select>
+      </div>
+      {/*
+       * Refresh Button
+       */}
       <button
         onClick={resetCustomers}
         className="ml-3 md:ml-6 text-sm font-medium text-gray-900"

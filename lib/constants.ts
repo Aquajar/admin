@@ -6,6 +6,7 @@ import { IoMdSettings } from "react-icons/io";
 import { FaShop } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
+import { MdProductionQuantityLimits } from "react-icons/md";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -40,11 +41,15 @@ const SidebarItems: SideBarItem[] = [
     icon: FaFileAlt,
     href: "/reports",
   },
-
   {
     name: "Areas",
     icon: TbLocationFilled,
     href: "/area",
+  },
+  {
+    name: "Products",
+    icon: MdProductionQuantityLimits,
+    href: "/products",
   },
   {
     name: "Settings",

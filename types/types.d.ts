@@ -19,7 +19,9 @@ interface Customer {
   invoices: string[];
   address?: CustomerAddress;
   createdAt: string;
-  userID: Number;
+  userID: number;
+  isRegular: boolean;
+  isCardReceived: boolean;
 }
 
 type Product = {
@@ -73,7 +75,7 @@ export interface Invoice {
   customerID: string | undefined;
   vehicleID: string | null;
   total: number;
-   products: {
+  products: {
     id: string;
     _id: string;
     quantity: number;
