@@ -16,9 +16,11 @@ import {
   FaCaretRight,
   FaChevronLeft,
   FaChevronRight,
+  FaCircle,
 } from "react-icons/fa";
 import useAuthUser from "@/lib/hooks/useAuthUser";
 import CustomerInsight from "@/components/dashboard/CustomerInsight";
+import SalesSummary from "@/components/dashboard/SalesSummary";
 
 const month = [
   "January",
@@ -34,7 +36,6 @@ const month = [
   "November",
   "December",
 ];
-
 export default function Home() {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
@@ -56,6 +57,8 @@ export default function Home() {
   const [totalJarSold, setTotalJarSold] = useState(0);
   const [totalJarSoldToday, setTotalJarSoldToday] = useState(0);
   const [todaysInvoice, setTodaysInvoice] = useState<Invoice[]>([]);
+  const [totalDueToday = 0, setTotalDueToday] = useState<number>(0);
+  const [totalCollectedToday = 0, setTotalCollectedToday] = useState<number>(0);
   const [summaryDate, setSummaryDate] = useState(new Date().toDateString());
   const [summaryMonth, setSummaryMonth] = useState(
     month[new Date().getMonth()] + " " + new Date().getFullYear()
@@ -207,6 +210,22 @@ export default function Home() {
       });
 
       setTotalJarSoldToday(t);
+
+      // get total due today
+      const totalDue = todaysInvoices.reduce((acc, invoice) => {
+        if (invoice.status === "paid") return acc;
+        return acc + invoice.total;
+      }, 0);
+
+      setTotalDueToday(totalDue);
+
+      // get total collected today
+      const totalCollected = todaysInvoices.reduce((acc, invoice) => {
+        if (invoice.status === "pending") return acc;
+        return acc + invoice.total;
+      }, 0);
+
+      setTotalCollectedToday(totalCollected);
     }
   }, [summaryDate, invoices]);
 
@@ -276,7 +295,7 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <div className="flex flex-col md:flex-row w-full mb-20">
+      <div className="flex flex-col-reverse md:flex-row w-full mb-20">
         {/*
          * LEFT
          */}
@@ -284,7 +303,7 @@ export default function Home() {
           {/*
            * CARDS SECTION
            */}
-          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3">
+          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3 mt-6 md:mt-0">
             {/* Total Sales */}
             <Card title="Total Sales">
               <CurrencyFormat
@@ -313,9 +332,6 @@ export default function Home() {
                     <p className="text-3xl font-semibold">{value}</p>
                   )}
                 />
-                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-2 py-1 rounded-2xl inline-flex items-center text-red-500">
-                  {((totalDues / totalSales) * 100).toFixed(1)}%
-                </span>
               </div>
             </Card>
             {/* Total Collected */}
@@ -332,103 +348,16 @@ export default function Home() {
                 )}
               />
             </Card>
-            {/* Total Customers */}
-            {/* <Card title="Total Customers">
-              <CurrencyFormat
-                value={customers?.length}
-                displayType={"text"}
-                thousandSeparator={true}
-                // prefix={"₹"}
-                decimalScale={0}
-                fixedDecimalScale={true}
-                renderText={(value) => (
-                  <p className="text-3xl font-semibold">{value}</p>
-                )}
-              />
-            </Card> */}
           </div>
-          <span className="text-lg mt-6 mb-2 text-gray-900 font-semibold">
-            Universal Summary
-          </span>
-          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3">
-            {/* Total Sales */}
-            <Card title="Total Sales">
-              <CurrencyFormat
-                value={totalSales}
-                displayType={"text"}
-                thousandSeparator={true}
-                prefix={"₹"}
-                decimalScale={0}
-                fixedDecimalScale={true}
-                renderText={(value) => (
-                  <p className="text-3xl font-semibold">{value}</p>
-                )}
-              />
-            </Card>
-            {/* Total Dues */}
-            <Card title="Total Dues">
-              <div className="flex justify-between items-start">
-                <CurrencyFormat
-                  value={totalDues}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={"₹"}
-                  decimalScale={0}
-                  fixedDecimalScale={true}
-                  renderText={(value) => (
-                    <p className="text-3xl font-semibold">{value}</p>
-                  )}
-                />
-                <span className="mt-2.5 text-sm border border-red-500 bg-red-50 px-2 py-1 rounded-2xl inline-flex items-center text-red-500">
-                  {((totalDues / totalSales) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </Card>
-            {/* Total Collected */}
-            <Card title="Total Collected">
-              <CurrencyFormat
-                value={totalCollected}
-                displayType={"text"}
-                thousandSeparator={true}
-                prefix={"₹"}
-                decimalScale={0}
-                fixedDecimalScale={true}
-                renderText={(value) => (
-                  <p className="text-3xl font-semibold">{value}</p>
-                )}
-              />
-            </Card>
-            {/* Total Customers */}
-            {/* <Card title="Total Customers">
-              <CurrencyFormat
-                value={customers?.length}
-                displayType={"text"}
-                thousandSeparator={true}
-                // prefix={"₹"}
-                decimalScale={0}
-                fixedDecimalScale={true}
-                renderText={(value) => (
-                  <p className="text-3xl font-semibold">{value}</p>
-                )}
-              />
-            </Card> */}
-          </div>
+
           {/*
            * CUSTOMERS INSIGHT
            */}
           <CustomerInsight
-          invoices={invoices}
+            invoices={invoices}
             customers={customers}
             currentMonth={month.indexOf(summaryMonth.split(" ")[0])}
           />
-          {/*
-           * SALES CHART
-           */}
-          {/* <div className="w-full mt-6 rounded-2xl shadow p-5 bg-white">
-            <span className="text-2xl font-semibold ">
-              Sales in the last 7 days
-            </span>
-          </div> */}
         </div>
         {/*
          * RIGHT
@@ -437,8 +366,8 @@ export default function Home() {
           {/*
            * DAY SUMMARY SECTION
            */}
-          <div className="w-full mt-5 md:ml-5 md:mt-0">
-            <div className="w-full h-fit flex flex-col rounded-3xl shadow bg-black py-8">
+          <div className="w-full mt-0 md:ml-5">
+            <div className="w-full h-fit flex flex-col rounded-3xl shadow bg-black py-6">
               {/*
                * HEADER
                */}
@@ -484,26 +413,13 @@ export default function Home() {
                */}
               <div className="flex flex-col mt-4 w-full px-8">
                 {/* Progress Bar */}
-                <div className="w-full h-6 bg-gray-600 rounded-3xl">
+                <div className="w-full h-4 bg-gray-600 rounded-xl">
                   <div
-                    className={`h-6 bg-gray-300 rounded-3xl transition-all duration-500 ease-in-out`}
+                    className={`h-4 bg-gray-300 rounded-xl transition-all duration-500 ease-in-out`}
                     style={{
                       width: `${
-                        (todaysInvoice
-                          .filter((invoice) => invoice.status === "paid")
-                          .map((invoice) =>
-                            invoice.products
-                              .map((product) => product.quantity)
-                              .reduce((acc, val) => acc + val, 0)
-                          )
-                          .reduce((acc, val) => acc + val, 0) /
-                          todaysInvoice
-                            .map((invoice) =>
-                              invoice.products
-                                .map((product) => product.quantity)
-                                .reduce((acc, val) => acc + val, 0)
-                            )
-                            .reduce((acc, val) => acc + val, 0)) *
+                        (totalDueToday /
+                          (totalDueToday + totalCollectedToday)) *
                         100
                       }%`,
                     }}
@@ -512,55 +428,50 @@ export default function Home() {
                   </div>
                 </div>
                 {/* Statements */}
-                <div className="mt-5 w-full flex flex-col justify-start">
-                  <div className="flex justify-between items-center">
-                    {/* Collected */}
-                    <span className="text-gray-300 text-sm w-full">
-                      <CurrencyFormat
-                        value={todaysInvoice
-                          .filter((invoice) => invoice.status === "paid")
-                          .map((invoice) => invoice.total)
-                          .reduce((acc, val) => acc + val, 0)}
-                        displayType={"text"}
-                        thousandSeparator={true}
-                        prefix={"₹"}
-                        renderText={(value) => (
-                          <span className="text-white text-lg mr-2 font-semibold">
-                            {value}
-                          </span>
-                        )}
-                        decimalScale={0}
-                        fixedDecimalScale={true}
-                      />
-                      Collected
-                    </span>
-                    <span className="h-3 w-3 bg-gray-300 text-sm rounded-full" />
+                <div className="mt-5 w-full flex justify-between items-center">
+                  {/* Collected */}
+                  <div className="flex flex-col justify-between items-center">
+                    <div className="text-gray-300 text-sm w-full flex items-center">
+                      <FaCircle />
+                      <span className="text-white text-sm ml-2">Due</span>
+                    </div>
+                    <CurrencyFormat
+                      value={totalDueToday}
+                      displayType={"text"}
+                      thousandSeparator={true}
+                      prefix={"₹"}
+                      renderText={(value) => (
+                        <span className="text-white text-lg mt-2 font-semibold">
+                          {value}
+                        </span>
+                      )}
+                      decimalScale={0}
+                      fixedDecimalScale={true}
+                    />
                   </div>
+
                   {/* Due */}
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-300 text-sm w-full">
-                      <CurrencyFormat
-                        value={todaysInvoice
-                          .filter((invoice) => invoice.status === "pending")
-                          .map((invoice) => invoice.total)
-                          .reduce((acc, val) => acc + val, 0)}
-                        displayType={"text"}
-                        thousandSeparator={true}
-                        prefix={"₹"}
-                        renderText={(value) => (
-                          <span className="text-white text-lg mr-2 font-semibold">
-                            {value}
-                          </span>
-                        )}
-                        decimalScale={0}
-                        fixedDecimalScale={true}
-                      />
-                      Due
-                    </span>
-                    <span className="h-3 w-3 bg-gray-600 text-sm rounded-full" />
+                  <div className="flex flex-col justify-between items-center mt-2">
+                    <div className="text-gray-300 text-sm w-full flex items-center">
+                      <span className="text-white text-sm mr-2">Collected</span>
+                      <FaCircle className="text-gray-600" />
+                    </div>
+                    <CurrencyFormat
+                      value={totalCollectedToday}
+                      displayType={"text"}
+                      thousandSeparator={true}
+                      prefix={"₹"}
+                      renderText={(value) => (
+                        <span className="text-white text-lg mr-2 font-semibold">
+                          {value}
+                        </span>
+                      )}
+                      decimalScale={0}
+                      fixedDecimalScale={true}
+                    />
                   </div>
                 </div>
-                <button className="text-gray-800 text-sm w-full mb-3 bg-gray-200 rounded-md py-2 mt-4 px-2 text-start">
+                <button className="text-gray-800 text-sm w-full mb-3 bg-gray-200 rounded-md py-2 mt-8 px-2 text-start">
                   <CurrencyFormat
                     value={todaysInvoice
                       .map((invoice) => invoice.total)
@@ -586,6 +497,16 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
+          {/*
+           * SALES SUMMARY
+           */}
+          <div className="w-full mt-6 md:ml-5">
+            <SalesSummary
+              totalSales={totalSales}
+              totalDue={totalDues}
+              totalCollected={totalCollected}
+            />
           </div>
         </div>
       </div>

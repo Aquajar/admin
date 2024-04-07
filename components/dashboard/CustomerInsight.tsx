@@ -44,7 +44,7 @@ const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
   }, [invoices, customers]);
 
   return (
-    <div className="bg-black rounded-2xl p-5 my-8">
+    <div className="bg-black rounded-2xl p-5 my-6">
       <span className="text-white text-lg">Customer Insight</span>
       {/* Stats */}
       <div className="grid mt-4 grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-8">

@@ -3,6 +3,7 @@ const colors = require("tailwindcss/colors");
 
 const config: Config = {
   content: [
+    "./node_modules/flowbite-react/lib/**/*.js",
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -23,6 +24,6 @@ const config: Config = {
       quaternary: "#F5F5F5",
     },
   },
-  plugins: [],
+  plugins: [require("flowbite/plugin")],
 };
 export default config;

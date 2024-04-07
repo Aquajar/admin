@@ -8,6 +8,7 @@ import type { AppProps } from "next/app";
 import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
+import { PagesProgressBar as ProgressBar } from "next-nprogress-bar";
 
 export default function App({
   Component,
@@ -25,6 +26,12 @@ export default function App({
                 <Toaster position="top-center" reverseOrder={false} />
                 <Sidebar />
                 <Component {...pageProps} />
+                <ProgressBar
+                  height="4px"
+                  color="#2463EB"
+                  options={{ showSpinner: false }}
+                  shallowRouting
+                />
               </div>
               {process.env.NODE_ENV === "development" && (
                 <ReactQueryDevtools initialIsOpen={false} />
