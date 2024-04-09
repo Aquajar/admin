@@ -35,12 +35,6 @@ const SidebarItems: SideBarItem[] = [
     icon: FaFileInvoice,
     href: "/invoices",
   },
-
-  {
-    name: "Reports",
-    icon: FaFileAlt,
-    href: "/reports",
-  },
   {
     name: "Areas",
     icon: TbLocationFilled,
@@ -50,6 +44,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Products",
     icon: MdProductionQuantityLimits,
     href: "/products",
+  },
+  {
+    name: "Reports",
+    icon: FaFileAlt,
+    href: "/reports",
   },
   {
     name: "Settings",

@@ -375,6 +375,7 @@ const Customers = () => {
        * Render Search Bar
        */}
       <HeaderMenu
+        invoices={invoices}
         resetCustomers={resetCustomerState}
         onSearch={handleOnsearch}
         customers={customersState}
@@ -382,7 +383,7 @@ const Customers = () => {
         setCustomers={setCustomersState}
       />
 
-      <div className="relative overflow-x-auto mt-5 shadow-md sm:rounded-lg">
+      <div className="relative overflow-x-auto mt-10 shadow-md sm:rounded-lg">
         {/*
          * Render Table
          */}
