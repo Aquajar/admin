@@ -88,4 +88,18 @@ const sortByOptions = [
   },
 ];
 
-export { SidebarItems, paymentMethods, sortByOptions };
+const reportTypes: {
+  name: string;
+  value: string;
+}[] = [
+  {
+    name: "Sales Report",
+    value: "salesReport",
+  },
+  {
+    name: "Customer Analytics",
+    value: "customerAnalytics",
+  },
+];
+
+export { SidebarItems, paymentMethods, sortByOptions, reportTypes };

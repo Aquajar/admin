@@ -12,7 +12,7 @@ type CustomerAddress = {
   latitude: string;
 };
 
-interface Customer {
+export interface Customer {
   _id: string;
   name?: string;
   phone: string;
@@ -24,7 +24,7 @@ interface Customer {
   isCardReceived: boolean;
 }
 
-type Product = {
+export type Product = {
   _id: string;
   name: string;
   description?: string;
@@ -34,7 +34,7 @@ type Product = {
   };
 };
 
-interface Item {
+export interface Item {
   name: string;
   quantity: number;
   price: number;

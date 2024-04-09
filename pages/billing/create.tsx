@@ -639,7 +639,7 @@ const Invoice = () => {
                                 newItems[index].price;
                               setItems(newItems);
                             }}
-                            className="border text-md rounded-md capitalize px-2 md:pr-14 md:pl-4 py-2 mt-1 bg-white"
+                            className="border text-md rounded-md capitalize px-2 w-24 md:pr-14 md:pl-4 py-2 mt-1 bg-white"
                           >
                             {products &&
                               products?.map((product: Product) => {
@@ -669,7 +669,7 @@ const Invoice = () => {
                                 newItems[index].price;
                               setItems(newItems);
                             }}
-                            className="border md:w-1/2 text-md rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white"
+                            className="border w-16 text-md rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white"
                           />
                         </td>
                         {/* Price */}

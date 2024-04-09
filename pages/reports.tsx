@@ -7,13 +7,14 @@ import { useSession } from "next-auth/react";
 import React, { useEffect, useRef, useState } from "react";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaSort } from "react-icons/fa";
+import { FaArrowRight, FaSort } from "react-icons/fa";
 import { utils, writeFileXLSX } from "xlsx";
 import { Menu, MenuItem, MenuButton } from "@szhsin/react-menu";
 import "@szhsin/react-menu/dist/index.css";
 import "@szhsin/react-menu/dist/transitions/slide.css";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import toast from "react-hot-toast";
+import { reportTypes } from "@/lib/constants";
 
 const Reports = () => {
   const [startDate, setStartDate] = useState(new Date(new Date()));
@@ -21,6 +22,7 @@ const Reports = () => {
   const [reportData, setReportData] = useState([]) as any[];
   const [areas, setAreas] = useState<Area[] | null>(null);
   const [address, setAddress] = useState("all");
+  const [reportType, setReportType] = useState(reportTypes[0].value);
 
   const { data: session } = useSession();
 
@@ -32,6 +34,7 @@ const Reports = () => {
 
   const tableRef = useRef(null);
 
+  // Fetch Invoices
   const getInvoices = async () => {
     setReportData([]);
 
@@ -106,22 +109,27 @@ const Reports = () => {
         {/*
          * Menu
          */}
-        <div className="flex flex-col md:flex-row space-y-5 md:space-y-0 md:space-x-8 md:justify-items-center mt-2">
+        <div className="grid grid-cols-1 md:grid-cols-6 mt-2 gap-5 items-end">
+          {/*
+           * From Date Picker
+           */}
           <div className="flex flex-col">
-            <label>From Date</label>
+            <label className="text-xs text-gray-500">From Date</label>
             <ReactDatePicker
               wrapperClassName="w-full"
               dateFormat={"dd/MM/yyyy"}
-              className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer px-3 mt-1.5 py-2 bg-gray-50 w-full"
               selected={startDate}
               onChange={(date) => setStartDate(date as Date)}
             />
           </div>
+         
           {/*
-           * Date Picker
+           * To Date Picker
            */}
           <div className="flex flex-col">
-            <label>To Date</label>
+          <label className="text-xs text-gray-500">To Date</label>
+
             <ReactDatePicker
               dateFormat={"dd/MM/yyyy"}
               className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
@@ -134,10 +142,10 @@ const Reports = () => {
            *  Area Selector
            */}
           <div className="flex flex-col">
-            <label>Select Area</label>
+            {/* <label>Select Area</label> */}
             <select
               onChange={(e) => setAddress(e.target.value)}
-              className="border rounded-md cursor-pointer pl-3 pr-10 py-2 mt-1.5 bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-gray-50 w-full"
             >
               <option selected={address === "all"} value="all">
                 All
@@ -151,34 +159,52 @@ const Reports = () => {
             </select>
           </div>
           {/*
+           *  Report Type Selector
+           */}
+          <div className="flex flex-col">
+            {/* <label>Select Area</label> */}
+            <select
+              onChange={(e) => setReportType(e.target.value)}
+              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-gray-50 w-full"
+            >
+              {reportTypes.map((type, index) => (
+                <option
+                  value={type.value}
+                  selected={type.value === reportType}
+                  key={index}
+                >
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/*
            * Action Buttons
            */}
-          <div className="flex items-center justify-center md:items-end">
+          <button
+            onClick={getInvoices}
+            className="bg-blue-500 text-white px-3 py-2 h-fit rounded-md"
+          >
+            Generate Report
+          </button>
+          {reportData.data && (
             <button
-              onClick={getInvoices}
-              className="bg-blue-500 text-white px-3 py-2 h-fit rounded-md"
+              className="bg-green-500 flex items-center text-white px-3 py-2 h-fit justify-center rounded-md"
+              onClick={() => {
+                // generate workbook from table element
+                const wb = utils.table_to_book(tableRef.current);
+                // write to XLSX
+                writeFileXLSX(
+                  wb,
+                  `${address.toUpperCase()}_${+new Date()}.xlsx`
+                );
+                toast.success("Exported to XLSX");
+              }}
             >
-              Generate Report
+              <LuFileSpreadsheet size={20} className="mr-1" />
+              Export XLSX
             </button>
-            {reportData.data && (
-              <button
-                className="bg-green-500 flex items-center text-white px-3 mx-5 py-2 h-fit rounded-md"
-                onClick={() => {
-                  // generate workbook from table element
-                  const wb = utils.table_to_book(tableRef.current);
-                  // write to XLSX
-                  writeFileXLSX(
-                    wb,
-                    `${address.toUpperCase()}_${+new Date()}.xlsx`
-                  );
-                  toast.success("Exported to XLSX");
-                }}
-              >
-                <LuFileSpreadsheet size={20} className="mr-1" />
-                Export XLSX
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         {/*
