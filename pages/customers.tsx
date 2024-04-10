@@ -404,7 +404,7 @@ const Customers = () => {
         setCustomers={setCustomersState}
       />
 
-      <div className="relative overflow-x-auto mt-10 shadow-md sm:rounded-lg">
+      <div className="relative overflow-x-auto mt-4 shadow-md sm:rounded-lg">
         {/*
          * Render Table
          */}
@@ -544,8 +544,12 @@ const Customers = () => {
                               : "text-red-500"
                           }`}
                         >
-                          {differenceInDays}
-                          <span className="text-xs font-normal"> day/s</span>
+                          {isNaN(differenceInDays) ? "N/A" : differenceInDays}
+                          {
+                            <span className="text-xs font-normal ml-1">
+                              {isNaN(differenceInDays) ? "" : "day/s"}
+                            </span>
+                          }
                         </span>
                       }
                     </td>

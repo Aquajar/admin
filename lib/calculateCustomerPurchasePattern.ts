@@ -14,7 +14,11 @@ export const calculatePurchasePattern = (
 ): PurchasePattern[] => {
   return customers.map((customer) => {
     const customerInvoices = allInvoices.filter(
-      (invoice) => invoice.customerID === customer._id
+      (invoice) =>
+        invoice.customerID === customer._id &&
+        invoice.products.map(
+          (product) => product.id === "65c1271bd78bb1922f9b1a63"
+        )
     );
 
     const customerInvoiceDates = customerInvoices.map((invoice) =>

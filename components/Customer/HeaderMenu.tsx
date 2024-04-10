@@ -160,129 +160,147 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   }, [areas]);
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-end">
-      {/*
-       * Search Bar
-       */}
-      <form
-        onSubmit={handleSearch}
-        className="relative  max-w-md w-full md:w-fit"
-      >
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <FaSearch className="w-5 h-5 text-gray-500" />
+    <>
+      <div className="flex flex-col md:flex-row justify-between items-end w-full">
+        {/*
+         * Search Bar
+         */}
+        <form
+          onSubmit={handleSearch}
+          className="relative  max-w-md w-full md:w-fit"
+        >
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <FaSearch className="w-5 h-5 text-gray-500" />
+          </div>
+          <input
+            type="text"
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 pr-36 p-2.5"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={handleInputChange}
+          />
+          <button
+            type="submit"
+            className="absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white bg-blue-600 hover:bg-indigo-700"
+          >
+            Search
+          </button>
+        </form>
+        {/*
+         * Search by
+         */}
+        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
+          <label htmlFor="searchBy" className="text-xs text-gray-500">
+            Search By
+          </label>
+          <select
+            id="searchBy"
+            className="bg-gray-50 border mt-1.5 cursor-pointer border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-8"
+            value={searchBy}
+            onChange={handleSearchByChange}
+          >
+            <option value="name">Name</option>
+            <option value="id">ID</option>
+          </select>
         </div>
-        <input
-          type="text"
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 pr-36 p-2.5"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={handleInputChange}
-        />
+        {/*
+         * Sort by regularity
+         */}
+        <div className="flex  w-full md:w-fit mt-5 md:mt-0 flex-col">
+          <label htmlFor="searchBy" className="text-xs text-gray-500">
+            Regularity
+          </label>
+          <select
+            id="searchBy"
+            className="bg-gray-50 border cursor-pointer mt-1.5 border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-4"
+            onChange={(e) => handleSortByRegularity(e.target.value)}
+          >
+            <option value="all" selected={sortByRegularity === "all"}>
+              All
+            </option>
+            <option value="true" selected={sortByRegularity === "true"}>
+              Regular
+            </option>
+            <option value="false" selected={sortByRegularity === "false"}>
+              Unregular
+            </option>
+          </select>
+        </div>
+        {/*
+         * Sort by Area
+         */}
+        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
+          <label htmlFor="searchBy" className="text-xs text-gray-500">
+            Area
+          </label>
+          <select
+            onChange={(e) => handleSortByArea(e.target.value)}
+            className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
+          >
+            <option selected={sortByArea === "all"} value="all">
+              All
+            </option>
+            {areas &&
+              areas.map((area: Area, index: number) => (
+                <option
+                  selected={sortByArea === area.name}
+                  value={area.name}
+                  key={index}
+                >
+                  {area.name}
+                </option>
+              ))}
+          </select>
+        </div>
+        {/*
+         * Sort by Purchase Interval
+         */}
+        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
+          <label htmlFor="searchBy" className="text-xs text-gray-500">
+            Purchase Interval
+          </label>
+          <select
+            onChange={(e) =>
+              handleSortByPurchaseInterval(e.target.value as any)
+            }
+            className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
+          >
+            <option value="all" selected={sortByInterval === "all"}>
+              All
+            </option>
+            <option value="high" selected={sortByInterval === "high"}>
+              High
+            </option>
+            <option value="less" selected={sortByInterval === "low"}>
+              Less
+            </option>
+          </select>
+        </div>
+        {/*
+         * Refresh Button
+         */}
         <button
-          type="submit"
-          className="absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white bg-blue-600 hover:bg-indigo-700"
+          onClick={() => {
+            resetCustomers();
+            setSortByArea("all");
+            setSortByRegularity("all");
+            setSortByInterval("all");
+          }}
+          className="p-2.5 bg-blue-700 rounded-md text-sm font-medium text-gray-900 w-full md:w-fit mt-6 md:mt-0 flex items-center justify-center"
         >
-          Search
+          <span className="mr-1 text-white">Refresh</span>
+          <MdOutlineRefresh className="w-5 h-5 text-white" />
         </button>
-      </form>
-      {/*
-       * Search by
-       */}
-      <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-        <label htmlFor="searchBy" className="text-xs text-gray-500">
-          Search By
-        </label>
-        <select
-          id="searchBy"
-          className="bg-gray-50 border mt-1.5 cursor-pointer border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-8"
-          value={searchBy}
-          onChange={handleSearchByChange}
-        >
-          <option value="name">Name</option>
-          <option value="id">ID</option>
-        </select>
       </div>
-      {/*
-       * Sort by regularity
-       */}
-      <div className="flex  w-full md:w-fit mt-5 md:mt-0 flex-col">
-        <label htmlFor="searchBy" className="text-xs text-gray-500">
-          Regularity
-        </label>
-        <select
-          id="searchBy"
-          className="bg-gray-50 border cursor-pointer mt-1.5 border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-4"
-          onChange={(e) => handleSortByRegularity(e.target.value)}
-        >
-          <option value="all" selected={sortByRegularity === "all"}>
-            All
-          </option>
-          <option value="true" selected={sortByRegularity === "true"}>
-            Regular
-          </option>
-          <option value="false" selected={sortByRegularity === "false"}>
-            Unregular
-          </option>
-        </select>
+      <div className="flex flex-col mt-6 md:flex-row justify-between items-end w-full">
+        <div className="">
+          <span className="text-gray-500 text-sm">Total Customers :</span>
+          <span className="text-sm font-medium text-gray-900 ml-2">
+            {customers?.length}
+          </span>
+        </div>
       </div>
-      {/*
-       * Sort by Area
-       */}
-      <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-        <label htmlFor="searchBy" className="text-xs text-gray-500">
-          Area
-        </label>
-        <select
-          onChange={(e) => handleSortByArea(e.target.value)}
-          className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
-        >
-          <option selected={sortByArea === "all"} value="all">
-            All
-          </option>
-          {areas &&
-            areas.map((area: Area, index: number) => (
-              <option
-                selected={sortByArea === area.name}
-                value={area.name}
-                key={index}
-              >
-                {area.name}
-              </option>
-            ))}
-        </select>
-      </div>
-      {/*
-       * Sort by Purchase Interval
-       */}
-      <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-        <label htmlFor="searchBy" className="text-xs text-gray-500">
-          Purchase Interval
-        </label>
-        <select
-          onChange={(e) => handleSortByPurchaseInterval(e.target.value as any)}
-          className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
-        >
-          <option value="all">All</option>
-          <option value="high">High</option>
-          <option value="less">Less</option>
-        </select>
-      </div>
-      {/*
-       * Refresh Button
-       */}
-      <button
-        onClick={() => {
-          resetCustomers();
-          setSortByArea("all");
-          setSortByRegularity("all");
-          setSortByInterval("all");
-        }}
-        className="p-2.5 bg-blue-700 rounded-md text-sm font-medium text-gray-900 w-full md:w-fit mt-6 md:mt-0 flex items-center justify-center"
-      >
-        <span className="mr-1 text-white">Refresh</span>
-        <MdOutlineRefresh className="w-5 h-5 text-white" />
-      </button>
-    </div>
+    </>
   );
 };
 
