@@ -14,6 +14,9 @@ import { useInvoicesStore } from "@/store/invoices.store";
 import { Area, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
+import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
+import CurrencyFormat from "react-currency-format";
+import { IoReturnUpBackOutline } from "react-icons/io5";
 
 Modal.setAppElement("#__next");
 
@@ -52,6 +55,14 @@ const Customers = () => {
   const [selectedCustomerInvoices, setSelectedCustomerInvoices] = useState<
     Invoice[] | undefined
   >(undefined);
+  const [purchasePatternData, setPurchasePatternData] = useState<
+    {
+      customerID: string;
+      averageIntervalDays?: number;
+      purchasePattern: "daily" | "irregular";
+      isNeedToday?: boolean;
+    }[]
+  >([]);
 
   function openModal() {
     setModalIsOpen(true);
@@ -61,6 +72,7 @@ const Customers = () => {
     setModalIsOpen(false);
   }
 
+  // Reset Customer State
   const resetCustomerState = () => {
     setSelectedCustomer(undefined);
     setCustomersState(customers);
@@ -254,6 +266,14 @@ const Customers = () => {
     }
   }, [customers]);
 
+  // Calculate Purchase Pattern
+  useEffect(() => {
+    if (customers && invoices) {
+      const purchasePatternData = calculatePurchasePattern(customers, invoices);
+      setPurchasePatternData(purchasePatternData);
+    }
+  }, [customers, invoices]);
+
   return (
     <Wrapper name="Cutomers">
       <Modal
@@ -375,6 +395,7 @@ const Customers = () => {
        * Render Search Bar
        */}
       <HeaderMenu
+        purchasePatternData={purchasePatternData}
         invoices={invoices}
         resetCustomers={resetCustomerState}
         onSearch={handleOnsearch}
@@ -405,8 +426,16 @@ const Customers = () => {
               <th scope="col" className="px-6 py-3">
                 Jar Purchased
               </th>
+
               <th scope="col" className="px-6 py-3">
-                CreatedAt
+                Purchase Interval
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Period since last
+              </th>
+
+              <th scope="col" className="px-6 py-3">
+                Total Due
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -414,7 +443,7 @@ const Customers = () => {
               </th>
 
               <th scope="col" className="px-6 py-3">
-                Total Due
+                CreatedAt
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -427,6 +456,36 @@ const Customers = () => {
               customersState.map((customer) => {
                 if (!invoices) return null;
                 let purchasedJar = checkIfUserPurchasedJar(customer._id);
+
+                let lastPurchaseDate = new Date(
+                  invoices
+                    .filter((invoice) => invoice.customerID === customer._id)
+                    .sort((a, b) => {
+                      return (
+                        new Date(b.invoiceDate).getTime() -
+                        new Date(a.invoiceDate).getTime()
+                      );
+                    })[0]?.invoiceDate
+                );
+
+                let todayDate = new Date();
+
+                let purchaseInterval = purchasePatternData
+                  .filter((pattern) => pattern.customerID === customer._id)
+                  .map((pattern) => {
+                    if (!pattern.averageIntervalDays) return 0;
+                    return Math.abs(Math.round(pattern.averageIntervalDays));
+                  })[0];
+
+                const diffTime = Math.abs(
+                  lastPurchaseDate.getTime() - todayDate.getTime()
+                );
+
+                // Calculate the interval between today and last purchase date
+                let differenceInDays = Math.ceil(
+                  diffTime / (1000 * 60 * 60 * 24)
+                );
+
                 return (
                   <tr
                     key={customer._id}
@@ -468,20 +527,59 @@ const Customers = () => {
                       {purchasedJar ? "Yes" : "No"}
                     </td>
 
-                    <td className="px-6 py-4">
+                    {/* Purchase Pattern */}
+                    <td className="px-6 py-4 text-gray-900">
+                      <span className="font-semibold">
+                        {purchaseInterval}
+                        <span className="text-xs font-normal"> day/s</span>
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-900">
+                      {
+                        <span
+                          className={`font-semibold ${
+                            differenceInDays <= purchaseInterval
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {differenceInDays}
+                          <span className="text-xs font-normal"> day/s</span>
+                        </span>
+                      }
+                    </td>
+
+                    {/* Total Due */}
+                    <td className="px-6 py-4 text-gray-900">
+                      <CurrencyFormat
+                        value={invoices
+                          .filter(
+                            (invoice) =>
+                              invoice.status === "pending" &&
+                              invoice.customerID === customer._id
+                          )
+                          .reduce((acc, curr) => acc + curr.due, 0)
+                          .toString()}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                      />
+                    </td>
+
+                    {/* Address */}
+                    <td className="px-6 py-4 text-gray-900">
+                      {customer.address?.text}
+                    </td>
+
+                    {/* Created At */}
+                    <td className="px-6 py-4 text-gray-900">
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">{customer.address?.text}</td>
-                    <td className="px-6 py-4">
-                      {invoices
-                        .filter(
-                          (invoice) =>
-                            invoice.status === "pending" &&
-                            invoice.customerID === customer._id
-                        )
-                        .reduce((acc, curr) => acc + curr.due, 0)
-                        .toString()}
-                    </td>
+
+                    {/* Action Button */}
                     <td className="flex items-center px-6 py-4">
                       <span
                         onClick={async () => {

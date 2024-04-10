@@ -15,6 +15,12 @@ interface HeaderMenuProps {
   >;
   resetCustomers: () => void;
   invoices: Invoice[] | null | undefined;
+  purchasePatternData: {
+    customerID: string;
+    averageIntervalDays?: number;
+    purchasePattern: "daily" | "irregular";
+    isNeedToday?: boolean;
+  }[];
 }
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
@@ -23,12 +29,18 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   setCustomers,
   resetCustomers,
   MasterCustomersState,
-  invoices,
+  purchasePatternData,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
   const [areas, setAreas] = useState<Area[] | null>(null);
-  const [address, setAddress] = useState("all");
+
+  // Filter key states
+  const [sortByArea, setSortByArea] = useState("all");
+  const [sortByRegularity, setSortByRegularity] = useState("all");
+  const [sortByInterval, setSortByInterval] = useState<"all" | "high" | "low">(
+    "all"
+  );
 
   const { data: session } = useSession();
 
@@ -53,28 +65,65 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   };
 
   // Handle sort by regularity
-  const handleSortByRegularity = (isRegular: boolean) => {
-    let n = MasterCustomersState?.filter(
-      (customer) => isRegular === customer.isRegular
-    );
+  const handleSortByRegularity = (val: string) => {
+    setSortByRegularity(val);
+
+    if (val === "all") {
+      setCustomers(MasterCustomersState);
+      setSortByArea("all");
+      return;
+    }
+    const isRegular = val === "true" ? true : false;
+
+    let n = customers?.filter((customer) => isRegular === customer.isRegular);
     setCustomers(n);
   };
 
   // Handle sort by area
   const handleSortByArea = (area: string) => {
+    setSortByArea(area);
     if (area === "all") {
       setCustomers(MasterCustomersState);
+      setSortByRegularity("all");
       return;
     }
-    let n = MasterCustomersState?.filter(
-      (customer) => area === customer.address?.text
-    );
+    let n = customers?.filter((customer) => area === customer.address?.text);
     setCustomers(n);
   };
 
   // Handle sort by
-  const handleSortBy = (sortBy: string) => {
-    
+  const handleSortByPurchaseInterval = (val: "all" | "high" | "low") => {
+    if (val === "all") {
+      setCustomers(MasterCustomersState);
+      return;
+    }
+
+    let n = customers?.filter((customer) => {
+      let data = purchasePatternData.find((d) => d.customerID === customer._id);
+      if (val === "high") {
+        return (
+          data?.averageIntervalDays && Math.abs(data.averageIntervalDays) > 3
+        );
+      } else {
+        return (
+          data?.averageIntervalDays && Math.abs(data.averageIntervalDays) <= 3
+        );
+      }
+    });
+
+    n?.sort((a, b) => {
+      let dataA = purchasePatternData.find((d) => d.customerID === a._id);
+      let dataB = purchasePatternData.find((d) => d.customerID === b._id);
+      if (val === "high") {
+        return dataA?.averageIntervalDays! - dataB?.averageIntervalDays!;
+      } else {
+        return dataB?.averageIntervalDays! - dataA?.averageIntervalDays!;
+      }
+    });
+
+    setCustomers(n);
+
+    setSortByInterval(val);
   };
 
   useEffect(() => {
@@ -92,7 +141,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         console.log("Fetching areas from cookies");
         let areas: Area[] = JSON.parse(cookieAreas);
         setAreas(areas);
-        setAddress("all");
+        setSortByArea("all");
       } else {
         // Fetch products
         console.log("Fetching products from API");
@@ -101,7 +150,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         axiosInstance.get(URL).then((res) => {
           const areas: Area[] = res.data;
           setAreas(areas);
-          setAddress("all");
+          setSortByArea("all");
           setCookie("areas", JSON.stringify(areas), {
             maxAge: 60 * 60 * 24 * 7,
           });
@@ -115,7 +164,10 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
       {/*
        * Search Bar
        */}
-      <form onSubmit={handleSearch} className="relative  max-w-md w-full md:w-fit">
+      <form
+        onSubmit={handleSearch}
+        className="relative  max-w-md w-full md:w-fit"
+      >
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <FaSearch className="w-5 h-5 text-gray-500" />
         </div>
@@ -160,10 +212,17 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         <select
           id="searchBy"
           className="bg-gray-50 border cursor-pointer mt-1.5 border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-4"
-          onChange={(e) => handleSortByRegularity(e.target.value === "true")}
+          onChange={(e) => handleSortByRegularity(e.target.value)}
         >
-          <option value="true">Regular</option>
-          <option value="false">Unregular</option>
+          <option value="all" selected={sortByRegularity === "all"}>
+            All
+          </option>
+          <option value="true" selected={sortByRegularity === "true"}>
+            Regular
+          </option>
+          <option value="false" selected={sortByRegularity === "false"}>
+            Unregular
+          </option>
         </select>
       </div>
       {/*
@@ -177,38 +236,47 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           onChange={(e) => handleSortByArea(e.target.value)}
           className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
         >
-          <option selected={address === "all"} value="all">
+          <option selected={sortByArea === "all"} value="all">
             All
           </option>
           {areas &&
             areas.map((area: Area, index: number) => (
-              <option value={area.name} key={index}>
+              <option
+                selected={sortByArea === area.name}
+                value={area.name}
+                key={index}
+              >
                 {area.name}
               </option>
             ))}
         </select>
       </div>
       {/*
-       * Sort by
+       * Sort by Purchase Interval
        */}
       <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
         <label htmlFor="searchBy" className="text-xs text-gray-500">
-          Sort By
+          Purchase Interval
         </label>
         <select
-          onChange={(e) => handleSortBy(e.target.value)}
+          onChange={(e) => handleSortByPurchaseInterval(e.target.value as any)}
           className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
         >
-          <option value="dateCreated">Created Date</option>
-          <option value="dueHtoL">Due High to Low</option>
-          <option value="dueLtoH">Due Low to High</option>
+          <option value="all">All</option>
+          <option value="high">High</option>
+          <option value="less">Less</option>
         </select>
       </div>
       {/*
        * Refresh Button
        */}
       <button
-        onClick={resetCustomers}
+        onClick={() => {
+          resetCustomers();
+          setSortByArea("all");
+          setSortByRegularity("all");
+          setSortByInterval("all");
+        }}
         className="p-2.5 bg-blue-700 rounded-md text-sm font-medium text-gray-900 w-full md:w-fit mt-6 md:mt-0 flex items-center justify-center"
       >
         <span className="mr-1 text-white">Refresh</span>

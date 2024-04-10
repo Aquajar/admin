@@ -1,5 +1,4 @@
 import { jwtVerify } from "jose";
-import axios from "axios";
 
 export const getJwtSecretKey = () => {
   const secret = process.env.ACCESS_TOKEN_SECRET;
