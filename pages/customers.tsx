@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Area, Invoice, Product } from "@/types/types";
+import { Area, Invoice, Product, SideBarItem } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
@@ -40,6 +40,13 @@ const customStyles = {
     display: "flex",
   },
 };
+
+const BreadCrumb = [
+  {
+    name: "Customers",
+    href: "/customers",
+  },
+];
 
 const Customers = () => {
   const { customers, setCustomers } = useCustomersStore();
@@ -275,7 +282,7 @@ const Customers = () => {
   }, [customers, invoices]);
 
   return (
-    <Wrapper name="Cutomers">
+    <Wrapper breadcrumb={BreadCrumb}>
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
@@ -404,7 +411,7 @@ const Customers = () => {
         setCustomers={setCustomersState}
       />
 
-      <div className="relative overflow-x-auto mt-4 shadow-md sm:rounded-lg">
+      <div className="relative overflow-x-auto mt-2 shadow-md sm:rounded-lg">
         {/*
          * Render Table
          */}

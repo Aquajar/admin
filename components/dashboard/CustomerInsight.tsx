@@ -23,11 +23,20 @@ const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
       return acc;
     }, {} as { [key: string]: number });
 
-    const customerIds = Object.keys(customerInvoices || {});
+    let customerIds;
+    let topCustomers;
+
+    customerIds = Object.keys(customerInvoices || {});
 
     if (!customerInvoices) return [];
 
-    const topCustomers = customerIds
+    // Filter only regular customers
+    customerIds = customerIds.filter(
+      (customerId) =>
+        customers?.find((customer) => customer._id === customerId)?.isRegular
+    );
+
+    topCustomers = customerIds
       .map((customerId) => ({
         customerId,
         total: customerInvoices[customerId],

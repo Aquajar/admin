@@ -29,8 +29,8 @@ export type Product = {
   name: string;
   description?: string;
   price: {
-    retail: string;
-    delivery: string;
+    retail: string | undefined;
+    delivery: string | undefined;
   };
 };
 
@@ -87,4 +87,12 @@ export interface Invoice {
   paymentMethod: string;
   due: number;
   paymentDate?: number | null;
+  isBulkOrder?: boolean | undefined;
+}
+
+export interface BreadCrumbProps {
+  items: {
+    name: string;
+    href: string;
+  }[];
 }

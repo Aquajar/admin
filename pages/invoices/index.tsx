@@ -5,14 +5,25 @@ import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Invoice } from "@/types/types";
+import { Invoice, SideBarItem } from "@/types/types";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { FiRefreshCcw } from "react-icons/fi";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
+import Link from "next/link";
+import { SidebarItems } from "@/lib/constants";
 
 Modal.setAppElement("#__next");
+
+const breadCrumbData: SideBarItem[] = [
+  {
+    name: "Invoices",
+    href: "/invoices",
+    icon: SidebarItems.filter((item) => item.name === "Invoices")[0].icon,
+  },
+];
 
 const customModalStyles = {
   overlay: {
@@ -161,7 +172,7 @@ const Invoices = () => {
   }
 
   return (
-    <Wrapper name="Invoices">
+    <Wrapper breadcrumb={breadCrumbData}>
       {/*
        * EDIT MODAL
        */}
@@ -290,17 +301,27 @@ const Invoices = () => {
       {/*
        * REFRESH BUTTON
        */}
-      <button
-        onClick={() => {
-          toast.loading("Refreshing...");
-          refreshInvoice();
-        }}
-        className="absolute right-20 md:right-10 bg-white px-3 shadow-sm py-1 rounded-md text-gray-900"
-      >
-        refresh
-      </button>
+      <div className="md:absolute right-20 md:right-10 flex justify-between space-x-4">
+        <Link href="/invoices/bulk" className="h-full">
+          <button className=" bg-green-400 px-3 shadow-sm py-2 rounded-md">
+            Bulk Invoices
+          </button>
+        </Link>
+        <button
+          onClick={() => {
+            toast.loading("Refreshing...");
+            refreshInvoice();
+          }}
+          className="flex justify-center py-2 items-center bg-white px-3 shadow-sm  rounded-md text-gray-900"
+        >
+          refresh <FiRefreshCcw className="ml-2" />
+        </button>
+      </div>
 
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+      {/*
+       * TABLE
+       */}
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 md:mt-2.5">
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">

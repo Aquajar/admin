@@ -36,6 +36,14 @@ const month = [
   "November",
   "December",
 ];
+
+const BreadCrumb = [
+  {
+    href: "/",
+    name: "Home",
+  },
+];
+
 export default function Home() {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
@@ -276,8 +284,8 @@ export default function Home() {
   }, [summaryMonth, invoices]);
 
   return (
-    <Wrapper name="Dashboard">
-      <div className="flex">
+    <Wrapper breadcrumb={BreadCrumb}>
+      <div className="flexx">
         <div className="flex mb-4 font-medium w-fit">
           <button onClick={handlePrevMonth}>
             <FaChevronLeft />

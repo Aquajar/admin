@@ -25,6 +25,17 @@ import { DebounceInput } from "react-debounce-input";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
 
+const BreadCrumb = [
+  {
+    href: "/billing",
+    name: "Billing",
+  },
+  {
+    href: "/billing/create",
+    name: "Invoice",
+  },
+];
+
 interface ItemProps {
   id: string;
   _id: string;
@@ -176,9 +187,13 @@ const Invoice = () => {
       if (product === undefined) return;
 
       if (e.target.value === "retail") {
-        item.price = parseInt(product?.price.retail) || 0;
+        item.price = product?.price.retail
+          ? parseInt(product?.price.retail)
+          : 0;
       } else if (e.target.value === "delivery") {
-        item.price = parseInt(product?.price.delivery) || 0;
+        item.price = product?.price.delivery
+          ? parseInt(product?.price.delivery)
+          : 0;
       }
       item.total = item.quantity * item.price;
     });
@@ -199,8 +214,12 @@ const Invoice = () => {
         quantity: 0,
         price: products
           ? orderType === "retail"
-            ? parseInt(products[0].price.retail)
-            : parseInt(products[0].price.delivery)
+            ? products[0].price.retail
+              ? parseInt(products[0].price.retail)
+              : 0
+            : products[0].price.delivery
+            ? parseInt(products[0].price.delivery)
+            : 0
           : 25,
         total: 0,
       },
@@ -278,6 +297,7 @@ const Invoice = () => {
     let payload: InvoiceType = {
       user: user,
       invoiceID: invoiceId,
+      isBulkOrder: false,
       invoiceDate: +startDate,
       customerID: customer?._id,
       vehicleID: orderType === "delivery" ? vehicle : null,
@@ -307,8 +327,12 @@ const Invoice = () => {
       setIsloading(true);
       const res = await axiosInstance.post(URL, payload);
 
-      // @ts-ignore
-      setInvoices((invoices) => [res.data.invoice, ...invoices]);
+      try {
+        // @ts-ignore
+        setInvoices((invoices) => [res.data.invoice, ...invoices]);
+      } catch (e) {
+        console.log(e);
+      }
 
       // Update recent invoices
       let _recentInvoices = recentInvoices ? recentInvoices : [];
@@ -357,8 +381,6 @@ const Invoice = () => {
         console.log(err);
       });
   };
-
-  console.log(recentInvoices);
 
   // Fetch products
   useEffect(() => {
@@ -424,7 +446,7 @@ const Invoice = () => {
   }, [areas]);
 
   return (
-    <Wrapper name="Create Invoice">
+    <Wrapper breadcrumb={BreadCrumb}>
       <div className="flex flex-col">
         <div className="flex flex-col md:flex-row justify-between items-start">
           {/* Form */}
@@ -628,12 +650,14 @@ const Invoice = () => {
 
                               if (orderType === "retail") {
                                 newItems[index].price =
-                                  parseInt(product?.price.retail) || 0;
+                                  parseInt(product?.price.retail as string) ||
+                                  0;
                               } else if (orderType === "delivery") {
                                 newItems[index].price = 25;
                               }
                               newItems[index].price =
-                                parseInt(product?.price.delivery) || 0;
+                                parseInt(product?.price.delivery as string) ||
+                                0;
                               newItems[index].total =
                                 newItems[index].quantity *
                                 newItems[index].price;
@@ -717,8 +741,12 @@ const Invoice = () => {
                       quantity: 0,
                       price: products
                         ? orderType === "retail"
-                          ? parseInt(products[0].price.retail)
-                          : parseInt(products[0].price.delivery)
+                          ? products[0].price.retail
+                            ? parseInt(products[0].price.retail)
+                            : 0
+                          : products[0].price.delivery
+                          ? parseInt(products[0].price.delivery)
+                          : 0
                         : 25,
                       total: 0,
                     },

@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import React, { useEffect, useRef, useState } from "react";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaArrowRight, FaSort } from "react-icons/fa";
+import { FaSort } from "react-icons/fa";
 import { utils, writeFileXLSX } from "xlsx";
 import { Menu, MenuItem, MenuButton } from "@szhsin/react-menu";
 import "@szhsin/react-menu/dist/index.css";
@@ -15,6 +15,13 @@ import "@szhsin/react-menu/dist/transitions/slide.css";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import toast from "react-hot-toast";
 import { reportTypes } from "@/lib/constants";
+
+const BreadCrumb = [
+  {
+    name: "Reports",
+    href: "/reports",
+  },
+];
 
 const Reports = () => {
   const [startDate, setStartDate] = useState(new Date(new Date()));
@@ -104,7 +111,7 @@ const Reports = () => {
   }, [areas]);
 
   return (
-    <Wrapper name="Reports">
+    <Wrapper breadcrumb={BreadCrumb}>
       <div className="mb-28">
         {/*
          * Menu
@@ -123,12 +130,12 @@ const Reports = () => {
               onChange={(date) => setStartDate(date as Date)}
             />
           </div>
-         
+
           {/*
            * To Date Picker
            */}
           <div className="flex flex-col">
-          <label className="text-xs text-gray-500">To Date</label>
+            <label className="text-xs text-gray-500">To Date</label>
 
             <ReactDatePicker
               dateFormat={"dd/MM/yyyy"}
