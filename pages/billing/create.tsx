@@ -297,7 +297,6 @@ const Invoice = () => {
     let payload: InvoiceType = {
       user: user,
       invoiceID: invoiceId,
-      isBulkOrder: false,
       invoiceDate: +startDate,
       customerID: customer?._id,
       vehicleID: orderType === "delivery" ? vehicle : null,

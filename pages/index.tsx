@@ -53,9 +53,6 @@ export default function Home() {
 
   const { invoices } = useInvoicesStore();
   const { customers } = useCustomersStore();
-  const [Salesdata, setSalesData] = useState([0, 0, 0, 0, 0, 0, 0]);
-  const [DueData, setDueData] = useState([0, 0, 0, 0, 0, 0, 0]);
-  const [itemsQuantity, setItemsQuantity] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalDues, setTotalDues] = useState(0);
   const [totalCollected, setTotalCollected] = useState(0);
@@ -188,10 +185,6 @@ export default function Home() {
 
         return items;
       });
-
-      setItemsQuantity(itemsQuantity);
-      setDueData(dueData);
-      setSalesData(salesData);
     }
   }, [invoices]);
 
@@ -285,7 +278,7 @@ export default function Home() {
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
-      <div className="flexx">
+      <div className="flex">
         <div className="flex mb-4 font-medium w-fit">
           <button onClick={handlePrevMonth}>
             <FaChevronLeft />
