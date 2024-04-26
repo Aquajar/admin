@@ -4,19 +4,18 @@ import useCustomers from "@/lib/hooks/useCustomers";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Modal from "react-modal";
 import { MdCancelPresentation } from "react-icons/md";
 import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Area, Invoice, Product, SideBarItem } from "@/types/types";
+import { Area, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
 import CurrencyFormat from "react-currency-format";
-import { IoReturnUpBackOutline } from "react-icons/io5";
 
 Modal.setAppElement("#__next");
 
@@ -59,6 +58,7 @@ const Customers = () => {
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
+  const [reportData, setReportData] = useState([]) as any[];
   const [selectedCustomerInvoices, setSelectedCustomerInvoices] = useState<
     Invoice[] | undefined
   >(undefined);
@@ -70,6 +70,8 @@ const Customers = () => {
       isNeedToday?: boolean;
     }[]
   >([]);
+
+  const tableRef = useRef(null);
 
   function openModal() {
     setModalIsOpen(true);
@@ -402,6 +404,7 @@ const Customers = () => {
        * Render Search Bar
        */}
       <HeaderMenu
+        tableRef={tableRef}
         purchasePatternData={purchasePatternData}
         invoices={invoices}
         resetCustomers={resetCustomerState}
@@ -415,7 +418,10 @@ const Customers = () => {
         {/*
          * Render Table
          */}
-        <table className="w-full text-sm text-left text-gray-500 ">
+        <table
+          ref={tableRef}
+          className="w-full text-sm text-left text-gray-500 "
+        >
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr className="">
               <th scope="col" className="px-6 py-3">

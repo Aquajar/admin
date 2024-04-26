@@ -3,8 +3,11 @@ import { Area, Customer, Invoice } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import { useSession } from "next-auth/react";
 import React, { ChangeEvent, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { FaSearch } from "react-icons/fa";
+import { LuFileSpreadsheet } from "react-icons/lu";
 import { MdOutlineRefresh } from "react-icons/md";
+import { utils, writeFileXLSX } from "xlsx";
 
 interface HeaderMenuProps {
   onSearch: (searchTerm: string, searchBy: "id" | "name") => void;
@@ -21,6 +24,7 @@ interface HeaderMenuProps {
     purchasePattern: "daily" | "irregular";
     isNeedToday?: boolean;
   }[];
+  tableRef: React.RefObject<HTMLTableElement>;
 }
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
@@ -30,6 +34,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   resetCustomers,
   MasterCustomersState,
   purchasePatternData,
+  tableRef,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
@@ -290,6 +295,23 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         >
           <span className="mr-1 text-white">Refresh</span>
           <MdOutlineRefresh className="w-5 h-5 text-white" />
+        </button>
+        {/*
+         * Export Button
+         */}
+        <button
+          className="bg-green-500 flex text-sm text-white p-2.5 font-medium w-full md:w-fit mt-6 md:mt-0 justify-center items-center rounded-md"
+          onClick={() => {
+            // generate workbook from table element
+            const wb = utils.table_to_book(tableRef.current);
+            // write to XLSX
+            writeFileXLSX(wb, `${+new Date()}.xlsx`);
+            toast.success("Exported to XLSX");
+          }}
+        >
+          <span className="mr-1 text-white"> Export</span>
+
+          <LuFileSpreadsheet className="ml-2 w-5 h-5" />
         </button>
       </div>
       <div className="flex flex-col mt-6 md:flex-row justify-between items-end w-full">
