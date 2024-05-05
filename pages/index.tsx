@@ -3,14 +3,10 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
-import { useCustomersStore } from "@/store/customers.store";
-import { useInvoicesStore } from "@/store/invoices.store";
 import { useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
-import { getLastNDays } from "@/lib/helpers";
 import { useEffect, useState } from "react";
 import Card from "@/components/dashboard/Card";
-import { Invoice } from "@/types/types";
 import {
   FaCaretLeft,
   FaCaretRight,
@@ -21,21 +17,7 @@ import {
 import useAuthUser from "@/lib/hooks/useAuthUser";
 import CustomerInsight from "@/components/dashboard/CustomerInsight";
 import SalesSummary from "@/components/dashboard/SalesSummary";
-
-const month = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { useDashboardStore } from "@/store/dashboardData.store";
 
 const BreadCrumb = [
   {
@@ -47,249 +29,76 @@ const BreadCrumb = [
 export default function Home() {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
-  useInvoice(axiosInstance, session);
-  useCustomers(axiosInstance, session);
   useRefreshTokenRotation(axiosInstance);
 
-  const { invoices } = useInvoicesStore();
-  const { customers } = useCustomersStore();
-  const [totalSales, setTotalSales] = useState(0);
-  const [totalDues, setTotalDues] = useState(0);
-  const [totalCollected, setTotalCollected] = useState(0);
-  const [currentMonthSales, setCurrentMonthSales] = useState(0);
-  const [currentMonthDues, setCurrentMonthDues] = useState(0);
-  const [currentMonthCollected, setCurrentMonthCollected] = useState(0);
-  const [totalJarSold, setTotalJarSold] = useState(0);
-  const [totalJarSoldToday, setTotalJarSoldToday] = useState(0);
-  const [todaysInvoice, setTodaysInvoice] = useState<Invoice[]>([]);
-  const [totalDueToday = 0, setTotalDueToday] = useState<number>(0);
-  const [totalCollectedToday = 0, setTotalCollectedToday] = useState<number>(0);
-  const [summaryDate, setSummaryDate] = useState(new Date().toDateString());
-  const [summaryMonth, setSummaryMonth] = useState(
-    month[new Date().getMonth()] + " " + new Date().getFullYear()
-  );
+  const { data, setData } = useDashboardStore();
+  const [currMonth, setCurrMonth] = useState("");
+  const [currDay, setCurrDay] = useState<string | undefined>("");
+  const [currDayIndex, setCurrDayIndex] = useState<number>(0);
+  const [currMonthIndex, setCurrMonthIndex] = useState<number>(0);
 
   const { user } = useAuthUser();
 
-  const last7Days: string[] = getLastNDays(7);
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      let URL = process.env.NEXT_PUBLIC_API_URL + "/user/dashboard";
+      const response = await axiosInstance.get(URL);
+      setData(response.data);
+      setCurrDay(response.data?.summary.last7Days.refilling[currDayIndex].date);
+      setCurrMonth(response.data?.summary.monthly[0].month);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (session && user && data?.customers.total === 0) fetchDashboardData();
+  }, [session, user, data]);
 
   // Set summary date to one day before
   const handlePrevDay = () => {
-    const date = new Date(summaryDate);
-    date.setDate(date.getDate() - 1);
-    setSummaryDate(date.toDateString());
+    let prevDay = data?.summary.last7Days.refilling[currDayIndex + 1].date;
+    setCurrDay(prevDay);
+    setCurrDayIndex(currDayIndex + 1);
   };
 
   // Set summary date to one day after
   const handleNextDay = () => {
-    const date = new Date(summaryDate);
-    date.setDate(date.getDate() + 1);
-    setSummaryDate(date.toDateString());
+    let nextDay = data?.summary.last7Days.refilling[currDayIndex - 1].date;
+    setCurrDay(nextDay);
+    setCurrDayIndex(currDayIndex - 1);
   };
 
   // set summary month to previous month and update the summary month
   const handlePrevMonth = () => {
-    setSummaryMonth(
-      month[month.indexOf(summaryMonth.split(" ")[0]) - 1] +
-        " " +
-        new Date().getFullYear()
-    );
+    const prevMonth = data?.summary.monthly[currMonthIndex + 1].month;
+    setCurrMonth(prevMonth || "");
+    setCurrMonthIndex(currMonthIndex + 1);
   };
 
   // set summary month to next month
   const handleNextMonth = () => {
-    setSummaryMonth(
-      month[month.indexOf(summaryMonth.split(" ")[0]) + 1] +
-        " " +
-        new Date().getFullYear()
-    );
+    const nextMonth = data?.summary.monthly[currMonthIndex - 1].month;
+    setCurrMonth(nextMonth || "");
+    setCurrMonthIndex(currMonthIndex - 1);
   };
-
-  useEffect(() => {
-    if (invoices) {
-      //  get total jars sold
-      if (totalJarSold === 0) {
-        let t = 0;
-        invoices?.map((invoice) => {
-          invoice.products.map((product) => {
-            if (product.id === "65c1271bd78bb1922f9b1a63")
-              t += product.quantity;
-          });
-        });
-        setTotalJarSold(t);
-      }
-      //  get total sales
-      setTotalSales(
-        invoices?.reduce((acc, invoice) => {
-          return acc + invoice.total;
-        }, 0)
-      );
-
-      //  get total dues
-      setTotalDues(
-        invoices?.reduce((acc, invoice) => {
-          if (invoice.status === "paid") return acc;
-          return acc + invoice.total;
-        }, 0)
-      );
-
-      // get total collected
-      setTotalCollected(
-        invoices?.reduce((acc, invoice) => {
-          if (invoice.status === "pending") return acc;
-          return acc + invoice.total;
-        }, 0)
-      );
-
-      //  get paid sales for each day in the last 7 days
-      const salesData = last7Days.map((date) => {
-        const sales = invoices.reduce((acc, invoice) => {
-          let invoiceDate = new Date(invoice.invoiceDate).toLocaleDateString();
-          if (invoiceDate === date) {
-            let t: number = 0;
-            if (invoice.status === "pending") {
-              t = invoice.total - invoice.due;
-            } else if (invoice.status === "paid") {
-              t = invoice.total;
-            }
-            return acc + t;
-          }
-          return acc;
-        }, 0);
-
-        return sales;
-      });
-
-      //  get due sales for each day in the last 7 days
-      const dueData = last7Days.map((date) => {
-        const sales = invoices.reduce((acc, invoice) => {
-          let invoiceDate = new Date(invoice.invoiceDate).toLocaleDateString();
-          if (invoiceDate === date && invoice.status === "pending") {
-            return acc + invoice.due;
-          }
-          return acc;
-        }, 0);
-
-        return sales;
-      });
-
-      // get an array of number of invoices generated each day in last 7 days
-      const itemsQuantity = last7Days.map((date) => {
-        const items = invoices.reduce((acc, invoice) => {
-          let invoiceDate = new Date(invoice.invoiceDate).toLocaleDateString();
-          if (invoiceDate === date) {
-            return acc + invoice.products.length;
-          }
-          return acc;
-        }, 0);
-
-        return items;
-      });
-    }
-  }, [invoices]);
-
-  // Get Day wise summary
-  useEffect(() => {
-    if (invoices) {
-      // get all todays invoices
-      const todaysInvoices = invoices.filter(
-        (invoice) =>
-          new Date(invoice.invoiceDate).toDateString() === summaryDate
-      );
-      setTodaysInvoice(todaysInvoices);
-
-      // get total jars sold today
-      let t = 0;
-      invoices?.map((invoice) => {
-        invoice.products.map((product) => {
-          if (
-            product.id === "65c1271bd78bb1922f9b1a63" &&
-            new Date(invoice.invoiceDate).toDateString() === summaryDate
-          )
-            t += product.quantity;
-        });
-      });
-
-      setTotalJarSoldToday(t);
-
-      // get total due today
-      const totalDue = todaysInvoices.reduce((acc, invoice) => {
-        if (invoice.status === "paid") return acc;
-        return acc + invoice.total;
-      }, 0);
-
-      setTotalDueToday(totalDue);
-
-      // get total collected today
-      const totalCollected = todaysInvoices.reduce((acc, invoice) => {
-        if (invoice.status === "pending") return acc;
-        return acc + invoice.total;
-      }, 0);
-
-      setTotalCollectedToday(totalCollected);
-    }
-  }, [summaryDate, invoices]);
-
-  // Get Month wise summary
-  useEffect(() => {
-    if (invoices) {
-      // get total sales for the current month
-      setCurrentMonthSales(
-        invoices?.reduce((acc, invoice) => {
-          if (
-            month[new Date(invoice.invoiceDate).getMonth()] ===
-            summaryMonth.split(" ")[0]
-          ) {
-            return acc + invoice.total;
-          }
-          return acc;
-        }, 0)
-      );
-
-      // get total dues for the current month
-      setCurrentMonthDues(
-        invoices?.reduce((acc, invoice) => {
-          if (
-            month[new Date(invoice.invoiceDate).getMonth()] ===
-              summaryMonth.split(" ")[0] &&
-            invoice.status === "pending"
-          ) {
-            return acc + invoice.total;
-          }
-          return acc;
-        }, 0)
-      );
-
-      // get total collected for the current month
-      setCurrentMonthCollected(
-        invoices?.reduce((acc, invoice) => {
-          if (
-            month[new Date(invoice.invoiceDate).getMonth()] ===
-              summaryMonth.split(" ")[0] &&
-            invoice.status === "paid"
-          ) {
-            return acc + invoice.total;
-          }
-          return acc;
-        }, 0)
-      );
-    }
-  }, [summaryMonth, invoices]);
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="flex">
         <div className="flex mb-4 font-medium w-fit">
-          <button onClick={handlePrevMonth}>
+          <button
+            onClick={handlePrevMonth}
+            disabled={currMonthIndex + 1 === data?.summary.monthly.length}
+            className="disabled:opacity-0"
+          >
             <FaChevronLeft />
           </button>
-          <span className={`font-medium mx-3`}>{summaryMonth}</span>
+          <span className={`font-medium w-14 mx-3 text-center`}>{currMonth}</span>
           <button
             onClick={handleNextMonth}
-            disabled={
-              summaryMonth ===
-              month[new Date().getMonth()] + " " + new Date().getFullYear()
-            }
+            disabled={currMonthIndex === 0}
             className="disabled:opacity-0"
           >
             <FaChevronRight />
@@ -308,7 +117,11 @@ export default function Home() {
             {/* Total Sales */}
             <Card title="Total Sales">
               <CurrencyFormat
-                value={currentMonthSales}
+                value={
+                  data?.summary.monthly.filter(
+                    (data) => data.month === currMonth
+                  )[0]?.sales
+                }
                 displayType={"text"}
                 thousandSeparator={true}
                 prefix={"₹"}
@@ -323,7 +136,11 @@ export default function Home() {
             <Card title="Total Dues">
               <div className="flex justify-between items-start">
                 <CurrencyFormat
-                  value={currentMonthDues}
+                  value={
+                    data?.summary.monthly.filter(
+                      (data) => data.month === currMonth
+                    )[0]?.due
+                  }
                   displayType={"text"}
                   thousandSeparator={true}
                   prefix={"₹"}
@@ -338,7 +155,11 @@ export default function Home() {
             {/* Total Collected */}
             <Card title="Total Collected">
               <CurrencyFormat
-                value={currentMonthCollected}
+                value={
+                  data?.summary.monthly.filter(
+                    (data) => data.month === currMonth
+                  )[0]?.collected
+                }
                 displayType={"text"}
                 thousandSeparator={true}
                 prefix={"₹"}
@@ -355,9 +176,14 @@ export default function Home() {
            * CUSTOMERS INSIGHT
            */}
           <CustomerInsight
-            invoices={invoices}
-            customers={customers}
-            currentMonth={month.indexOf(summaryMonth.split(" ")[0])}
+            top={data?.customers.top}
+            total={data?.customers.total}
+            regular={data?.customers.regular}
+            newCustomers={
+              data?.customers?.new?.filter(
+                (data) => data.month === currMonth
+              )[0]?.customers
+            }
           />
         </div>
         {/*
@@ -373,20 +199,22 @@ export default function Home() {
                * HEADER
                */}
               <div className="flex w-full justify-between px-3 items-center">
-                <button onClick={handlePrevDay}>
+                <button
+                  onClick={handlePrevDay}
+                  disabled={
+                    currDayIndex + 1 ===
+                    data?.summary.last7Days.refilling.length
+                  }
+                  className="disabled:opacity-50"
+                >
                   <FaCaretLeft className="text-gray-300 text-2xl" />
                 </button>
                 <span className={`text-2xl font-semibold text-white`}>
-                  {summaryDate === new Date().toDateString()
-                    ? "Today's"
-                    : summaryDate.split(" ")[1] +
-                      " " +
-                      summaryDate.split(" ")[2]}{" "}
-                  Summary
+                  {currDay} Summary
                 </span>
                 <button
                   onClick={handleNextDay}
-                  disabled={summaryDate === new Date().toDateString()}
+                  disabled={currDayIndex === 0}
                   className="disabled:opacity-50"
                 >
                   <FaCaretRight className="text-gray-300 text-2xl" />
@@ -397,13 +225,21 @@ export default function Home() {
                */}
               <div className="flex flex-col px-8 py-6 w-full">
                 <span className="text-2xl text-white mt-2">
-                  {totalJarSoldToday}
+                  {
+                    data?.summary.last7Days.refilling.filter(
+                      (data) => data.date === currDay
+                    )[0]?.jars
+                  }
+
                   <span className="text-sm text-gray-300 px-2">
                     refilling processed
                   </span>
                 </span>
                 <span className="text-xl mt-2 text-white">
-                  {totalJarSoldToday * 20}L
+                  {(data?.summary.last7Days.refilling.filter(
+                    (data) => data.date === currDay
+                  )[0]?.jars || 0) * 20}{" "}
+                  L
                   <span className="text-sm text-gray-300 px-2">
                     water displaced
                   </span>
@@ -419,8 +255,12 @@ export default function Home() {
                     className={`h-4 bg-gray-300 rounded-xl transition-all duration-500 ease-in-out`}
                     style={{
                       width: `${
-                        (totalDueToday /
-                          (totalDueToday + totalCollectedToday)) *
+                        ((data?.summary.last7Days.refilling.filter(
+                          (data) => data.date === currDay
+                        )[0]?.collected || 0) /
+                          (data?.summary.last7Days.refilling.filter(
+                            (data) => data.date === currDay
+                          )[0]?.sales || 1)) *
                         100
                       }%`,
                     }}
@@ -437,7 +277,11 @@ export default function Home() {
                       <span className="text-white text-sm ml-2">Due</span>
                     </div>
                     <CurrencyFormat
-                      value={totalDueToday}
+                      value={
+                        data?.summary.last7Days.refilling.filter(
+                          (data) => data.date === currDay
+                        )[0]?.collected
+                      }
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={"₹"}
@@ -458,7 +302,11 @@ export default function Home() {
                       <FaCircle className="text-gray-600" />
                     </div>
                     <CurrencyFormat
-                      value={totalCollectedToday}
+                      value={
+                        data?.summary.last7Days.refilling.filter(
+                          (data) => data.date === currDay
+                        )[0]?.due
+                      }
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={"₹"}
@@ -474,9 +322,11 @@ export default function Home() {
                 </div>
                 <button className="text-gray-800 text-sm w-full mb-3 bg-gray-200 rounded-md py-2 mt-8 px-2 text-start">
                   <CurrencyFormat
-                    value={todaysInvoice
-                      .map((invoice) => invoice.total)
-                      .reduce((acc, val) => acc + val, 0)}
+                    value={
+                      data?.summary.last7Days.refilling.filter(
+                        (data) => data.date === currDay
+                      )[0]?.sales
+                    }
                     displayType={"text"}
                     thousandSeparator={true}
                     prefix={"Rs. "}
@@ -489,12 +339,12 @@ export default function Home() {
                     fixedDecimalScale={true}
                   />
                   in sales{" "}
-                  {summaryDate === new Date().toDateString()
-                    ? "today"
-                    : "on " +
-                      summaryDate.split(" ")[1] +
-                      " " +
-                      summaryDate.split(" ")[2]}
+                  {
+                    data?.summary.last7Days.refilling.filter(
+                      (data) => data.date === currDay
+                    )[0]?.jars
+                  }{" "}
+                  jars
                 </button>
               </div>
             </div>
@@ -504,9 +354,9 @@ export default function Home() {
            */}
           <div className="w-full mt-6 md:ml-5">
             <SalesSummary
-              totalSales={totalSales}
-              totalDue={totalDues}
-              totalCollected={totalCollected}
+              totalSales={data?.summary.total.sales || 0}
+              totalDue={data?.summary.total.due || 0}
+              totalCollected={data?.summary.total.collected || 0}
             />
           </div>
         </div>

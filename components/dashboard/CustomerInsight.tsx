@@ -1,57 +1,21 @@
 import { Customer, Invoice } from "@/types/types";
 import React, { FC, useEffect, useState } from "react";
+import CurrencyFormat from "react-currency-format";
 
 interface IProps {
-  customers: Customer[] | null | undefined;
-  currentMonth: number;
-  invoices: Invoice[] | null | undefined;
+  total: number | undefined;
+  regular: number | undefined;
+  newCustomers: number | undefined;
+  top:
+    | Array<{
+        name: string;
+        phone: string;
+        totalSales: number;
+      }>
+    | undefined;
 }
 
-const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
-  const [topCustomers, setTopCustomers] = useState<
-    { customerId: string; total: number }[]
-  >([]);
-
-  const findTopCustomers = () => {
-    const customerInvoices = invoices?.reduce((acc, invoice) => {
-      if (!invoice.customerID) return acc;
-      if (acc[invoice?.customerID]) {
-        acc[invoice.customerID] += invoice.total;
-      } else {
-        acc[invoice.customerID] = invoice.total;
-      }
-      return acc;
-    }, {} as { [key: string]: number });
-
-    let customerIds;
-    let topCustomers;
-
-    customerIds = Object.keys(customerInvoices || {});
-
-    if (!customerInvoices) return [];
-
-    // Filter only regular customers
-    customerIds = customerIds.filter(
-      (customerId) =>
-        customers?.find((customer) => customer._id === customerId)?.isRegular
-    );
-
-    topCustomers = customerIds
-      .map((customerId) => ({
-        customerId,
-        total: customerInvoices[customerId],
-      }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-
-    return topCustomers;
-  };
-
-  useEffect(() => {
-    if (!invoices || !customers) return;
-    setTopCustomers(findTopCustomers());
-  }, [invoices, customers]);
-
+const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
   return (
     <div className="bg-black rounded-2xl p-5 my-6">
       <span className="text-white text-lg">Customer Insight</span>
@@ -59,29 +23,18 @@ const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
       <div className="grid mt-4 grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-8">
         {/* Total customers */}
         <div className="bg-[#FE7B50] rounded-2xl p-5 flex flex-col items-center justify-center">
-          <span className="text-white text-3xl font-semibold">
-            {customers?.length}
-          </span>
+          <span className="text-white text-3xl font-semibold">{total}</span>
           <span className="text-white text-sm">Total</span>
         </div>
         {/* Regular Customer this month */}
         <div className="bg-[#FE9D50] rounded-2xl p-5 flex flex-col items-center justify-center">
-          <span className="text-white text-3xl font-semibold">
-            {customers?.filter((customer) => customer.isRegular).length}
-          </span>
+          <span className="text-white text-3xl font-semibold">{regular}</span>
           <span className="text-white text-sm">Regular</span>
         </div>
         {/* New Regular Customer added this month */}
         <div className="bg-[#ACA081] rounded-2xl p-5 flex flex-col items-center justify-center">
           <span className="text-white text-3xl font-semibold">
-            +
-            {
-              customers?.filter(
-                (customer) =>
-                  customer.isRegular &&
-                  new Date(customer.createdAt).getMonth() === currentMonth
-              ).length
-            }
+            +{newCustomers}
           </span>
           <span className="text-white text-sm">New added </span>
         </div>
@@ -98,7 +51,7 @@ const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
                 Name
               </th>
               <th scope="col" className="px-6 py-3">
-                Area
+                Phone
               </th>
               <th scope="col" className="px-6 py-3">
                 Amount
@@ -106,28 +59,30 @@ const CustomerInsight: FC<IProps> = ({ customers, currentMonth, invoices }) => {
             </tr>
           </thead>
           <tbody>
-            {topCustomers.map((customer, index) => {
-              const customerData = customers?.find(
-                (c) => c._id === customer.customerId
-              );
+            {top?.map((customer, index) => {
               return (
-                <tr key={customer.customerId}>
+                <tr key={customer.name}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-300">{index + 1}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-300">
-                      {customerData?.name}
+                      {customer.name}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-300">
-                      {customerData?.address?.text}
+                      {customer.phone}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-300">
-                      {customer.total}
+                      <CurrencyFormat
+                        value={customer.totalSales}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                      />
                     </span>
                   </td>
                 </tr>

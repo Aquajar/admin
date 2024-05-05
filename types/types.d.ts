@@ -96,3 +96,45 @@ export interface BreadCrumbProps {
     href: string;
   }[];
 }
+
+
+export type DashBoardData = {
+  customers: {
+    total: number
+    regular: number
+    new: Array<{
+      month: string
+      customers: number
+    }>
+    top: Array<{
+      name: string
+      phone: string
+      totalSales: number
+    }>
+  }
+  summary: {
+    monthly: Array<{
+      month: string
+      sales: number
+      due: number
+      collected: number
+      jars: number
+    }>
+    total: {
+      sales: number
+      jars: number
+      collected: number
+      due: number
+    }
+    last7Days: {
+      refilling: Array<{
+        date: string
+        sales: number
+        jars: number
+        due: number
+        collected: number
+      }>
+    }
+  }
+  iat: string
+}
