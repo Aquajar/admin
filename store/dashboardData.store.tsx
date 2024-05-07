@@ -25,8 +25,16 @@ const initalState: DashBoardData = {
 
 // Define the type for your store data
 type StoreData = {
-  data: null | undefined | DashBoardData;
   setData: React.Dispatch<React.SetStateAction<DashBoardData>>;
+  setCurrDay: React.Dispatch<React.SetStateAction<string | undefined>>;
+  setCurrMonth: React.Dispatch<React.SetStateAction<string>>;
+  setCurrDayIndex: React.Dispatch<React.SetStateAction<number>>;
+  setCurrMonthIndex: React.Dispatch<React.SetStateAction<number>>;
+  data: null | undefined | DashBoardData;
+  currDay: string | undefined;
+  currMonth: string;
+  currDayIndex: number;
+  currMonthIndex: number;
 };
 
 // Create a context for your store
@@ -48,10 +56,22 @@ interface StoreProviderProps {
 // Create a provider component to wrap your app with the store
 export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
   const [data, setData] = useState<DashBoardData>(initalState);
+  const [currDay, setCurrDay] = useState<string | undefined>("");
+  const [currMonth, setCurrMonth] = useState("");
+  const [currDayIndex, setCurrDayIndex] = useState<number>(0);
+  const [currMonthIndex, setCurrMonthIndex] = useState<number>(0);
 
   const store: StoreData = {
     data,
+    currDay,
+    currMonth,
+    currDayIndex,
+    currMonthIndex,
     setData,
+    setCurrDay,
+    setCurrMonth,
+    setCurrDayIndex,
+    setCurrMonthIndex,
   };
 
   return (

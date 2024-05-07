@@ -31,11 +31,18 @@ export default function Home() {
   const axiosInstance = useAxiosInstance(session);
   useRefreshTokenRotation(axiosInstance);
 
-  const { data, setData } = useDashboardStore();
-  const [currMonth, setCurrMonth] = useState("");
-  const [currDay, setCurrDay] = useState<string | undefined>("");
-  const [currDayIndex, setCurrDayIndex] = useState<number>(0);
-  const [currMonthIndex, setCurrMonthIndex] = useState<number>(0);
+  const {
+    data,
+    setData,
+    currDay,
+    setCurrDay,
+    currMonth,
+    setCurrMonth,
+    currMonthIndex,
+    currDayIndex,
+    setCurrDayIndex,
+    setCurrMonthIndex,
+  } = useDashboardStore();
 
   const { user } = useAuthUser();
 
@@ -95,7 +102,9 @@ export default function Home() {
           >
             <FaChevronLeft />
           </button>
-          <span className={`font-medium w-14 mx-3 text-center`}>{currMonth}</span>
+          <span className={`font-medium w-14 mx-3 text-center`}>
+            {currMonth}
+          </span>
           <button
             onClick={handleNextMonth}
             disabled={currMonthIndex === 0}
@@ -270,7 +279,7 @@ export default function Home() {
                 </div>
                 {/* Statements */}
                 <div className="mt-5 w-full flex justify-between items-center">
-                  {/* Collected */}
+                  {/* Due */}
                   <div className="flex flex-col justify-between items-center">
                     <div className="text-gray-300 text-sm w-full flex items-center">
                       <FaCircle />
@@ -280,7 +289,7 @@ export default function Home() {
                       value={
                         data?.summary.last7Days.refilling.filter(
                           (data) => data.date === currDay
-                        )[0]?.collected
+                        )[0]?.due
                       }
                       displayType={"text"}
                       thousandSeparator={true}
@@ -295,7 +304,7 @@ export default function Home() {
                     />
                   </div>
 
-                  {/* Due */}
+                  {/* Collected */}
                   <div className="flex flex-col justify-between items-center mt-2">
                     <div className="text-gray-300 text-sm w-full flex items-center">
                       <span className="text-white text-sm mr-2">Collected</span>
@@ -305,7 +314,7 @@ export default function Home() {
                       value={
                         data?.summary.last7Days.refilling.filter(
                           (data) => data.date === currDay
-                        )[0]?.due
+                        )[0]?.collected
                       }
                       displayType={"text"}
                       thousandSeparator={true}
