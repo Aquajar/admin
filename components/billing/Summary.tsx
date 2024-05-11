@@ -18,6 +18,7 @@ interface IProps {
   setPartialPayment: (value: string) => void;
   isPartialPayment: boolean;
   setIsPartialPayment: (value: boolean) => void;
+  paymentPlan: string | undefined;
 }
 
 const Summary: FC<IProps> = ({
@@ -35,6 +36,7 @@ const Summary: FC<IProps> = ({
   setPartialPayment,
   isPartialPayment,
   setIsPartialPayment,
+  paymentPlan,
 }) => {
   useEffect(() => {
     const discountValue = parseFloat(discount) || 0;
@@ -106,7 +108,31 @@ const Summary: FC<IProps> = ({
 
         {/* Payment Method */}
         <div className="flex flex-col mt-10">
-          <label className="text-md font-medium text-gray-700">
+          <span className="text-md font-medium text-gray-700">
+            Payment Plan
+          </span>
+          <input
+            type="text"
+            className={`border-2 rounded-md px-3 py-2 mt-1.5 bg-gray-50
+            ${
+              paymentPlan === "M" || !paymentPlan
+                ? "border-green-500"
+                : paymentPlan === "W"
+                ? "border-yellow-500"
+                : "border-red-500"
+            }
+            `}
+            disabled
+            value={
+              paymentPlan === "M" || !paymentPlan
+                ? "Monthly"
+                : paymentPlan === "W"
+                ? "Weekly"
+                : "Daily"
+            }
+          />
+
+          <label className="text-md font-medium text-gray-700 mt-6">
             Payment Method
           </label>
           <select
@@ -183,7 +209,7 @@ const Summary: FC<IProps> = ({
         </button>
       </div>
     </div>
-  )
+  );
 };
 
 export default Summary;

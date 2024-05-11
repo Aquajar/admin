@@ -22,6 +22,8 @@ export interface Customer {
   userID: number;
   isRegular: boolean;
   isCardReceived: boolean;
+  paymentPlan: string;
+  profileRate: number;
 }
 
 export type Product = {
@@ -97,44 +99,43 @@ export interface BreadCrumbProps {
   }[];
 }
 
-
 export type DashBoardData = {
   customers: {
-    total: number
-    regular: number
+    total: number;
+    regular: number;
     new: Array<{
-      month: string
-      customers: number
-    }>
+      month: string;
+      customers: number;
+    }>;
     top: Array<{
-      name: string
-      phone: string
-      totalSales: number
-    }>
-  }
+      name: string;
+      phone: string;
+      totalSales: number;
+    }>;
+  };
   summary: {
     monthly: Array<{
-      month: string
-      sales: number
-      due: number
-      collected: number
-      jars: number
-    }>
+      month: string;
+      sales: number;
+      due: number;
+      collected: number;
+      jars: number;
+    }>;
     total: {
-      sales: number
-      jars: number
-      collected: number
-      due: number
-    }
+      sales: number;
+      jars: number;
+      collected: number;
+      due: number;
+    };
     last7Days: {
       refilling: Array<{
-        date: string
-        sales: number
-        jars: number
-        due: number
-        collected: number
-      }>
-    }
-  }
-  iat: string
-}
+        date: string;
+        sales: number;
+        jars: number;
+        due: number;
+        collected: number;
+      }>;
+    };
+  };
+  iat: string;
+};

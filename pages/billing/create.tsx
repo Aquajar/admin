@@ -501,6 +501,7 @@ const Invoice = () => {
                   className="border disabled:bg-gray-200 rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
                 />
               </div>
+
               {/* Bill To */}
               <div className="flex flex-col">
                 <label className="text-md font-medium text-gray-700 flex w-full items-center justify-between">
@@ -788,6 +789,7 @@ const Invoice = () => {
             tax={tax}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            paymentPlan={customer?.paymentPlan}
           />
         </div>
       </div>

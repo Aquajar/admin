@@ -58,7 +58,6 @@ const Customers = () => {
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
-  const [reportData, setReportData] = useState([]) as any[];
   const [selectedCustomerInvoices, setSelectedCustomerInvoices] = useState<
     Invoice[] | undefined
   >(undefined);
@@ -381,6 +380,44 @@ const Customers = () => {
                 className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
               />
 
+              {/* Subscription Type */}
+              <label htmlFor="address" className="text-gray-600 mt-5">
+                Payment Plan
+              </label>
+              <select
+                id="paymentPlan"
+                name="paymentPlan"
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    paymentPlan: e.target.value,
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              >
+                <option
+                  value="D"
+                  selected={selectedCustomer?.paymentPlan === "D"}
+                >
+                  Daily
+                </option>
+                <option
+                  value="W"
+                  selected={selectedCustomer?.paymentPlan === "W"}
+                >
+                  Weekly
+                </option>
+                <option
+                  value="M"
+                  selected={
+                    selectedCustomer?.paymentPlan === "M" ||
+                    selectedCustomer?.paymentPlan === undefined
+                  }
+                >
+                  Monthly
+                </option>
+              </select>
+
               <button
                 onClick={handleSave}
                 className="w-full p-2 mt-10 bg-blue-600 text-white rounded-lg"
@@ -436,8 +473,9 @@ const Customers = () => {
               <th scope="col" className="px-6 py-3">
                 Phone
               </th>
+
               <th scope="col" className="px-6 py-3">
-                Jar Purchased
+                Plan
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -449,6 +487,10 @@ const Customers = () => {
 
               <th scope="col" className="px-6 py-3">
                 Total Due
+              </th>
+
+              <th scope="col" className="px-6 py-3">
+                Jar Purchased
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -504,7 +546,7 @@ const Customers = () => {
                     key={customer._id}
                     className="bg-white  border-b 0  hover:bg-gray-50 "
                   >
-                    <td className="px-6 text-gray-900 w-full h-full mt-6 flex justify-center">
+                    <td className="px-2 text-center text-gray-900 w-full h-full mt-6 flex justify-center">
                       <input
                         id={`regular-${customer.userID}`}
                         type="checkbox"
@@ -519,36 +561,37 @@ const Customers = () => {
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
                       />
                     </td>
-                    <td className="px-6 py-4 text-gray-900 font-medium">
+                    <td className="px-2 text-center py-4 text-gray-900 font-medium">
                       {customer.userID.toString()}
                     </td>
+                    {/* Name */}
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                     >
                       {customer.name}
                     </th>
-                    <td className="px-6 py-4 text-gray-900">
+
+                    {/* Phone */}
+                    <td className="px-2 text-center py-4 text-gray-900">
                       {customer.phone}
                     </td>
 
-                    <td
-                      className={`px-6 py-4 font-medium ${
-                        purchasedJar ? "text-green-600" : "text-red-500"
-                      }`}
-                    >
-                      {purchasedJar ? "Yes" : "No"}
+                    {/* Payment Plan */}
+                    <td className="px-2  text-center py-4 text-gray-900">
+                      {customer.paymentPlan}
                     </td>
 
                     {/* Purchase Pattern */}
-                    <td className="px-6 py-4 text-gray-900">
+                    <td className="px-2 text-center py-4 text-gray-900">
                       <span className="font-semibold">
                         {purchaseInterval}
                         <span className="text-xs font-normal"> day/s</span>
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 text-gray-900">
+                    {/* Purchase Interval */}
+                    <td className="px-2 text-center py-4 text-gray-900">
                       {
                         <span
                           className={`font-semibold ${
@@ -568,7 +611,7 @@ const Customers = () => {
                     </td>
 
                     {/* Total Due */}
-                    <td className="px-6 py-4 text-gray-900">
+                    <td className="px-2 text-center py-4 text-gray-900">
                       <CurrencyFormat
                         value={invoices
                           .filter(
@@ -586,18 +629,27 @@ const Customers = () => {
                       />
                     </td>
 
+                    {/* Jar Purchased */}
+                    <td
+                      className={`px-2 text-center py-4 font-medium ${
+                        purchasedJar ? "text-green-600" : "text-red-500"
+                      }`}
+                    >
+                      {purchasedJar ? "Yes" : "No"}
+                    </td>
+
                     {/* Address */}
-                    <td className="px-6 py-4 text-gray-900">
+                    <td className="px-2 text-center py-4 text-gray-900">
                       {customer.address?.text}
                     </td>
 
                     {/* Created At */}
-                    <td className="px-6 py-4 text-gray-900">
+                    <td className="px-2 text-center py-4 text-gray-900">
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </td>
 
                     {/* Action Button */}
-                    <td className="flex items-center px-6 py-4">
+                    <td className="flex items-center px-2 text-center py-4">
                       <span
                         onClick={async () => {
                           setSelectedCustomerID(customer.userID);
