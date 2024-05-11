@@ -639,7 +639,9 @@ const Customers = () => {
                     </td>
 
                     {/* Address */}
-                    <td className="px-2 text-center py-4 text-gray-900">
+                    <td className="px-2 w-52 text-center py-4 text-xs text-gray-900">
+                      {customer.address?.landmark !== customer.address?.text &&
+                        `${customer.address?.landmark}, `}
                       {customer.address?.text}
                     </td>
 
