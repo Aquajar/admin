@@ -775,6 +775,7 @@ const Invoice = () => {
 
           {/* Summary */}
           <Summary
+            items={items}
             isPartialPayment={isPartialPayment}
             setIsPartialPayment={setIsPartialPayment}
             partialPayment={partialPayment}

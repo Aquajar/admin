@@ -1,4 +1,5 @@
 import { paymentMethods } from "@/lib/constants";
+import { Item } from "@/types/types";
 import React, { FC, useEffect } from "react";
 import CurrencyFormat from "react-currency-format";
 import { MdOutlineLock } from "react-icons/md";
@@ -19,6 +20,7 @@ interface IProps {
   isPartialPayment: boolean;
   setIsPartialPayment: (value: boolean) => void;
   paymentPlan: string | undefined;
+  items: Item[];
 }
 
 const Summary: FC<IProps> = ({
@@ -37,6 +39,7 @@ const Summary: FC<IProps> = ({
   isPartialPayment,
   setIsPartialPayment,
   paymentPlan,
+  items,
 }) => {
   useEffect(() => {
     const discountValue = parseFloat(discount) || 0;
@@ -50,18 +53,33 @@ const Summary: FC<IProps> = ({
       <div className="flex flex-col">
         {/* Sub Total */}
         <div className="flex justify-between items-center mt-10">
-          <span className="text-md font-normal text-gray-500">Sub Total</span>
-          <CurrencyFormat
-            value={subTotal}
-            displayType={"text"}
-            thousandSeparator={true}
-            prefix={"₹"}
-            renderText={(value: string) => (
-              <span className="text-md font-medium text-gray-700">{value}</span>
-            )}
-          />
+          <table className="w-full">
+            <tbody>
+              {items.map((item, index) => (
+                <tr key={index}>
+                  <td className="text-md font-normal text-gray-500">
+                    {item.name}{" x "}{item.quantity}
+                  </td>
+
+                  <td className="text-md text-right font-normal text-gray-500">
+                    <CurrencyFormat
+                      value={item.total}
+                      displayType={"text"}
+                      thousandSeparator={true}
+                      prefix={"₹"}
+                      renderText={(value: string) => (
+                        <span className="text-md font-normal text-gray-500">
+                          {value}
+                        </span>
+                      )}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        {/* Tax */}
+        {/* Tax
         <div className="flex justify-between items-center mt-5">
           <span className="text-md font-normal text-gray-500">Tax (12%)</span>
           <CurrencyFormat
@@ -73,9 +91,9 @@ const Summary: FC<IProps> = ({
               <span className="text-md font-medium text-gray-700">{value}</span>
             )}
           />
-        </div>
+        </div> */}
         {/* Discount */}
-        <div className="flex justify-between items-center mt-5">
+        <div className="flex justify-between items-center mt-6">
           <span className="text-md font-normal text-gray-500">Discount</span>
 
           <div>
@@ -89,7 +107,7 @@ const Summary: FC<IProps> = ({
           </div>
         </div>
         {/* Total */}
-        <div className="flex justify-between border-t items-center mt-10 pt-2">
+        <div className="flex justify-between border-t items-center mt-6 pt-4">
           <span className="text-md font-normal text-gray-500">
             Total (incl. tax)
           </span>
