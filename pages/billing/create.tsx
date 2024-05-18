@@ -327,10 +327,9 @@ const Invoice = () => {
       const res = await axiosInstance.post(URL, payload);
 
       try {
-        if (!invoices) return;
-
+        // if (!invoices) return;
         // @ts-ignore
-        setInvoices((invoices) => [res.data.invoice, ...invoices]);
+        // setInvoices((invoices) => [res.data.invoice, ...invoices]);
       } catch (e) {
         console.log(e);
       }
