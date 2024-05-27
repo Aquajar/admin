@@ -290,13 +290,13 @@ const Customers = () => {
         style={customStyles}
         contentLabel="Summary Modal"
       >
-        <div className="bg-white h-[90%] relative md:h-10/12 w-full md:w-1/2 rounded-lg">
+        <div className="bg-white h-fit relative md:h-10/12 w-full md:w-1/2 rounded-lg">
           <MdCancelPresentation
             onClick={closeModal}
             className="absolute top-2 z-50 right-2 cursor-pointer text-4xl text-black"
           />
           {!showSummary ? (
-            <div className="flex flex-col w-full px-6 md:px-10 pt-16">
+            <div className="flex flex-col w-full px-6 md:px-10 py-8">
               <label htmlFor="name" className="text-gray-600">
                 Name
               </label>
@@ -418,6 +418,24 @@ const Customers = () => {
                 </option>
               </select>
 
+              {/* Profile Rate */}
+              <label htmlFor="profileRate" className="text-gray-600 mt-5">
+                Profile Rate
+              </label>
+              <input
+                type="number"
+                id="profileRate"
+                name="profileRate"
+                value={selectedCustomer?.profileRate}
+                onChange={(e) =>
+                  setSelectedCustomer({
+                    ...selectedCustomer,
+                    profileRate: parseInt(e.target.value),
+                  })
+                }
+                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
+              />
+
               <button
                 onClick={handleSave}
                 className="w-full p-2 mt-10 bg-blue-600 text-white rounded-lg"
@@ -495,6 +513,10 @@ const Customers = () => {
 
               <th scope="col" className="px-6 py-3">
                 Address
+              </th>
+
+              <th scope="col" className="px-6 py-3">
+                Profile Rate
               </th>
 
               <th scope="col" className="px-6 py-3">
@@ -643,6 +665,18 @@ const Customers = () => {
                       {customer.address?.landmark !== customer.address?.text &&
                         `${customer.address?.landmark}, `}
                       {customer.address?.text}
+                    </td>
+
+                    {/* Profile Rate */}
+                    <td className="px-2 text-center py-4 text-gray-900">
+                      <CurrencyFormat
+                        value={customer.profileRate ? customer.profileRate : 25}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                      />
                     </td>
 
                     {/* Created At */}

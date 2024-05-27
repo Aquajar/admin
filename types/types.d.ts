@@ -23,7 +23,7 @@ export interface Customer {
   isRegular: boolean;
   isCardReceived: boolean;
   paymentPlan: string;
-  profileRate: number;
+  profileRate: number | null;
 }
 
 export type Product = {
