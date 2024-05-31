@@ -293,7 +293,7 @@ const Customers = () => {
         <div className="bg-white h-fit relative md:h-10/12 w-full md:w-1/2 rounded-lg">
           <MdCancelPresentation
             onClick={closeModal}
-            className="absolute top-2 z-50 right-2 cursor-pointer text-4xl text-black"
+            className="absolute top-2 z-50 mx-2 md:mx-0 md:right-2 cursor-pointer text-4xl text-black"
           />
           {!showSummary ? (
             <div className="flex flex-col w-full px-6 md:px-10 py-8">

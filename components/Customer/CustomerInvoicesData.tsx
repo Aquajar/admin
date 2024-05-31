@@ -113,14 +113,14 @@ const CustomerInvoicesData: FC<IProps> = ({
     }
   };
   return (
-    <div className="flex items-center flex-col h-full w-full py-14 overflow-y-auto bg-gray-100">
+    <div className="flex items-center flex-col h-[50rem] md:h-[40rem] w-full py-14 overflow-y-auto bg-gray-100">
       {!invoices || !products ? (
         <div>
           <AiOutlineLoading className="text-4xl animate-spin" />
         </div>
       ) : (
         <>
-          <div className="relative bg-white p-4 rounded-xl">
+          <div className="relative bg-white p-4 rounded-xl overflow-y-auto justify-end">
             <table className="w-full text-sm text-left">
               <thead className="text-sm  uppercase bg-gray-100">
                 <tr>
@@ -215,69 +215,70 @@ const CustomerInvoicesData: FC<IProps> = ({
                     );
                   })}
               </tbody>
+            </table>
+          </div>
 
-              <tfoot className="">
-                <tr className="font-normal text-gray-900 border-t-4  border-dashed">
-                  <th
-                    scope="row"
-                    className="px-2 md:px-4 py-2 text-xl font-normal"
-                  >
-                    Total
-                  </th>
-                  <td className="px-2 md:px-4 py-2"></td>
-                  <td className="px-2 md:px-4 py-2">
+          <div className="flex flex-col justify-end w-full px-7 my-10">
+            {/* Info */}
+            <div className="flex w-full border-2 border-dashed rounded-lg border-gray-300">
+              <tr className="font-normal w-1/2  text-gray-900">
+                <th
+                  scope="row"
+                  className="px-2 md:px-4 py-2 text-xl font-semibold"
+                >
+                  Total :
+                </th>
+                <td className="px-2 md:px-4 py-2"></td>
+                <td className="px-2 md:px-4 py-2">
+                  <CurrencyFormat
+                    value={invoices.reduce((acc, cur) => acc + cur.total, 0)}
+                    displayType={"text"}
+                    thousandSeparator={true}
+                    prefix={"₹"}
+                    renderText={(value) => (
+                      <div className="text-lg">{value}</div>
+                    )}
+                  />
+                </td>
+              </tr>
+              <tr className="font-semibold w-1/2 border-l-2 border-dashed border-gray-300 text-gray-900">
+                <th
+                  scope="row"
+                  className="px-2 md:px-4 py-2 text-xl font-semibold"
+                >
+                  Due :
+                </th>
+                <td className="px-2 md:px-4 py-1"></td>
+                <td className="px-2 md:px-4 py-1 ">
+                  {
                     <CurrencyFormat
-                      value={invoices.reduce((acc, cur) => acc + cur.total, 0)}
+                      value={invoices.reduce(
+                        (acc, cur) =>
+                          cur.status === "paid" ? acc : acc + cur.due,
+                        0
+                      )}
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={"₹"}
                       renderText={(value) => (
-                        <div className="text-lg">{value}</div>
+                        <div className="font-bold text-red-500 text-xl">
+                          {value}
+                        </div>
                       )}
                     />
-                  </td>
-                </tr>
-                <tr className="font-semibold text-gray-900">
-                  <th
-                    scope="row"
-                    className="px-2 md:px-4 py-1 text-xl font-semibold"
-                  >
-                    Due
-                  </th>
-                  <td className="px-2 md:px-4 py-1"></td>
-                  <td className="px-2 md:px-4 py-1 ">
-                    {
-                      <CurrencyFormat
-                        value={invoices.reduce(
-                          (acc, cur) =>
-                            cur.status === "paid" ? acc : acc + cur.due,
-                          0
-                        )}
-                        displayType={"text"}
-                        thousandSeparator={true}
-                        prefix={"₹"}
-                        renderText={(value) => (
-                          <div className="font-bold text-red-500 text-xl">
-                            {value}
-                          </div>
-                        )}
-                      />
-                    }
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                  }
+                </td>
+              </tr>
+            </div>
 
             {/*
              * Pay Now
              */}
-          </div>
-          <div className="flex justify-end w-full px-2 md:px-12 my-10">
             {invoices.reduce(
               (acc, cur) => (cur.status === "paid" ? acc : acc + cur.due),
               0
             ) !== 0 ? (
-              <div className="flex justify-between items-end w-full md:px-2 md:px-4">
+              <div className="flex justify-between items-end w-full mt-5">
                 <div className="flex flex-col">
                   <label className="font-normal">
                     Enter the amount to pay:
