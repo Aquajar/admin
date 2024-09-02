@@ -62,9 +62,9 @@ const Invoices = () => {
 
   // Fetch invoices
   const refreshInvoice = async () => {
-    // 3 months ago
+    // last 3 days invoices
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
+    startDate.setDate(startDate.getDate() - 3);
 
     const endDate = new Date();
 

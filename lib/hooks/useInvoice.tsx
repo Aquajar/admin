@@ -10,7 +10,7 @@ const useInvoice = (axiosInstance: AxiosInstance, session: Session | null) => {
   const getInvoices = async () => {
     // 3 months ago
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
+    startDate.setMonth(startDate.getMonth() - 10);
 
     const endDate = new Date();
 

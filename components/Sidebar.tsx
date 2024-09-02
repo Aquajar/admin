@@ -10,7 +10,6 @@ import { IoPower } from "react-icons/io5";
 const Sidebar = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuthUser();
 
   return (
     <>
@@ -25,7 +24,7 @@ const Sidebar = () => {
           isOpen ? "translate-x-0" : "-translate-x-72"
         } z-50 md:translate-x-0 ${
           !router.pathname.includes("/auth/login") ? "md:flex" : "hidden"
-        } fixed bg-black px-5 shadow-sm flex-col`}
+        } fixed bg-black px-3 shadow-sm flex-col`}
       >
         <div className="h-full flex flex-col justify-between">
           {/* Render Items */}
@@ -37,10 +36,26 @@ const Sidebar = () => {
                   href={item.href}
                   key={index}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center my-3"
+                  className={`flex items-center my-1.5 p-1.5 rounded-md text-white ${
+                    router.pathname.includes(item.name.toLowerCase())
+                      ? "bg-gray-200 text-black"
+                      : "hover:bg-gray-700"
+                  }`}
                 >
-                  <IconComponent className="w-6 h-6 text-white" />
-                  <p className="text-lg text-white md:text-sm mt-2 mx-2">
+                  <IconComponent
+                    className={`w-5 h-5 ${
+                      router.pathname.includes(item.name.toLowerCase())
+                        ? "text-black"
+                        : "text-white"
+                    }`}
+                  />
+                  <p
+                    className={`text-lg md:text-sm mx-3 ${
+                      router.pathname.includes(item.name.toLowerCase())
+                        ? "text-black"
+                        : "text-white"
+                    }`}
+                  >
                     {item.name}
                   </p>
                 </Link>

@@ -45,7 +45,7 @@ interface ItemProps {
 const Invoice = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [orderType, setOrderType] = useState("delivery");
-  const [startDate, setStartDate] = useState(new Date());
+  const [startDate, setStartDate] = useState<null | Date>(null);
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [subTotal, setSubTotal] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
@@ -203,6 +203,7 @@ const Invoice = () => {
 
   // Reset page state
   const resetBilling = () => {
+    const cookieSalesDate = getCookie("invoiceSalesDate");
     setPhoneNumber("");
     setBillTo("");
     setCustomer(undefined);
@@ -227,7 +228,7 @@ const Invoice = () => {
     setCustomerID("");
     setSearchByPhone(false);
     setOrderType("delivery");
-    setStartDate(new Date());
+    setStartDate(cookieSalesDate ? new Date(cookieSalesDate) : new Date());
     setPaymentMethod("");
     setInvoiceId(randomString(8).toUpperCase());
     setIsPartialPayment(false);
@@ -248,6 +249,8 @@ const Invoice = () => {
       return toast.error("Please enter the address");
     } else if (paymentMethod === "") {
       return toast.error("Please select a payment method");
+    } else if (!startDate) {
+      return toast.error("Please select a sale date");
     }
 
     let newProducts: ItemProps[] = [];
@@ -445,6 +448,16 @@ const Invoice = () => {
     }
   }, [areas]);
 
+  // Get sales date from cookies
+  useEffect(() => {
+    const cookieSalesDate = getCookie("invoiceSalesDate");
+    if (!cookieSalesDate) {
+      setStartDate(new Date());
+    } else {
+      setStartDate(new Date(cookieSalesDate));
+    }
+  }, [vehicle]);
+
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="flex flex-col">
@@ -599,7 +612,12 @@ const Invoice = () => {
                   dateFormat={"dd/MM/yyyy"}
                   className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
                   selected={startDate}
-                  onChange={(date) => setStartDate(date as Date)}
+                  onChange={(date) => {
+                    setStartDate(date as Date);
+                    setCookie("invoiceSalesDate", date, {
+                      maxAge: 60 * 60 * 24 * 7,
+                    });
+                  }}
                 />
               </div>
             </div>
