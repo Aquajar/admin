@@ -48,7 +48,6 @@ export const calculatePurchasePattern = (
     );
     const today = moment();
     const daysSinceLastPurchase = today.diff(lastInvoiceDate, "days");
-    console.log("daysSinceLastPurchase: ", daysSinceLastPurchase);
     const isNeedToday = daysSinceLastPurchase >= averageIntervalDays;
 
     return {

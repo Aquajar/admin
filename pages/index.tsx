@@ -18,6 +18,7 @@ import useAuthUser from "@/lib/hooks/useAuthUser";
 import CustomerInsight from "@/components/dashboard/CustomerInsight";
 import SalesSummary from "@/components/dashboard/SalesSummary";
 import { useDashboardStore } from "@/store/dashboardData.store";
+import Greetings from "@/components/dashboard/Greetings";
 
 const BreadCrumb = [
   {
@@ -45,6 +46,8 @@ export default function Home() {
   } = useDashboardStore();
 
   const { user } = useAuthUser();
+
+  console.log(user);
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -93,6 +96,7 @@ export default function Home() {
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
+      <Greetings name={user?.name} />
       <div className="flex">
         <div className="flex mb-4 font-medium w-fit">
           <button

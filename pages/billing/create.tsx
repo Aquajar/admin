@@ -24,6 +24,7 @@ import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { DebounceInput } from "react-debounce-input";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
+import useAuthUser from "@/lib/hooks/useAuthUser";
 
 const BreadCrumb = [
   {
@@ -74,6 +75,10 @@ const Invoice = () => {
 
   const { data: session } = useSession();
   const { setInvoices } = useInvoicesStore();
+
+  const { user } = useAuthUser();
+
+  console.log(user);
 
   // Create an axios instance with the user's access token
   const axiosInstance = axios.create({
@@ -239,6 +244,26 @@ const Invoice = () => {
     setTax(0);
   };
 
+  // handle send activity to the server
+  const craeteBillingActivity = async () => {
+    const URL = process.env.NEXT_PUBLIC_API_URL + "/activity";
+    const payload = {
+      activity: "You have created a new invoice for " + billTo,
+      tag: "create",
+      // @ts-ignore
+      userID: user?._id,
+    };
+
+    // console.log(payload);
+
+    // try {
+    //   const res = await axiosInstance.post(URL, payload);
+    //   console.log(res);
+    // } catch (e) {
+    //   console.log(e);
+    // }
+  };
+
   // Generate Bill
   const handleGenerateBill = async () => {
     if (phoneNumber.length !== 10 && billTo === "") {
@@ -354,6 +379,8 @@ const Invoice = () => {
       toast.success("Invoice generated successfully", {
         duration: 3000,
       });
+
+      craeteBillingActivity();
 
       // reset form
       resetBilling();

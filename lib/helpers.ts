@@ -38,4 +38,16 @@ export function getLastNDays(n: number): string[] {
   return dates;
 }
 
-export { randomString };
+// Get greetings
+const getGreeting = () => {
+  const currentHour = new Date().getHours();
+  if (currentHour < 12) {
+    return "Good Morning";
+  } else if (currentHour >= 12 && currentHour < 18) {
+    return "Good Afternoon";
+  } else {
+    return "Good Evening";
+  }
+};
+
+export { randomString, getGreeting };

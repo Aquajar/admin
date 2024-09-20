@@ -24,6 +24,7 @@ export interface Customer {
   isCardReceived: boolean;
   paymentPlan: string;
   profileRate: number | null;
+  invoices: Invoice[];
 }
 
 export type Product = {
