@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import {
   Area,
   Customer,
+  Driver,
   Invoice as InvoiceType,
   Item,
   Product,
@@ -72,13 +73,13 @@ const Invoice = () => {
   const [partialPayment, setPartialPayment] = useState<string>("0");
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
   const [customersResults, setCustomersResults] = useState<Customer[] | []>([]);
+  const [drivers, setDrivers] = useState<Driver[] | undefined>(undefined);
+  const [driverID, setDriverID] = useState<string | undefined>(undefined);
 
   const { data: session } = useSession();
   const { setInvoices } = useInvoicesStore();
 
   const { user } = useAuthUser();
-
-  console.log(user);
 
   // Create an axios instance with the user's access token
   const axiosInstance = axios.create({
@@ -87,6 +88,15 @@ const Invoice = () => {
       Authorization: `Bearer ${session?.user.accessToken}`,
     },
   });
+
+  // Fetch drivers
+  const getDrivers = async () => {
+    const { data } = await axios.get(
+      process.env.NEXT_PUBLIC_API_URL! + "/driver"
+    );
+    setCookie("_driversD", data.data);
+    setDrivers(data.data);
+  };
 
   useRefreshTokenRotation(axiosInstance);
 
@@ -128,6 +138,47 @@ const Invoice = () => {
       setRecentInvoices(parsedDate);
     }
   }, [recentInvoices]);
+
+  // Fetch driver information from cookies
+  useEffect(() => {
+    if (drivers === undefined) {
+      let rawData = getCookie("_driversD");
+      let selectedDriverID = getCookie("_selectedDriverID");
+
+      setDriverID(selectedDriverID);
+
+      if (rawData === undefined) {
+        getDrivers();
+      } else {
+        let parsedData = rawData ? JSON.parse(rawData) : [];
+        setDrivers(parsedData);
+      }
+    }
+  }, [drivers]);
+
+  // Fetch products from cookies
+  useEffect(() => {
+    if (products === undefined) {
+      let rawData = getCookie("products");
+
+      let parsedData = rawData ? JSON.parse(rawData) : [];
+
+      setProducts(parsedData);
+    }
+  }, [products]);
+
+  // Fetch areas from cookies
+  useEffect(() => {
+    if (areas === undefined) {
+      let rawData = getCookie("areas");
+
+      let parsedData = rawData ? JSON.parse(rawData) : [];
+
+      setAreas(parsedData);
+    }
+  }, [areas]);
+
+  // Fetch customer information from phone number or customer ID
 
   // Auto Fetch customer details by phone number/customer ID
   useEffect(() => {
@@ -328,6 +379,7 @@ const Invoice = () => {
       invoiceDate: +startDate,
       customerID: customer?._id,
       vehicleID: orderType === "delivery" ? vehicle : null,
+      driver: orderType === "delivery" ? driverID : null,
       total: total,
       products: newProducts,
       address: orderType === "delivery" ? address : null,
@@ -810,6 +862,9 @@ const Invoice = () => {
             {/* Deliver Details */}
             {orderType === "retail" ? null : (
               <DeliveryDetails
+                drivers={drivers}
+                driverID={driverID}
+                setDriverID={setDriverID}
                 areas={areas}
                 setAddress={setAddress}
                 setVehicle={setVehicle}

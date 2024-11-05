@@ -19,6 +19,7 @@ const useInvoice = (axiosInstance: AxiosInstance, session: Session | null) => {
         process.env.NEXT_PUBLIC_API_URL +
         `/invoice/filter?startDate=${+startDate}&endDate=${+endDate}`;
       const { data } = await axiosInstance.get(URL);
+      console.log(data)
       //   filter invoices by latest at the top
       const filteredInvoices = data.invoices.sort(
         (a: Invoice, b: Invoice) =>

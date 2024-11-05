@@ -1,4 +1,5 @@
-import { Area } from "@/types/types";
+import { Area, Driver } from "@/types/types";
+import { setCookie } from "cookies-next";
 import React, { FC } from "react";
 
 interface IProps {
@@ -9,6 +10,9 @@ interface IProps {
   vehicle: string;
   setVehicle: (value: string) => void;
   areas: Area[] | undefined;
+  drivers: Driver[] | undefined;
+  driverID: string | undefined;
+  setDriverID: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 const DeliveryDetails: FC<IProps> = ({
@@ -19,6 +23,9 @@ const DeliveryDetails: FC<IProps> = ({
   landmark,
   vehicle,
   areas,
+  drivers,
+  driverID,
+  setDriverID,
 }) => {
   return (
     <div className={`flex flex-col mb-6 border-t`}>
@@ -52,15 +59,21 @@ const DeliveryDetails: FC<IProps> = ({
         </div>
         {/* Driver */}
         <div className="flex flex-col">
-          <label className="text-md font-medium text-gray-700">Vehicle</label>
+          <label className="text-md font-medium text-gray-700">Driver</label>
           <select
-            defaultValue={"WB73E3666"}
-            onChange={(e) => setVehicle(e.target.value)}
+            value={driverID}
+            disabled={!driverID}
+            onChange={(e) => {
+              setDriverID(e.target.value);
+              setCookie("_selectedDriverID", e.target.value);
+            }}
             className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
           >
-            <option selected={vehicle === "WB73E3666"} value="WB73E3666">
-              WB73E3666
-            </option>
+            {drivers?.map((driver) => (
+              <option key={driver._id} value={driver._id}>
+                {driver.name}
+              </option>
+            )) || <option disabled>No drivers found</option>}
           </select>
         </div>
       </div>

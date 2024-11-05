@@ -91,6 +91,7 @@ export interface Invoice {
   due: number;
   paymentDate?: number | null;
   isBulkOrder?: boolean | undefined;
+  driver: string | null | undefined;
 }
 
 export interface BreadCrumbProps {
@@ -140,3 +141,16 @@ export type DashBoardData = {
   };
   iat: string;
 };
+
+export interface Driver {
+  name: string;
+  phone: string;
+  address: string;
+  licenseNumber: string;
+  salary: number;
+  joiningDate: string; // ISO 8601 format
+  status: "active" | "inactive"; // only possible statuses
+  _id: string; // MongoDB ObjectID as a string
+  createdAt: string; // ISO 8601 format
+  updatedAt: string; // ISO 8601 format
+}
