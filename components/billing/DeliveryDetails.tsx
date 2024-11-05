@@ -62,7 +62,7 @@ const DeliveryDetails: FC<IProps> = ({
           <label className="text-md font-medium text-gray-700">Driver</label>
           <select
             value={driverID}
-            disabled={!driverID}
+            // disabled={!driverID}
             onChange={(e) => {
               setDriverID(e.target.value);
               setCookie("_selectedDriverID", e.target.value);
