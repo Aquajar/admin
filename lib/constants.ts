@@ -7,6 +7,8 @@ import { FaShop } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits } from "react-icons/md";
+import { RiOrganizationChart } from "react-icons/ri";
+import { GrOrganization } from "react-icons/gr";
 import { LuFuel } from "react-icons/lu";
 
 const SidebarItems: SideBarItem[] = [
@@ -35,6 +37,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Invoices",
     icon: FaFileInvoice,
     href: "/invoices",
+  },
+  {
+    name: "Account Groups",
+    icon: GrOrganization,
+    href: "/account-groups",
   },
   {
     name: "Fueling",
