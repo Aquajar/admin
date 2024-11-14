@@ -154,3 +154,17 @@ export interface Driver {
   createdAt: string; // ISO 8601 format
   updatedAt: string; // ISO 8601 format
 }
+
+export interface Account extends Customer {
+  totalSales: number;
+  totalOutstanding: number;
+}
+
+export interface AccoutGroup {
+  _id: string;
+  name: string;
+  description: string;
+  contact: string;
+  logo: string;
+  accounts: Account[];
+}
