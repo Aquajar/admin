@@ -114,4 +114,19 @@ const reportTypes: {
   },
 ];
 
-export { SidebarItems, paymentMethods, sortByOptions, reportTypes };
+const monthAbbr: { [key: string]: string } = {
+  "January": "Jan",
+  "February": "Feb",
+  "March": "Mar",
+  "April": "Apr",
+  "May": "May",
+  "June": "Jun",
+  "July": "Jul",
+  "August": "Aug",
+  "September": "Sep",
+  "October": "Oct",
+  "November": "Nov",
+  "December": "Dec"
+};
+
+export { SidebarItems, paymentMethods, sortByOptions, reportTypes, monthAbbr };

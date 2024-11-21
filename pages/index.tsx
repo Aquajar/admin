@@ -19,6 +19,7 @@ import CustomerInsight from "@/components/dashboard/CustomerInsight";
 import SalesSummary from "@/components/dashboard/SalesSummary";
 import { useDashboardStore } from "@/store/dashboardData.store";
 import Greetings from "@/components/dashboard/Greetings";
+import SalesAreaChart from "@/components/dashboard/SalesAreaChart";
 
 const BreadCrumb = [
   {
@@ -54,6 +55,7 @@ export default function Home() {
     try {
       let URL = process.env.NEXT_PUBLIC_API_URL + "/user/dashboard";
       const response = await axiosInstance.get(URL);
+      console.log(response.data);
       setData(response.data);
       setCurrDay(response.data?.summary.last7Days.refilling[currDayIndex].date);
       setCurrMonth(response.data?.summary.monthly[0].month);
@@ -118,22 +120,37 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <div className="flex flex-col-reverse md:flex-row w-full mb-20">
+      <div className="flex flex-col w-full mb-20 space-y-5">
         {/*
-         * LEFT
+         * LEVEL 1
          */}
-        <div className="flex flex-col w-full md:w-[70%]">
-          {/*
-           * CARDS SECTION
-           */}
-          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-3 mt-6 md:mt-0">
-            {/* Total Sales */}
-            <Card title="Total Sales">
+        <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-31 gap-3 mt-6 md:mt-0">
+          {/* Total Sales */}
+          <Card title="Total Sales">
+            <CurrencyFormat
+              value={
+                data?.summary.monthly.filter(
+                  (data) => data.month === currMonth
+                )[0]?.sales
+              }
+              displayType={"text"}
+              thousandSeparator={true}
+              prefix={"₹"}
+              decimalScale={0}
+              fixedDecimalScale={true}
+              renderText={(value) => (
+                <p className="text-3xl font-semibold">{value}</p>
+              )}
+            />
+          </Card>
+          {/* Total Dues */}
+          <Card title="Total Dues">
+            <div className="flex justify-between items-start">
               <CurrencyFormat
                 value={
                   data?.summary.monthly.filter(
                     (data) => data.month === currMonth
-                  )[0]?.sales
+                  )[0]?.due
                 }
                 displayType={"text"}
                 thousandSeparator={true}
@@ -144,69 +161,36 @@ export default function Home() {
                   <p className="text-3xl font-semibold">{value}</p>
                 )}
               />
-            </Card>
-            {/* Total Dues */}
-            <Card title="Total Dues">
-              <div className="flex justify-between items-start">
-                <CurrencyFormat
-                  value={
-                    data?.summary.monthly.filter(
-                      (data) => data.month === currMonth
-                    )[0]?.due
-                  }
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={"₹"}
-                  decimalScale={0}
-                  fixedDecimalScale={true}
-                  renderText={(value) => (
-                    <p className="text-3xl font-semibold">{value}</p>
-                  )}
-                />
-              </div>
-            </Card>
-            {/* Total Collected */}
-            <Card title="Total Collected">
-              <CurrencyFormat
-                value={
-                  data?.summary.monthly.filter(
-                    (data) => data.month === currMonth
-                  )[0]?.collected
-                }
-                displayType={"text"}
-                thousandSeparator={true}
-                prefix={"₹"}
-                decimalScale={0}
-                fixedDecimalScale={true}
-                renderText={(value) => (
-                  <p className="text-3xl font-semibold">{value}</p>
-                )}
-              />
-            </Card>
-          </div>
-
-          {/*
-           * CUSTOMERS INSIGHT
-           */}
-          <CustomerInsight
-            top={data?.customers.top}
-            total={data?.customers.total}
-            regular={data?.customers.regular}
-            newCustomers={
-              data?.customers?.new?.filter(
-                (data) => data.month === currMonth
-              )[0]?.customers
-            }
-          />
+            </div>
+          </Card>
+          {/* Total Collected */}
+          <Card title="Total Collected">
+            <CurrencyFormat
+              value={
+                data?.summary.monthly.filter(
+                  (data) => data.month === currMonth
+                )[0]?.collected
+              }
+              displayType={"text"}
+              thousandSeparator={true}
+              prefix={"₹"}
+              decimalScale={0}
+              fixedDecimalScale={true}
+              renderText={(value) => (
+                <p className="text-3xl font-semibold">{value}</p>
+              )}
+            />
+          </Card>
         </div>
+
         {/*
-         * RIGHT
+         * LEVEL 2
          */}
-        <div className="flex flex-col w-full md:w-[30%]">
+        <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-5">
           {/*
            * DAY SUMMARY SECTION
            */}
-          <div className="w-full mt-0 md:ml-5">
+          <div className="">
             <div className="w-full h-fit flex flex-col rounded-3xl shadow bg-black py-6">
               {/*
                * HEADER
@@ -363,9 +347,35 @@ export default function Home() {
             </div>
           </div>
           {/*
+           * SALES AREA CHART
+           */}
+          <div className="rounded-2xl p-5 shadow-md bg-white relative">
+            {data?.summary.last7Days.refilling && (
+              <SalesAreaChart data={data?.summary.last7Days.refilling} />
+            )}
+          </div>
+        </div>
+
+        {/*
+         * CUSTOMERS INSIGHT
+         */}
+        <CustomerInsight
+          top={data?.customers.top}
+          total={data?.customers.total}
+          regular={data?.customers.regular}
+          newCustomers={
+            data?.customers?.new?.filter((data) => data.month === currMonth)[0]
+              ?.customers
+          }
+        />
+        {/*
+         * LEVEL 2
+         */}
+        <div className="flex flex-col w-full">
+          {/*
            * SALES SUMMARY
            */}
-          <div className="w-full mt-6 md:ml-5">
+          <div className="w-full">
             <SalesSummary
               totalSales={data?.summary.total.sales || 0}
               totalDue={data?.summary.total.due || 0}
