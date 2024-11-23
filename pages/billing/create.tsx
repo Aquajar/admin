@@ -862,6 +862,7 @@ const Invoice = () => {
             {/* Deliver Details */}
             {orderType === "retail" ? null : (
               <DeliveryDetails
+                customer={customer}
                 drivers={drivers}
                 driverID={driverID}
                 setDriverID={setDriverID}

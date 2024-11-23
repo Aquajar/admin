@@ -28,7 +28,7 @@ const CustomerInvoicesData: FC<IProps> = ({
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
     if (!invoices || !products) return;
     const totalDue = invoices.reduce(
       (acc, cur) => (cur.status === "due" ? acc : acc + cur.due),
@@ -112,18 +112,32 @@ const CustomerInvoicesData: FC<IProps> = ({
       // resetCustomerState();
     }
   };
+
+  const createActivity = async ({}) => {
+    // Create new activity
+    const URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
+
+    const { data } = await axiosInstance.post(URL, {
+      message: `Payment of to user`,
+      tag: "payment",
+    });
+  };
+
   return (
-    <div className="flex items-center flex-col h-[50rem] md:h-[40rem] w-full py-14 overflow-y-auto bg-gray-100">
+    <div className="flex items-center flex-col h-[50rem] md:h-[40rem] w-full p-2 py-14 overflow-y-auto bg-gray-100">
       {!invoices || !products ? (
         <div>
           <AiOutlineLoading className="text-4xl animate-spin" />
         </div>
       ) : (
         <>
-          <div className="relative bg-white p-4 rounded-xl overflow-y-auto justify-end">
+          <div className="relative bg-white p-2 rounded-xl overflow-y-auto justify-end w-full">
             <table className="w-full text-sm text-left">
-              <thead className="text-sm  uppercase bg-gray-100">
+              <thead className="text-sm uppercase bg-gray-100">
                 <tr>
+                  <th scope="col" className="px-2 md:px-4 py-3">
+                    Invoice ID
+                  </th>
                   <th scope="col" className="px-2 md:px-4 py-3">
                     Date
                   </th>
@@ -146,6 +160,9 @@ const CustomerInvoicesData: FC<IProps> = ({
                   invoices.map((invoice) => {
                     return (
                       <tr key={invoice._id} className="bg-white">
+                        <td className="px-2 md:px-4 py-4">
+                          {invoice.invoiceID}
+                        </td>
                         <td className="px-2 md:px-4 py-4 text-md">
                           {new Date(invoice.invoiceDate).toLocaleDateString(
                             "en-US",
@@ -291,7 +308,8 @@ const CustomerInvoicesData: FC<IProps> = ({
                   />
                 </div>
                 <button
-                  onClick={handlePayNow}
+                  onClick={createActivity}
+                  // onClick={handlePayNow}
                   className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
                 >
                   Pay Now

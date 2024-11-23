@@ -1,4 +1,4 @@
-import { Area, Driver } from "@/types/types";
+import { Area, Customer, Driver } from "@/types/types";
 import { setCookie } from "cookies-next";
 import React, { FC } from "react";
 
@@ -13,6 +13,7 @@ interface IProps {
   drivers: Driver[] | undefined;
   driverID: string | undefined;
   setDriverID: React.Dispatch<React.SetStateAction<string | undefined>>;
+  customer: undefined | null | Customer;
 }
 
 const DeliveryDetails: FC<IProps> = ({
@@ -26,12 +27,14 @@ const DeliveryDetails: FC<IProps> = ({
   drivers,
   driverID,
   setDriverID,
+  customer,
 }) => {
   return (
     <div className={`flex flex-col mb-6 border-t`}>
       {/* Address */}
       <label className="text-md mt-4 font-medium text-gray-700">Address</label>
       <select
+        disabled={customer && customer?.name === undefined ? false : true}
         onChange={(e) => setAddress(e.target.value)}
         className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
       >
@@ -48,9 +51,10 @@ const DeliveryDetails: FC<IProps> = ({
       </select>
       <div className="grid mt-6 gap-8 grid-cols-2 items-start my-3 justify-between">
         {/* Land Mark */}
-        <div className="flex flex-col">
+        <div className={`flex flex-col`}>
           <label className="text-md font-medium text-gray-700">Landmark</label>
           <input
+            disabled={customer && customer?.name === undefined ? false : true}
             onChange={(e) => setLandmark(e.target.value)}
             value={landmark}
             type="text"
