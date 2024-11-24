@@ -295,26 +295,6 @@ const Invoice = () => {
     setTax(0);
   };
 
-  // handle send activity to the server
-  const craeteBillingActivity = async () => {
-    const URL = process.env.NEXT_PUBLIC_API_URL + "/activity";
-    const payload = {
-      activity: "You have created a new invoice for " + billTo,
-      tag: "create",
-      // @ts-ignore
-      userID: user?._id,
-    };
-
-    // console.log(payload);
-
-    // try {
-    //   const res = await axiosInstance.post(URL, payload);
-    //   console.log(res);
-    // } catch (e) {
-    //   console.log(e);
-    // }
-  };
-
   // Generate Bill
   const handleGenerateBill = async () => {
     if (phoneNumber.length !== 10 && billTo === "") {
@@ -382,8 +362,8 @@ const Invoice = () => {
       driver: orderType === "delivery" ? driverID : null,
       total: total,
       products: newProducts,
-      address: orderType === "delivery" ? address : null,
-      landmark: orderType === "delivery" ? landmark : null,
+      // address: orderType === "delivery" ? address : null,
+      // landmark: orderType === "delivery" ? landmark : null,
       dueDate: +dueDate,
       status:
         paymentMethod === "due"
@@ -431,8 +411,6 @@ const Invoice = () => {
       toast.success("Invoice generated successfully", {
         duration: 3000,
       });
-
-      craeteBillingActivity();
 
       // reset form
       resetBilling();

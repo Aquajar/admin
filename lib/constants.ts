@@ -7,9 +7,9 @@ import { FaShop } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits } from "react-icons/md";
-import { RiOrganizationChart } from "react-icons/ri";
 import { GrOrganization } from "react-icons/gr";
 import { LuFuel } from "react-icons/lu";
+import { FiActivity } from "react-icons/fi";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -64,6 +64,11 @@ const SidebarItems: SideBarItem[] = [
     href: "/reports",
   },
   {
+    name: "Activity",
+    icon: FiActivity,
+    href: "/activity",
+  },
+  {
     name: "Settings",
     icon: IoMdSettings,
     href: "/settings",
@@ -115,18 +120,50 @@ const reportTypes: {
 ];
 
 const monthAbbr: { [key: string]: string } = {
-  "January": "Jan",
-  "February": "Feb",
-  "March": "Mar",
-  "April": "Apr",
-  "May": "May",
-  "June": "Jun",
-  "July": "Jul",
-  "August": "Aug",
-  "September": "Sep",
-  "October": "Oct",
-  "November": "Nov",
-  "December": "Dec"
+  January: "Jan",
+  February: "Feb",
+  March: "Mar",
+  April: "Apr",
+  May: "May",
+  June: "Jun",
+  July: "Jul",
+  August: "Aug",
+  September: "Sep",
+  October: "Oct",
+  November: "Nov",
+  December: "Dec",
 };
+
+export const ActivityTypes: {
+  id: "all" | "payment" | "log" | "user" | "entry";
+  name: string;
+  color: string;
+}[] = [
+  {
+    id: "all",
+    name: "All",
+    color: "gray-200",
+  },
+  {
+    id: "payment",
+    name: "Payment",
+    color: "green-500",
+  },
+  {
+    id: "entry",
+    name: "Entry",
+    color: "blue-500",
+  },
+  {
+    id: "log",
+    name: "log",
+    color: "yellow-500",
+  },
+  {
+    id: "user",
+    name: "User",
+    color: "orange-500",
+  },
+];
 
 export { SidebarItems, paymentMethods, sortByOptions, reportTypes, monthAbbr };

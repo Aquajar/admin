@@ -119,13 +119,27 @@ const Invoices = () => {
   // Remove invoice
   const removeInvoice = async (invoice: Invoice) => {
     try {
-      const URL =
-        process.env.NEXT_PUBLIC_API_URL + `/invoice/delete/${invoice._id}`;
+      let URL;
+      URL = process.env.NEXT_PUBLIC_API_URL + `/invoice/delete/${invoice._id}`;
       await axiosInstance.delete(URL);
       setInvoices((invoices) => {
         if (!invoices) return [];
         return invoices.filter((inv) => inv.invoiceID !== invoice.invoiceID);
       });
+
+      // Create new activity
+      URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
+
+      const payload = {
+        message: `Invoice ID ${invoice.invoiceID} deleted, customer ref no. ${invoice.customerID}`,
+        tag: "entry",
+      };
+      await axiosInstance.post(URL, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       closeDeleteModal();
     } catch (error) {
       console.log(error);

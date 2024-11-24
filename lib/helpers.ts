@@ -50,4 +50,39 @@ const getGreeting = () => {
   }
 };
 
+// Date object is converted into a human-readable format
+export function formatTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffInMilliseconds = now.getTime() - date.getTime();
+
+  const seconds = Math.floor(diffInMilliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  // If the date is more than 1 day ago, show the exact date
+  if (days > 1) {
+    const dateFormat = new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    return dateFormat.format(date); // e.g., "22 Nov 2024"
+  } else if (days === 1) {
+    return "Yesterday";
+  } else if (hours > 1) {
+    return `${hours} hours ago`;
+  } else if (hours === 1) {
+    return "1 hour ago";
+  } else if (minutes > 1) {
+    return `${minutes} mins ago`;
+  } else if (minutes === 1) {
+    return "1 min ago";
+  } else if (seconds < 60) {
+    return `${seconds} seconds ago`;
+  } else {
+    return "Just now";
+  }
+}
+
 export { randomString, getGreeting };

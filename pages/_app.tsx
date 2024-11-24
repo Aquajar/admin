@@ -3,6 +3,7 @@ import { StoreProvider as CustomerStoreProvider } from "@/store/customers.store"
 import { StoreProvider as InvoiceStoreProvider } from "@/store/invoices.store";
 import { StoreProvider as AuthUserStoreProvider } from "@/store/authUser.store";
 import { StoreProvider as DashboardStoreProvider } from "@/store/dashboardData.store";
+import { StoreProvider as ActivityStoreProvider } from "@/store/activities.store";
 import "@/styles/globals.css";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
@@ -26,24 +27,26 @@ export default function App({
       <AuthUserStoreProvider>
         <CustomerStoreProvider>
           <DashboardStoreProvider>
-            <InvoiceStoreProvider>
-              <QueryClientProvider client={queryClient}>
-                <div className="bg-quaternary">
-                  <Toaster position="top-center" reverseOrder={false} />
-                  <Sidebar />
-                  <Component {...pageProps} />
-                  <ProgressBar
-                    height="4px"
-                    color="#2463EB"
-                    options={{ showSpinner: false }}
-                    shallowRouting
-                  />
-                </div>
-                {process.env.NODE_ENV === "development" && (
-                  <ReactQueryDevtools initialIsOpen={false} />
-                )}
-              </QueryClientProvider>
-            </InvoiceStoreProvider>
+            <ActivityStoreProvider>
+              <InvoiceStoreProvider>
+                <QueryClientProvider client={queryClient}>
+                  <div className="bg-quaternary">
+                    <Toaster position="top-center" reverseOrder={false} />
+                    <Sidebar />
+                    <Component {...pageProps} />
+                    <ProgressBar
+                      height="4px"
+                      color="#2463EB"
+                      options={{ showSpinner: false }}
+                      shallowRouting
+                    />
+                  </div>
+                  {process.env.NODE_ENV === "development" && (
+                    <ReactQueryDevtools initialIsOpen={false} />
+                  )}
+                </QueryClientProvider>
+              </InvoiceStoreProvider>
+            </ActivityStoreProvider>
           </DashboardStoreProvider>
         </CustomerStoreProvider>
       </AuthUserStoreProvider>

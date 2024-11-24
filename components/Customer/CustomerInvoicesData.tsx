@@ -22,12 +22,14 @@ const CustomerInvoicesData: FC<IProps> = ({
   products,
   setInvoices,
   setModalIsOpen,
+  selectedCustomerID,
 }) => {
   const [amount, setAmount] = React.useState<string>("");
 
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
 
+  // Handle the payment to due invoices
   const handlePayNow = async () => {
     if (!invoices || !products) return;
     const totalDue = invoices.reduce(
@@ -107,20 +109,24 @@ const CustomerInvoicesData: FC<IProps> = ({
         });
       });
 
+      // Create new activity
+      const URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
+
+      const payload = {
+        message: `Payment of ₹${amount} added to ${
+          selectedCustomerID || dueInvoices[0].customerID
+        }`,
+        tag: "payment",
+      };
+      await axiosInstance.post(URL, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       toast.success("Invoice updated successfully!");
       setModalIsOpen(false);
-      // resetCustomerState();
     }
-  };
-
-  const createActivity = async ({}) => {
-    // Create new activity
-    const URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
-
-    const { data } = await axiosInstance.post(URL, {
-      message: `Payment of to user`,
-      tag: "payment",
-    });
   };
 
   return (
@@ -308,8 +314,7 @@ const CustomerInvoicesData: FC<IProps> = ({
                   />
                 </div>
                 <button
-                  onClick={createActivity}
-                  // onClick={handlePayNow}
+                  onClick={handlePayNow}
                   className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
                 >
                   Pay Now

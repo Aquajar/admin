@@ -83,8 +83,8 @@ export interface Invoice {
     _id: string;
     quantity: number;
   }[];
-  address: sting | null;
-  landmark: sting | null;
+  address?: sting | null;
+  landmark?: sting | null;
   dueDate: number;
   status: string;
   paymentMethod: string;
@@ -167,4 +167,13 @@ export interface AccoutGroup {
   contact: string;
   logo: string;
   accounts: Account[];
+}
+
+export interface Activity {
+  _id: string;
+  message: string;
+  createdAt: Date;
+  author: string;
+  tag: string;
+  updatesAt: Date;
 }
