@@ -22,3 +22,7 @@ select {
 body {
   background-color: #eff3f6;
 }
+
+.main-container {
+  pointer-events: none;
+}

@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { PagesProgressBar as ProgressBar } from "next-nprogress-bar";
+import { CgSpinner } from "react-icons/cg";
 
 export default function App({
   Component,

@@ -92,8 +92,9 @@ const Invoice = () => {
   // Fetch drivers
   const getDrivers = async () => {
     const { data } = await axios.get(
-      process.env.NEXT_PUBLIC_API_URL! + "/driver"
+      process.env.NEXT_PUBLIC_API_URL! + "/staff?status=active&type=driver"
     );
+    console.log(data);
     setCookie("_driversD", data.data);
     setDrivers(data.data);
   };
@@ -177,8 +178,6 @@ const Invoice = () => {
       setAreas(parsedData);
     }
   }, [areas]);
-
-  // Fetch customer information from phone number or customer ID
 
   // Auto Fetch customer details by phone number/customer ID
   useEffect(() => {
@@ -776,7 +775,10 @@ const Invoice = () => {
                         </td>
                         {/* Price */}
                         <td className="text-md font-normal text-gray-700 px-4 py-2">
-                          @{item.price}
+                          @
+                          {item.name === "Refill"
+                            ? customer?.profileRate
+                            : item.price}
                         </td>
                         {/* Total */}
                         <td className="text-md font-medium text-gray-700 px-4 py-2">

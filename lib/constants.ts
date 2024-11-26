@@ -147,12 +147,12 @@ export const ActivityTypes: {
   {
     id: "payment",
     name: "Payment",
-    color: "green-500",
+    color: "#6ACF65",
   },
   {
     id: "entry",
     name: "Entry",
-    color: "blue-500",
+    color: "#379dff",
   },
   {
     id: "log",

@@ -20,6 +20,9 @@ import SalesSummary from "@/components/dashboard/SalesSummary";
 import { useDashboardStore } from "@/store/dashboardData.store";
 import Greetings from "@/components/dashboard/Greetings";
 import SalesAreaChart from "@/components/dashboard/SalesAreaChart";
+import { useCustomersStore } from "@/store/customers.store";
+import { useInvoicesStore } from "@/store/invoices.store";
+import Loader from "@/components/Loader";
 
 const BreadCrumb = [
   {
@@ -32,6 +35,8 @@ export default function Home() {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
   useRefreshTokenRotation(axiosInstance);
+  const { setCustomers } = useCustomersStore();
+  const { setInvoices } = useInvoicesStore();
 
   const {
     data,
@@ -48,14 +53,14 @@ export default function Home() {
 
   const { user } = useAuthUser();
 
-  console.log(user);
-
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
       let URL = process.env.NEXT_PUBLIC_API_URL + "/user/dashboard";
       const response = await axiosInstance.get(URL);
       console.log(response.data);
+      setCustomers(response.data.data.users);
+      setInvoices(response.data.data.invoices);
       setData(response.data);
       setCurrDay(response.data?.summary.last7Days.refilling[currDayIndex].date);
       setCurrMonth(response.data?.summary.monthly[0].month);
@@ -98,6 +103,7 @@ export default function Home() {
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
+      {/* <Loader visible /> */}
       <Greetings name={user?.name} />
       <div className="flex">
         <div className="flex mb-4 font-medium w-fit">
@@ -223,8 +229,8 @@ export default function Home() {
               <div className="flex flex-col px-8 py-6 w-full">
                 <span className="text-2xl text-white mt-2">
                   {
-                    data?.summary.last7Days.refilling.filter(
-                      (data) => data.date === currDay
+                    data?.summary?.last7Days?.refilling?.filter(
+                      (data) => data?.date === currDay
                     )[0]?.jars
                   }
 
@@ -234,7 +240,7 @@ export default function Home() {
                 </span>
                 <span className="text-xl mt-2 text-white">
                   {(data?.summary.last7Days.refilling.filter(
-                    (data) => data.date === currDay
+                    (data) => data?.date === currDay
                   )[0]?.jars || 0) * 20}{" "}
                   L
                   <span className="text-sm text-gray-300 px-2">
@@ -253,10 +259,10 @@ export default function Home() {
                     style={{
                       width: `${
                         ((data?.summary.last7Days.refilling.filter(
-                          (data) => data.date === currDay
+                          (data) => data?.date === currDay
                         )[0]?.collected || 0) /
                           (data?.summary.last7Days.refilling.filter(
-                            (data) => data.date === currDay
+                            (data) => data?.date === currDay
                           )[0]?.sales || 1)) *
                         100
                       }%`,
@@ -276,7 +282,7 @@ export default function Home() {
                     <CurrencyFormat
                       value={
                         data?.summary.last7Days.refilling.filter(
-                          (data) => data.date === currDay
+                          (data) => data?.date === currDay
                         )[0]?.due
                       }
                       displayType={"text"}
@@ -301,7 +307,7 @@ export default function Home() {
                     <CurrencyFormat
                       value={
                         data?.summary.last7Days.refilling.filter(
-                          (data) => data.date === currDay
+                          (data) => data?.date === currDay
                         )[0]?.collected
                       }
                       displayType={"text"}
@@ -321,7 +327,7 @@ export default function Home() {
                   <CurrencyFormat
                     value={
                       data?.summary.last7Days.refilling.filter(
-                        (data) => data.date === currDay
+                        (data) => data?.date === currDay
                       )[0]?.sales
                     }
                     displayType={"text"}
@@ -338,7 +344,7 @@ export default function Home() {
                   in sales{" "}
                   {
                     data?.summary.last7Days.refilling.filter(
-                      (data) => data.date === currDay
+                      (data) => data?.date === currDay
                     )[0]?.jars
                   }{" "}
                   jars

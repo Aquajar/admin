@@ -22,17 +22,18 @@ export const options = {
 };
 
 const SalesAreaChart: FC<IProps> = ({ data }) => {
+  // Sort Data required by the Chart Component
   const transformedData = useMemo(
     () => [
       ["Date", "Sales"],
       ...data.map((entry) => [
-        entry.date.replace(
+        entry?.date?.replace(
           /\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/,
           (match) => {
             return monthAbbr[match]; // Replace with the abbreviation
           }
         ),
-        entry.sales,
+        entry?.sales,
       ]),
     ],
     [data]
@@ -40,9 +41,9 @@ const SalesAreaChart: FC<IProps> = ({ data }) => {
 
   const averageSales = useMemo(
     () =>
-      (data.reduce((sum, entry) => sum + entry.sales, 0) / data.length).toFixed(
-        0
-      ),
+      (
+        data.reduce((sum, entry) => sum + entry?.sales, 0) / data?.length
+      )?.toFixed(0),
     [data]
   );
 

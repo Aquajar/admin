@@ -1,4 +1,20 @@
 import { jwtVerify } from "jose";
+import CryptoJS from 'crypto-js';
+
+
+// Encrypt data
+export const encryptData = (data: string, secretKey: string): string => {
+  const encryptedData = CryptoJS.AES.encrypt(data, secretKey).toString();
+  return encryptedData;
+};
+
+// Decrypt data
+export const decryptData = (encryptedData: string, secretKey: string): string => {
+  const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
+  const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+  return decryptedData;
+};
+
 
 export const getJwtSecretKey = () => {
   const secret = process.env.ACCESS_TOKEN_SECRET;

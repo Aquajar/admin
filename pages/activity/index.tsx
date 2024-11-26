@@ -57,7 +57,7 @@ const ActivityMain = () => {
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="w-full flex flex-col md:flow-row mt-5">
-        <div className="md:w-[70%] flex flex-col">
+        <div className="md:w-[75%] flex flex-col">
           {/* Navigation */}
           <div className="w-full grid grid-cols-5 gap-0.5 bg-gray-200 rounded-md">
             {ActivityTypes.map((activityType) => {
@@ -77,8 +77,8 @@ const ActivityMain = () => {
             })}
           </div>
           {/* Render Activities */}
-          <div className="h-[34rem] bg-gray-200">
-            <div className="overflow-y-auto space-y-2 p-3">
+          <div className="h-[34rem] overflow-y-auto bg-gray-200">
+            <div className="space-y-2 p-3">
               {(filteredActivities &&
                 filteredActivities.map((activity, index) => {
                   let activityType = ActivityTypes.find(
@@ -88,11 +88,16 @@ const ActivityMain = () => {
                   return (
                     <div
                       key={index}
-                      className={`p-5 border-${activityType?.color} border-l-[6px] bg-gray-100 flex justify-between rounded`}
+                      style={{
+                        borderColor: activityType?.color,
+                      }}
+                      className={`p-3 md:p-5 border-l-[6px] bg-gray-100 flex justify-between rounded`}
                     >
-                      <div className="font-medium w-[86%]">{activity.message}</div>
+                      <div className="font-medium text-sm w-[70%] md:w-[86%]">
+                        {activity.message}
+                      </div>
                       <div className="">
-                        <span className="text-sm">
+                        <span className="text-xs md:text-sm">
                           {formatTimeAgo(new Date(activity.createdAt))}
                         </span>
                       </div>
@@ -102,7 +107,7 @@ const ActivityMain = () => {
             </div>
           </div>
         </div>
-        <div className="md:w-[30%]"></div>
+        <div className="md:w-[25%]"></div>
       </div>
     </Wrapper>
   );

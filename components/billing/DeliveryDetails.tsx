@@ -34,7 +34,7 @@ const DeliveryDetails: FC<IProps> = ({
       {/* Address */}
       <label className="text-md mt-4 font-medium text-gray-700">Address</label>
       <select
-        disabled={customer && customer?.name === undefined ? false : true}
+        // disabled={}
         onChange={(e) => setAddress(e.target.value)}
         className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
       >
@@ -54,7 +54,7 @@ const DeliveryDetails: FC<IProps> = ({
         <div className={`flex flex-col`}>
           <label className="text-md font-medium text-gray-700">Landmark</label>
           <input
-            disabled={customer && customer?.name === undefined ? false : true}
+            // disabled={customer && customer?.name === undefined ? false : true}
             onChange={(e) => setLandmark(e.target.value)}
             value={landmark}
             type="text"
