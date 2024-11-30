@@ -539,10 +539,10 @@ const Customers = () => {
                     .filter((invoice) => invoice.customerID === customer._id)
                     .sort((a, b) => {
                       return (
-                        new Date(b.invoiceDate).getTime() -
-                        new Date(a.invoiceDate).getTime()
+                        new Date(b.invoiceDate!).getTime() -
+                        new Date(a.invoiceDate!).getTime()
                       );
-                    })[0]?.invoiceDate
+                    })[0]?.invoiceDate!
                 );
 
                 let todayDate = new Date();
@@ -559,9 +559,8 @@ const Customers = () => {
                 );
 
                 // Calculate the interval between today and last purchase date
-                let differenceInDays = Math.ceil(
-                  diffTime / (1000 * 60 * 60 * 24)
-                );
+                let differenceInDays =
+                  Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
 
                 return (
                   <tr
@@ -596,7 +595,7 @@ const Customers = () => {
 
                     {/* Phone */}
                     <td className="px-2 text-center py-4 text-gray-900">
-                      {customer.phone}
+                      <a href={`tel:+91 ${customer.phone}`}>{customer.phone}</a>
                     </td>
 
                     {/* Payment Plan */}
