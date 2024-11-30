@@ -23,7 +23,7 @@ const useInvoice = (axiosInstance: AxiosInstance, session: Session | null) => {
       //   filter invoices by latest at the top
       const filteredInvoices = data.invoices.sort(
         (a: Invoice, b: Invoice) =>
-          new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
+          new Date(b.invoiceDate!).getTime() - new Date(a.invoiceDate!).getTime()
       );
 
       if (data.invoices) setInvoices(filteredInvoices);

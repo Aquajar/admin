@@ -116,7 +116,7 @@ const Bulk = () => {
                         }
                       </td>
                       <td className="px-6 py-4 ">
-                        {new Date(invoice.invoiceDate).toLocaleDateString()}
+                        {new Date(invoice.invoiceDate!).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-gray-900 font-medium">
                         {invoice.total}

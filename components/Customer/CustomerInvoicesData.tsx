@@ -170,7 +170,7 @@ const CustomerInvoicesData: FC<IProps> = ({
                           {invoice.invoiceID}
                         </td>
                         <td className="px-2 md:px-4 py-4 text-md">
-                          {new Date(invoice.invoiceDate).toLocaleDateString(
+                          {new Date(invoice.invoiceDate!).toLocaleDateString(
                             "en-US",
                             {
                               year: "numeric",
