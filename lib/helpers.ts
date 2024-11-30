@@ -1,6 +1,5 @@
 import { jwtVerify } from "jose";
-import CryptoJS from 'crypto-js';
-
+import CryptoJS from "crypto-js";
 
 // Encrypt data
 export const encryptData = (data: string, secretKey: string): string => {
@@ -9,12 +8,14 @@ export const encryptData = (data: string, secretKey: string): string => {
 };
 
 // Decrypt data
-export const decryptData = (encryptedData: string, secretKey: string): string => {
+export const decryptData = (
+  encryptedData: string,
+  secretKey: string
+): string => {
   const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
   const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
   return decryptedData;
 };
-
 
 export const getJwtSecretKey = () => {
   const secret = process.env.ACCESS_TOKEN_SECRET;
@@ -99,6 +100,18 @@ export function formatTimeAgo(date: Date): string {
   } else {
     return "Just now";
   }
+}
+
+// Format the date to local time
+export function beautifyDate(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  };
+
+  // Use toLocaleString to format the date based on the options
+  return date.toLocaleString("en-IN", options);
 }
 
 export { randomString, getGreeting };

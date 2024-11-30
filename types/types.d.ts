@@ -74,7 +74,7 @@ export interface Invoice {
     invoices: string[];
   };
   invoiceID: invoiceId;
-  invoiceDate: number;
+  invoiceDate: string | null;
   customerID: string | undefined;
   vehicleID: string | null;
   total: number;
@@ -85,7 +85,7 @@ export interface Invoice {
   }[];
   address?: sting | null;
   landmark?: sting | null;
-  dueDate: number;
+  // dueDate: number;
   status: string;
   paymentMethod: string;
   due: number;

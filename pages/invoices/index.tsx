@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import Modal from "react-modal";
 import Link from "next/link";
 import { SidebarItems } from "@/lib/constants";
+import { beautifyDate } from "@/lib/helpers";
 
 Modal.setAppElement("#__next");
 
@@ -76,7 +77,8 @@ const Invoices = () => {
       //   filter invoices by latest at the top
       const filteredInvoices = data.invoices.sort(
         (a: Invoice, b: Invoice) =>
-          new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
+          new Date(b.invoiceDate!).getTime() -
+          new Date(a.invoiceDate!).getTime()
       );
 
       toast.dismiss();
@@ -337,7 +339,7 @@ const Invoices = () => {
        */}
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 md:mt-2.5">
         <table className="w-full text-sm text-left text-gray-500 ">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+          <thead className="text-xs uppercase bg-gray-50">
             <tr className="">
               <th scope="col" className="px-6 py-3">
                 Invoice ID
@@ -383,8 +385,8 @@ const Invoices = () => {
                         )?.name
                       }
                     </td>
-                    <td className="px-6 py-4 ">
-                      {new Date(invoice.invoiceDate).toLocaleDateString()}
+                    <td className="px-2 py-4 text-center text-black">
+                      {beautifyDate(new Date(invoice.invoiceDate!))}
                     </td>
                     <td className="px-6 py-4 text-gray-900 font-medium">
                       {invoice.total}

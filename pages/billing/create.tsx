@@ -10,6 +10,7 @@ import DeliveryDetails from "@/components/billing/DeliveryDetails";
 import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
+import { DateTime } from "luxon";
 import {
   Area,
   Customer,
@@ -64,9 +65,9 @@ const Invoice = () => {
   );
   const [customerID, setCustomerID] = useState<string>("");
   const [isLoading, setIsloading] = useState(false);
-  const [recentInvoices, setRecentInvoices] = useState<
-    InvoiceType[] | [] | null
-  >(null);
+  // const [recentInvoices, setRecentInvoices] = useState<
+  //   InvoiceType[] | [] | null
+  // >(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [discount, setDiscount] = useState<string>("0");
@@ -125,20 +126,20 @@ const Invoice = () => {
   }, [items]);
 
   // Fetch recent invoices from cookies
-  useEffect(() => {
-    if (recentInvoices === null) {
-      let rawData = getCookie("recentInvoice");
+  // useEffect(() => {
+  //   if (recentInvoices === null) {
+  //     let rawData = getCookie("recentInvoice");
 
-      let parsedDate = rawData ? JSON.parse(rawData) : [];
+  //     let parsedDate = rawData ? JSON.parse(rawData) : [];
 
-      parsedDate = parsedDate.sort(
-        (a: InvoiceType, b: InvoiceType) =>
-          new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
-      );
+  //     parsedDate = parsedDate.sort(
+  //       (a: InvoiceType, b: InvoiceType) =>
+  //         new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
+  //     );
 
-      setRecentInvoices(parsedDate);
-    }
-  }, [recentInvoices]);
+  //     setRecentInvoices(parsedDate);
+  //   }
+  // }, [recentInvoices]);
 
   // Fetch driver information from cookies
   useEffect(() => {
@@ -328,18 +329,6 @@ const Invoice = () => {
       customer?.invoices.map((invoice) => invoices.push(invoice));
     invoices.push(invoiceId as string);
 
-    // set due date to 28th day of the month
-    const dueDate = new Date();
-    dueDate.setDate(28);
-
-    if (dueDate.getDate() < new Date().getDate()) {
-      dueDate.setMonth(dueDate.getMonth() + 1);
-    }
-
-    if (paymentMethod !== "due") {
-      dueDate.setDate(new Date().getDate());
-    }
-
     // create user object
     let user = {
       name: billTo,
@@ -355,7 +344,7 @@ const Invoice = () => {
     let payload: InvoiceType = {
       user: user,
       invoiceID: invoiceId,
-      invoiceDate: +startDate,
+      invoiceDate: startDate.toISOString(),
       customerID: customer?._id,
       vehicleID: orderType === "delivery" ? vehicle : null,
       driver: orderType === "delivery" ? driverID : null,
@@ -363,7 +352,6 @@ const Invoice = () => {
       products: newProducts,
       // address: orderType === "delivery" ? address : null,
       // landmark: orderType === "delivery" ? landmark : null,
-      dueDate: +dueDate,
       status:
         paymentMethod === "due"
           ? "pending"
@@ -394,18 +382,18 @@ const Invoice = () => {
       }
 
       // Update recent invoices
-      let _recentInvoices = recentInvoices ? recentInvoices : [];
+      // let _recentInvoices = recentInvoices ? recentInvoices : [];
 
-      let resultInvoice = res.data.invoice;
+      // let resultInvoice = res.data.invoice;
 
-      _recentInvoices.unshift(resultInvoice);
-      _recentInvoices = _recentInvoices.slice(0, 4);
+      // _recentInvoices.unshift(resultInvoice);
+      // _recentInvoices = _recentInvoices.slice(0, 4);
 
-      setRecentInvoices(_recentInvoices);
+      // // setRecentInvoices(_recentInvoices);
 
-      setCookie("recentInvoice", _recentInvoices, {
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      // setCookie("recentInvoice", _recentInvoices, {
+      //   maxAge: 60 * 60 * 24 * 7,
+      // });
       setIsloading(false);
       toast.success("Invoice generated successfully", {
         duration: 3000,
@@ -669,8 +657,17 @@ const Invoice = () => {
                   className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
                   selected={startDate}
                   onChange={(date) => {
-                    setStartDate(date as Date);
-                    setCookie("invoiceSalesDate", date, {
+                    if (!date) return;
+                    let currentTime = new Date();
+                    let originalDate = new Date(date);
+                    // Set the time of the original date to the current time
+                    originalDate.setHours(currentTime.getHours());
+                    originalDate.setMinutes(currentTime.getMinutes());
+                    originalDate.setSeconds(currentTime.getSeconds());
+                    originalDate.setMilliseconds(currentTime.getMilliseconds());
+                    console.log(originalDate);
+                    setStartDate(originalDate);
+                    setCookie("invoiceSalesDate", originalDate, {
                       maxAge: 60 * 60 * 24 * 7,
                     });
                   }}
@@ -881,7 +878,7 @@ const Invoice = () => {
       {/*
        * RECENT INVOICES
        */}
-      {recentInvoices?.length != undefined && recentInvoices.length > 0 && (
+      {/* {recentInvoices?.length != undefined && recentInvoices.length > 0 && (
         <div className="pb-24 mt-8 hidden md:block">
           <p className="text-xl font-normal capitalize text-black">Recents</p>
           <div className="grid grid-cols-4 gap-5 mt-5 overflow-x-auto">
@@ -898,7 +895,7 @@ const Invoice = () => {
             })}
           </div>
         </div>
-      )}
+      )} */}
     </Wrapper>
   );
 };
