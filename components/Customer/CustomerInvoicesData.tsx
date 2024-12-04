@@ -1,4 +1,5 @@
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import { copyTextToKeyboard } from "@/lib/utils";
 import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
 import React, { FC } from "react";
@@ -166,7 +167,10 @@ const CustomerInvoicesData: FC<IProps> = ({
                   invoices.map((invoice) => {
                     return (
                       <tr key={invoice._id} className="bg-white">
-                        <td className="px-2 md:px-4 py-4">
+                        <td
+                          className="px-2 md:px-4 py-4"
+                          onClick={(e) => copyTextToKeyboard(invoice.invoiceID)}
+                        >
                           {invoice.invoiceID}
                         </td>
                         <td className="px-2 md:px-4 py-4 text-md">
