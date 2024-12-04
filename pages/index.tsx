@@ -114,13 +114,13 @@ export default function Home() {
           >
             <FaChevronLeft />
           </button>
-          <span className={`font-medium w-14 mx-3 text-center`}>
+          <span className={`font-medium w-14 mx-2 text-center`}>
             {currMonth}
           </span>
           <button
             onClick={handleNextMonth}
             disabled={currMonthIndex === 0}
-            className="disabled:opacity-0"
+            className="disabled:opacity-0 ml-5"
           >
             <FaChevronRight />
           </button>
