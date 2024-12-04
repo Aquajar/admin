@@ -8,6 +8,8 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { FaUsersBetweenLines } from "react-icons/fa6";
+import { useRouter } from "next/router";
+import { encryptData } from "@/lib/helpers";
 
 const BreadCrumb = [
   {
@@ -20,6 +22,8 @@ const AccountGroup = () => {
   const [accountGroups, setAccountGroups] = useState<AccoutGroup[] | null>(
     null
   );
+
+  const router = useRouter();
 
   const { data: session } = useSession();
 
@@ -82,10 +86,7 @@ const AccountGroup = () => {
           <tbody>
             {accountGroups?.map((group) => {
               return (
-                <tr
-                  key={group._id}
-                  className="bg-white border-b"
-                >
+                <tr key={group._id} className="bg-white border-b">
                   <th
                     scope="row"
                     className="px-6 py-4 font-medium whitespace-nowrap"
@@ -121,6 +122,9 @@ const AccountGroup = () => {
                   <td className="px-6 py-4">{group.contact}</td>
                   <td className="px-6 py-4">
                     <button
+                      onClick={() => {
+                        router.push("/account-groups/profile/" + group._id);
+                      }}
                       type="button"
                       className="relative inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                     >
