@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoPower } from "react-icons/io5";
+import { BiLogOutCircle } from "react-icons/bi";
 
 const Sidebar = () => {
   const router = useRouter();
@@ -26,7 +27,7 @@ const Sidebar = () => {
           !router.pathname.includes("/auth/login") ? "md:flex" : "hidden"
         } fixed bg-black px-3 shadow-sm flex-col`}
       >
-        <div className="h-full flex flex-col justify-between">
+        <div className="h-full flex flex-col justify-between overflow-y-auto">
           {/* Render Items */}
           <div className="flex flex-col mt-10">
             {SidebarItems.map((item, index) => {
@@ -65,11 +66,11 @@ const Sidebar = () => {
 
           {/* Logout */}
           <div
-            className="flex items-center mb-8 w-fit cursor-pointer"
+            className="flex items-center mb-8 my-1.5 p-1 w-fit cursor-pointer"
             onClick={() => signOut()}
           >
-            <IoPower className="w-6 h-6" />
-            <p className="text-lg md:text-sm mx-2">Logout</p>
+            <BiLogOutCircle className="w-6 h-6 text-white" />
+            <p className="text-lg text-white md:text-sm mx-3">Logout</p>
           </div>
         </div>
       </div>
