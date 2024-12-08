@@ -25,6 +25,7 @@ export interface Customer {
   paymentPlan: string;
   profileRate: number | null;
   invoices: Invoice[];
+  lastPurchaseDate?: Date;
 }
 
 export type Product = {
@@ -105,10 +106,7 @@ export type DashBoardData = {
   customers: {
     total: number;
     regular: number;
-    new: Array<{
-      month: string;
-      customers: number;
-    }>;
+    new: number;
     top: Array<{
       name: string;
       phone: string;

@@ -6,7 +6,7 @@ interface IProps {
   total: number | undefined;
   regular: number | undefined;
   newCustomers: number | undefined;
-  top:
+  top?:
     | Array<{
         name: string;
         phone: string;

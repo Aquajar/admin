@@ -36,8 +36,6 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
     setCustomers,
   };
 
-  
-
   return (
     <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
   );

@@ -366,13 +366,10 @@ export default function Home() {
          * CUSTOMERS INSIGHT
          */}
         <CustomerInsight
-          top={data?.customers.top}
+          // top={data?.customers.top}
           total={data?.customers.total}
           regular={data?.customers.regular}
-          newCustomers={
-            data?.customers?.new?.filter((data) => data.month === currMonth)[0]
-              ?.customers
-          }
+          newCustomers={data?.customers?.new}
         />
         {/*
          * LEVEL 2

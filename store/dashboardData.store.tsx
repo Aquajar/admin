@@ -5,7 +5,7 @@ const initalState: DashBoardData = {
   customers: {
     total: 0,
     regular: 0,
-    new: [],
+    new: 0,
     top: [],
   },
   iat: "0",

@@ -1,12 +1,12 @@
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import useCustomers from "@/lib/hooks/useCustomers";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import Modal from "react-modal";
 import { MdCancelPresentation } from "react-icons/md";
+import { BiLoaderAlt } from "react-icons/bi";
 import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
@@ -49,6 +49,8 @@ const BreadCrumb = [
 
 const Customers = () => {
   const { customers, setCustomers } = useCustomersStore();
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
   const { data: session } = useSession();
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedCustomerID, setSelectedCustomerID] = useState<number>();
@@ -69,8 +71,16 @@ const Customers = () => {
       isNeedToday?: boolean;
     }[]
   >([]);
+  const [hasMore, setHasMore] = useState(true); // Check if more data is available
+  const [loading, setLoading] = useState(false); // Manage loading state
 
-  const tableRef = useRef(null);
+  const initialLoad = useRef<boolean>(true); // Track initial render
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const tableRef = useRef<HTMLTableElement | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  const daysAgo = (date: Date): number =>
+    Math.floor((new Date().getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
 
   function openModal() {
     setModalIsOpen(true);
@@ -93,8 +103,67 @@ const Customers = () => {
 
   // Hooks
   useRefreshTokenRotation(axiosInstance);
-  useCustomers(axiosInstance, session);
   useInvoice(axiosInstance, session);
+
+  // Fetch customers
+  const getCustomers = async (pageNumber: number) => {
+    if (!hasMore || loading) return; // Avoid duplicate calls while loading or if no more data
+
+    setLoading(true); // Set loading state
+
+    try {
+      const URL =
+        process.env.NEXT_PUBLIC_API_URL +
+        `/user/all?limit=${limit}&page=${pageNumber}`;
+
+      const { data } = await axiosInstance.get(URL);
+
+      if (data?.users.length > 0) {
+        setCustomers((prev) => {
+          if (!prev) return data.users;
+
+          // Filter out the customers that already exist in the previous state
+          const uniqueCustomers = [...prev, ...data.users].filter(
+            (value, index, self) =>
+              index === self.findIndex((t) => t.userID === value.userID) // Assuming `userID` is the unique identifier
+          );
+
+          return uniqueCustomers;
+        });
+
+        setCustomersState((prev) => {
+          if (!prev) return data.users;
+
+          // Filter out the customers that already exist in the previous state
+          const uniqueCustomers = [...prev, ...data.users].filter(
+            (value, index, self) =>
+              index === self.findIndex((t) => t.userID === value.userID) // Assuming `userID` is the unique identifier
+          );
+
+          return uniqueCustomers;
+        });
+
+        setPage(pageNumber + 1); // Increment page for the next request
+        setHasMore(data.hasMore); // Update `hasMore` based on API response
+      } else {
+        setHasMore(false); // No more data available
+      }
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      toast.error("Failed to fetch customers");
+    } finally {
+      setLoading(false); // Reset loading state
+    }
+  };
+
+  // Initial data load
+  useEffect(() => {
+    if (initialLoad.current) {
+      // Load customers on initial render
+      getCustomers(1);
+      initialLoad.current = false;
+    }
+  }, []);
 
   // Update Customer Details
   const handleSave = () => {
@@ -123,24 +192,58 @@ const Customers = () => {
     });
   };
 
-  const checkIfUserPurchasedJar = (customerID: string) => {
-    if (!invoices) return false;
-    const customerInvoices = invoices.filter(
-      (invoice) => invoice.customerID === customerID
+  // const checkIfUserPurchasedJar = (customerID: string) => {
+  //   if (!invoices) return false;
+  //   const customerInvoices = invoices.filter(
+  //     (invoice) => invoice.customerID === customerID
+  //   );
+
+  //   if (customerInvoices.length === 0) return false;
+
+  //   const purchasedJar = customerInvoices.some((invoice) =>
+  //     invoice.products.some(
+  //       (product) =>
+  //         product.id === "65d39d92e47ffdfd6db8c898" ||
+  //         product.id === "65d1c8a73a2e530a5997ca57"
+  //     )
+  //   );
+
+  //   return purchasedJar;
+  // };
+
+  // Intersection Observer
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            debounceTimeout.current = setTimeout(() => {
+              getCustomers(page);
+              debounceTimeout.current = null;
+            }, 1000); // Debounce with 1200ms delay
+          }
+        });
+      },
+      {
+        root: null, // Viewport
+        threshold: 0.1, // Trigger when 10% is visible
+      }
     );
 
-    if (customerInvoices.length === 0) return false;
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
 
-    const purchasedJar = customerInvoices.some((invoice) =>
-      invoice.products.some(
-        (product) =>
-          product.id === "65d39d92e47ffdfd6db8c898" ||
-          product.id === "65d1c8a73a2e530a5997ca57"
-      )
-    );
-
-    return purchasedJar;
-  };
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, [page, hasMore]);
 
   // Fetch Areas
   useEffect(() => {
@@ -492,24 +595,24 @@ const Customers = () => {
                 Phone
               </th>
 
+              {/* <th scope="col" className="px-6 py-3">
+                Total Due
+              </th> */}
+
+              {/* <th scope="col" className="px-6 py-3">
+                Purchase Interval
+              </th> */}
+              <th scope="col" className="px-6 py-3">
+                Last Purchase
+              </th>
+
               <th scope="col" className="px-6 py-3">
                 Plan
               </th>
 
-              <th scope="col" className="px-6 py-3">
-                Purchase Interval
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Period since last
-              </th>
-
-              <th scope="col" className="px-6 py-3">
-                Total Due
-              </th>
-
-              <th scope="col" className="px-6 py-3">
+              {/* <th scope="col" className="px-6 py-3">
                 Jar Purchased
-              </th>
+              </th> */}
 
               <th scope="col" className="px-6 py-3">
                 Address
@@ -531,36 +634,39 @@ const Customers = () => {
           <tbody>
             {customersState &&
               customersState.map((customer) => {
-                if (!invoices) return null;
-                let purchasedJar = checkIfUserPurchasedJar(customer._id);
+                // let purchasedJar = checkIfUserPurchasedJar(customer._id);
 
-                let lastPurchaseDate = new Date(
-                  invoices
-                    .filter((invoice) => invoice.customerID === customer._id)
-                    .sort((a, b) => {
-                      return (
-                        new Date(b.invoiceDate!).getTime() -
-                        new Date(a.invoiceDate!).getTime()
-                      );
-                    })[0]?.invoiceDate!
-                );
+                // let lastPurchaseDate = new Date(
+                //   invoices
+                //     .filter((invoice) => invoice.customerID === customer._id)
+                //     .sort((a, b) => {
+                //       return (
+                //         new Date(b.invoiceDate!).getTime() -
+                //         new Date(a.invoiceDate!).getTime()
+                //       );
+                //     })[0]?.invoiceDate!
+                // );
 
-                let todayDate = new Date();
+                // let todayDate = new Date();
 
-                let purchaseInterval = purchasePatternData
-                  .filter((pattern) => pattern.customerID === customer._id)
-                  .map((pattern) => {
-                    if (!pattern.averageIntervalDays) return 0;
-                    return Math.abs(Math.round(pattern.averageIntervalDays));
-                  })[0];
+                // let purchaseInterval = purchasePatternData
+                //   .filter((pattern) => pattern.customerID === customer._id)
+                //   .map((pattern) => {
+                //     if (!pattern.averageIntervalDays) return 0;
+                //     return Math.abs(Math.round(pattern.averageIntervalDays));
+                //   })[0];
 
-                const diffTime = Math.abs(
-                  lastPurchaseDate.getTime() - todayDate.getTime()
-                );
+                // const diffTime = Math.abs(
+                //   lastPurchaseDate.getTime() - todayDate.getTime()
+                // );
 
                 // Calculate the interval between today and last purchase date
-                let differenceInDays =
-                  Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
+                // let differenceInDays =
+                //   Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
+
+                const lastPurchaseDate = customer?.lastPurchaseDate
+                  ? daysAgo(new Date(customer?.lastPurchaseDate))
+                  : 1;
 
                 return (
                   <tr
@@ -598,41 +704,8 @@ const Customers = () => {
                       <a href={`tel:+91 ${customer.phone}`}>{customer.phone}</a>
                     </td>
 
-                    {/* Payment Plan */}
-                    <td className="px-2  text-center py-4 text-gray-900">
-                      {customer.paymentPlan}
-                    </td>
-
-                    {/* Purchase Pattern */}
-                    <td className="px-2 text-center py-4 text-gray-900">
-                      <span className="font-semibold">
-                        {purchaseInterval}
-                        <span className="text-xs font-normal"> day/s</span>
-                      </span>
-                    </td>
-
-                    {/* Purchase Interval */}
-                    <td className="px-2 text-center py-4 text-gray-900">
-                      {
-                        <span
-                          className={`font-semibold ${
-                            differenceInDays <= purchaseInterval
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {isNaN(differenceInDays) ? "N/A" : differenceInDays}
-                          {
-                            <span className="text-xs font-normal ml-1">
-                              {isNaN(differenceInDays) ? "" : "day/s"}
-                            </span>
-                          }
-                        </span>
-                      }
-                    </td>
-
                     {/* Total Due */}
-                    <td className="px-2 text-center py-4 text-gray-900">
+                    {/* <td className="px-2 text-center py-4 text-gray-900">
                       <CurrencyFormat
                         value={invoices
                           .filter(
@@ -648,16 +721,48 @@ const Customers = () => {
                         decimalScale={0}
                         fixedDecimalScale={true}
                       />
+                    </td> */}
+
+                    {/* Purchase Pattern */}
+                    {/* <td className="px-2 text-center py-4 text-gray-900">
+                      <span className="font-semibold">
+                        {purchaseInterval}
+                        <span className="text-xs font-normal"> day/s</span>
+                      </span>
+                    </td> */}
+
+                    {/* Purchase Interval */}
+                    <td className="px-2 text-center py-4 text-gray-900">
+                      {
+                        <span
+                          className={`font-semibold ${
+                            customer.isRegular && lastPurchaseDate >= 5
+                              ? "text-red-500"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {
+                            <span className="text-sm font-medium ml-1">
+                              {lastPurchaseDate} day/s
+                            </span>
+                          }
+                        </span>
+                      }
+                    </td>
+
+                    {/* Payment Plan */}
+                    <td className="px-2  text-center py-4 text-gray-900">
+                      {customer.paymentPlan}
                     </td>
 
                     {/* Jar Purchased */}
-                    <td
+                    {/* <td
                       className={`px-2 text-center py-4 font-medium ${
                         purchasedJar ? "text-green-600" : "text-red-500"
                       }`}
                     >
                       {purchasedJar ? "Yes" : "No"}
-                    </td>
+                    </td> */}
 
                     {/* Address */}
                     <td className="px-2 w-52 text-center py-4 text-xs text-gray-900">
@@ -701,7 +806,7 @@ const Customers = () => {
                           setSelectedCustomerID(customer.userID);
                           setShowSummary(true);
                           setSelectedCustomerInvoices(
-                            invoices.filter(
+                            invoices?.filter(
                               (invoice) => invoice.customerID === customer._id
                             )
                           );
@@ -723,6 +828,12 @@ const Customers = () => {
               })}
           </tbody>
         </table>
+      </div>
+      {/*
+       * Loader
+       */}
+      <div ref={loaderRef} className="mt-8">
+        <BiLoaderAlt className="text-4xl mx-auto animate-spin" />
       </div>
     </Wrapper>
   );
