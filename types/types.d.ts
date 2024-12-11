@@ -77,6 +77,7 @@ export interface Invoice {
   invoiceID: invoiceId;
   invoiceDate: string | null;
   customerID: string | undefined;
+  customerName?: string;
   vehicleID: string | null;
   total: number;
   products: {

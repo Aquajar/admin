@@ -346,6 +346,7 @@ const Invoice = () => {
       invoiceID: invoiceId,
       invoiceDate: startDate.toISOString(),
       customerID: customer?._id,
+      customerName: customer?.name,
       vehicleID: orderType === "delivery" ? vehicle : null,
       driver: orderType === "delivery" ? driverID : null,
       total: total,

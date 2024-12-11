@@ -1,9 +1,7 @@
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
-import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
 import { Invoice, SideBarItem } from "@/types/types";
 import { useSession } from "next-auth/react";
@@ -47,7 +45,6 @@ const customModalStyles = {
 const Invoices = () => {
   const { data: session } = useSession();
   const { invoices, setInvoices } = useInvoicesStore();
-  const { customers } = useCustomersStore();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [modalIsOpen, setIsOpen] = useState(false);
   const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
@@ -59,7 +56,7 @@ const Invoices = () => {
   // Hooks
   useRefreshTokenRotation(axiosInstance);
   useInvoice(axiosInstance, session);
-  useCustomers(axiosInstance, session);
+  // useCustomers(axiosInstance, session);
 
   // Fetch invoices
   const refreshInvoice = async () => {
@@ -379,11 +376,7 @@ const Invoices = () => {
                       {invoice.invoiceID}
                     </th>
                     <td className="px-6 py-4 text-gray-900 font-medium">
-                      {
-                        customers?.find(
-                          (customer) => customer._id === invoice.customerID
-                        )?.name
-                      }
+                      {invoice?.customerName || ""}
                     </td>
                     <td className="px-2 py-4 text-center text-black">
                       {beautifyDate(new Date(invoice.invoiceDate!))}

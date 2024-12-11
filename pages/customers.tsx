@@ -73,6 +73,13 @@ const Customers = () => {
   >([]);
   const [hasMore, setHasMore] = useState(true); // Check if more data is available
   const [loading, setLoading] = useState(false); // Manage loading state
+  const [autoLoad, setAutoLoad] = useState(true);
+
+  // Filter key states
+  const [sortByArea, setSortByArea] = useState<"all" | Area["name"]>("all");
+  const [sortByRegularity, setSortByRegularity] = useState<
+    "all" | "true" | "false"
+  >("all");
 
   const initialLoad = useRef<boolean>(true); // Track initial render
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -92,6 +99,7 @@ const Customers = () => {
 
   // Reset Customer State
   const resetCustomerState = () => {
+    setAutoLoad(true);
     setSelectedCustomer(undefined);
     setCustomersState(customers);
     setSelectedCustomerID(undefined);
@@ -107,7 +115,9 @@ const Customers = () => {
 
   // Fetch customers
   const getCustomers = async (pageNumber: number) => {
+    console.log("Getting customers...");
     if (!hasMore || loading) return; // Avoid duplicate calls while loading or if no more data
+    if (!autoLoad) return;
 
     setLoading(true); // Set loading state
 
@@ -179,7 +189,7 @@ const Customers = () => {
         setCustomers((prev) => {
           if (!prev) return;
           const index = prev.findIndex(
-            (customer) => customer.userID === selectedCustomer.userID
+            (customer) => customer?.userID === selectedCustomer?.userID
           );
           prev[index] = selectedCustomer;
           return prev;
@@ -293,29 +303,43 @@ const Customers = () => {
   }, [products]);
 
   // Handle Search Trigger
-  const handleOnsearch = (searchTerm: string, searchBy: "id" | "name") => {
-    if (!searchTerm) {
-      setCustomersState(customers);
-    }
-    if (!searchTerm) {
-      setCustomersState((prev) => {
-        if (!prev) return;
-        return prev;
-      });
-    } else {
+  const handleOnsearch = async (
+    searchTerm: string,
+    searchBy: "id" | "name"
+  ) => {
+    setAutoLoad(false);
+    setLoading(true);
+    try {
       if (!customers) return;
-      setCustomersState(
-        customers.filter((customer) => {
-          if (searchBy === "id") {
-            return customer.userID.toString().includes(searchTerm);
-          } else {
-            if (!customer.name) return;
-            return customer.name
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase());
-          }
-        })
-      );
+      if (searchBy === "id") {
+        if (searchTerm.length === 4) {
+          const URL =
+            process.env.NEXT_PUBLIC_API_URL +
+            "/user/find-by-userid/" +
+            searchTerm;
+          const { data } = await axiosInstance.get(URL);
+          console.log(data);
+          setCustomersState([data.user]);
+        } else {
+          toast.error("User ID should be 4 characters.");
+        }
+      } else {
+        let term = searchTerm;
+        console.log("Term: " + term);
+        if (searchTerm === "") term = "all";
+        const URL =
+          process.env.NEXT_PUBLIC_API_URL +
+          "/user/find-by-name/" +
+          term +
+          `?area=${sortByArea}&regularity=${sortByRegularity}`;
+        const { data } = await axiosInstance.get(URL);
+        console.log(data);
+        setCustomersState(data.user);
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -332,23 +356,38 @@ const Customers = () => {
       loading: "Updating Customer",
       success: (res) => {
         // Update the customer in the store
-        setCustomers((prev) => {
-          if (!prev) return;
-          const index = prev.findIndex(
-            (customer) => customer.userID === userID
-          );
-          prev[index].isRegular = !isRegular;
-          return prev;
-        });
+        // setCustomers((prev) => {
+        //   if (!prev) return;
+        //   const index = prev.findIndex(
+        //     (customer) => customer?.userID === userID
+        //   );
+        //   prev[index].isRegular = !isRegular;
+        //   return prev;
+        // });
 
+        const user = customersState && customersState[0];
+
+        // Update the customer in the store
         setCustomersState((prev) => {
           if (!prev) return;
           const index = prev.findIndex(
-            (customer) => customer.userID === userID
+            (customer) => customer?.userID === userID
           );
-          prev[index].isRegular = !isRegular;
+          prev[index] = { ...prev[index], isRegular: !isRegular };
           return prev;
         });
+
+        if (user) {
+          user.isRegular = !isRegular;
+          setCustomersState((prev) => {
+            if (!prev) return;
+            const index = prev.findIndex(
+              (customer) => customer?.userID === userID
+            );
+            prev[index] = { ...prev[index], isRegular: !isRegular };
+            return prev;
+          });
+        }
 
         return res.data.message;
       },
@@ -363,7 +402,7 @@ const Customers = () => {
         let totalDue = invoices
           ?.filter(
             (invoice) =>
-              invoice.customerID === customer._id &&
+              invoice.customerID === customer?._id &&
               invoice.status === "pending"
           )
           .reduce((acc, curr) => acc + curr.due, 0)
@@ -442,7 +481,7 @@ const Customers = () => {
                   setSelectedCustomer({
                     ...selectedCustomer,
                     address: {
-                      ...selectedCustomer.address,
+                      ...selectedCustomer?.address,
                       text: e.target.value,
                     },
                   })
@@ -475,7 +514,7 @@ const Customers = () => {
                   setSelectedCustomer({
                     ...selectedCustomer,
                     address: {
-                      ...selectedCustomer.address,
+                      ...selectedCustomer?.address,
                       landmark: e.target.value,
                     },
                   })
@@ -562,6 +601,11 @@ const Customers = () => {
        * Render Search Bar
        */}
       <HeaderMenu
+        loading={loading}
+        sortByArea={sortByArea}
+        setSortByArea={setSortByArea}
+        sortByRegularity={sortByRegularity}
+        setSortByRegularity={setSortByRegularity}
         tableRef={tableRef}
         purchasePatternData={purchasePatternData}
         invoices={invoices}
@@ -634,11 +678,11 @@ const Customers = () => {
           <tbody>
             {customersState &&
               customersState.map((customer) => {
-                // let purchasedJar = checkIfUserPurchasedJar(customer._id);
+                // let purchasedJar = checkIfUserPurchasedJar(customer?._id);
 
                 // let lastPurchaseDate = new Date(
                 //   invoices
-                //     .filter((invoice) => invoice.customerID === customer._id)
+                //     .filter((invoice) => invoice.customerID === customer?._id)
                 //     .sort((a, b) => {
                 //       return (
                 //         new Date(b.invoiceDate!).getTime() -
@@ -650,7 +694,7 @@ const Customers = () => {
                 // let todayDate = new Date();
 
                 // let purchaseInterval = purchasePatternData
-                //   .filter((pattern) => pattern.customerID === customer._id)
+                //   .filter((pattern) => pattern.customerID === customer?._id)
                 //   .map((pattern) => {
                 //     if (!pattern.averageIntervalDays) return 0;
                 //     return Math.abs(Math.round(pattern.averageIntervalDays));
@@ -670,38 +714,40 @@ const Customers = () => {
 
                 return (
                   <tr
-                    key={customer._id}
+                    key={customer?._id}
                     className="bg-white  border-b 0  hover:bg-gray-50 "
                   >
                     <td className="px-2 text-center text-gray-900 w-full h-full mt-6 flex justify-center">
                       <input
-                        id={`regular-${customer.userID}`}
+                        id={`regular-${customer?.userID}`}
                         type="checkbox"
                         value=""
                         onChange={() =>
                           handleUpdateRegularity(
-                            customer.userID,
-                            customer.isRegular
+                            customer?.userID,
+                            customer?.isRegular
                           )
                         }
-                        checked={customer.isRegular}
+                        checked={customer?.isRegular}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
                       />
                     </td>
                     <td className="px-2 text-center py-4 text-gray-900 font-medium">
-                      {customer.userID.toString()}
+                      {customer?.userID?.toString()}
                     </td>
                     {/* Name */}
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                     >
-                      {customer.name}
+                      {customer?.name}
                     </th>
 
                     {/* Phone */}
                     <td className="px-2 text-center py-4 text-gray-900">
-                      <a href={`tel:+91 ${customer.phone}`}>{customer.phone}</a>
+                      <a href={`tel:+91 ${customer?.phone}`}>
+                        {customer?.phone}
+                      </a>
                     </td>
 
                     {/* Total Due */}
@@ -711,7 +757,7 @@ const Customers = () => {
                           .filter(
                             (invoice) =>
                               invoice.status === "pending" &&
-                              invoice.customerID === customer._id
+                              invoice.customerID === customer?._id
                           )
                           .reduce((acc, curr) => acc + curr.due, 0)
                           .toString()}
@@ -736,9 +782,11 @@ const Customers = () => {
                       {
                         <span
                           className={`font-semibold ${
-                            customer.isRegular && lastPurchaseDate >= 5
-                              ? "text-red-500"
-                              : "text-green-600"
+                            customer?.isRegular
+                              ? lastPurchaseDate >= 5
+                                ? "text-red-500"
+                                : "text-green-600"
+                              : "text-gray-500"
                           }`}
                         >
                           {
@@ -752,7 +800,7 @@ const Customers = () => {
 
                     {/* Payment Plan */}
                     <td className="px-2  text-center py-4 text-gray-900">
-                      {customer.paymentPlan}
+                      {customer?.paymentPlan}
                     </td>
 
                     {/* Jar Purchased */}
@@ -766,15 +814,18 @@ const Customers = () => {
 
                     {/* Address */}
                     <td className="px-2 w-52 text-center py-4 text-xs text-gray-900">
-                      {customer.address?.landmark !== customer.address?.text &&
-                        `${customer.address?.landmark}, `}
-                      {customer.address?.text}
+                      {customer?.address?.landmark !==
+                        customer?.address?.text &&
+                        `${customer?.address?.landmark}, `}
+                      {customer?.address?.text}
                     </td>
 
                     {/* Profile Rate */}
                     <td className="px-2 text-center py-4 text-gray-900">
                       <CurrencyFormat
-                        value={customer.profileRate ? customer.profileRate : 25}
+                        value={
+                          customer?.profileRate ? customer?.profileRate : 25
+                        }
                         displayType={"text"}
                         thousandSeparator={true}
                         prefix={"₹"}
@@ -785,14 +836,14 @@ const Customers = () => {
 
                     {/* Created At */}
                     <td className="px-2 text-center py-4 text-gray-900">
-                      {new Date(customer.createdAt).toLocaleDateString()}
+                      {new Date(customer?.createdAt).toLocaleDateString()}
                     </td>
 
                     {/* Action Button */}
                     <td className="flex items-center px-2 text-center py-4">
                       <span
                         onClick={async () => {
-                          setSelectedCustomerID(customer.userID);
+                          setSelectedCustomerID(customer?.userID);
                           setSelectedCustomer(customer);
                           setShowSummary(false);
                           openModal();
@@ -803,11 +854,11 @@ const Customers = () => {
                       </span>
                       <span
                         onClick={() => {
-                          setSelectedCustomerID(customer.userID);
+                          setSelectedCustomerID(customer?.userID);
                           setShowSummary(true);
                           setSelectedCustomerInvoices(
                             invoices?.filter(
-                              (invoice) => invoice.customerID === customer._id
+                              (invoice) => invoice.customerID === customer?._id
                             )
                           );
                           openModal();
@@ -832,7 +883,7 @@ const Customers = () => {
       {/*
        * Loader
        */}
-      <div ref={loaderRef} className="mt-8">
+      <div ref={loaderRef} className={`mt-8 ${!autoLoad && "hidden"}`}>
         <BiLoaderAlt className="text-4xl mx-auto animate-spin" />
       </div>
     </Wrapper>

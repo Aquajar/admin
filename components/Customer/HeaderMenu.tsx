@@ -2,7 +2,13 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { Area, Customer, Invoice } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import { useSession } from "next-auth/react";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, {
+  ChangeEvent,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import toast from "react-hot-toast";
 import { FaSearch } from "react-icons/fa";
 import { LuFileSpreadsheet } from "react-icons/lu";
@@ -25,6 +31,11 @@ interface HeaderMenuProps {
     isNeedToday?: boolean;
   }[];
   tableRef: React.RefObject<HTMLTableElement>;
+  sortByRegularity: "all" | "true" | "false";
+  setSortByRegularity: Dispatch<SetStateAction<"all" | "true" | "false">>;
+  setSortByArea: Dispatch<SetStateAction<"all" | Area["name"]>>;
+  sortByArea: Area["name"];
+  loading: boolean;
 }
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
@@ -35,17 +46,15 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   MasterCustomersState,
   purchasePatternData,
   tableRef,
+  sortByRegularity,
+  setSortByRegularity,
+  setSortByArea,
+  sortByArea,
+  loading,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState<"id" | "name">("name");
   const [areas, setAreas] = useState<Area[] | null>(null);
-
-  // Filter key states
-  const [sortByArea, setSortByArea] = useState("all");
-  const [sortByRegularity, setSortByRegularity] = useState("all");
-  const [sortByInterval, setSortByInterval] = useState<"all" | "high" | "low">(
-    "all"
-  );
 
   const { data: session } = useSession();
 
@@ -70,7 +79,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   };
 
   // Handle sort by regularity
-  const handleSortByRegularity = (val: string) => {
+  const handleSortByRegularity = (val: "all" | "true" | "false") => {
     setSortByRegularity(val);
 
     if (val === "all") {
@@ -128,7 +137,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
 
     setCustomers(n);
 
-    setSortByInterval(val);
+    // setSortByInterval(val);
   };
 
   useEffect(() => {
@@ -179,14 +188,18 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           </div>
           <input
             type="text"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 pr-36 p-2.5"
+            disabled={loading}
+            className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 pr-36 p-2.5 `}
             placeholder="Search..."
             value={searchTerm}
             onChange={handleInputChange}
           />
           <button
+            disabled={loading}
             type="submit"
-            className="absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white bg-blue-600 hover:bg-indigo-700"
+            className={`absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white ${
+              loading ? "bg-gray-300 cursor-wait" : "bg-blue-600 hover:bg-indigo-700"
+            }  `}
           >
             Search
           </button>
@@ -218,7 +231,9 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
           <select
             id="searchBy"
             className="bg-gray-50 border cursor-pointer mt-1.5 border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-4"
-            onChange={(e) => handleSortByRegularity(e.target.value)}
+            onChange={(e) =>
+              setSortByRegularity(e.target.value as "all" | "true" | "false")
+            }
           >
             <option value="all" selected={sortByRegularity === "all"}>
               All
@@ -239,7 +254,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
             Area
           </label>
           <select
-            onChange={(e) => handleSortByArea(e.target.value)}
+            onChange={(e) => setSortByArea(e.target.value)}
             className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
           >
             <option selected={sortByArea === "all"} value="all">
@@ -260,7 +275,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
         {/*
          * Sort by Purchase Interval
          */}
-        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
+        {/* <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
           <label htmlFor="searchBy" className="text-xs text-gray-500">
             Purchase Interval
           </label>
@@ -280,7 +295,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
               Less
             </option>
           </select>
-        </div>
+        </div> */}
         {/*
          * Refresh Button
          */}
@@ -289,7 +304,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
             resetCustomers();
             setSortByArea("all");
             setSortByRegularity("all");
-            setSortByInterval("all");
+            // setSortByInterval("all");
           }}
           className="p-2.5 bg-blue-700 rounded-md text-sm font-medium text-gray-900 w-full md:w-fit mt-6 md:mt-0 flex items-center justify-center"
         >
