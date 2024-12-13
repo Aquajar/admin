@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Area, Invoice, Product } from "@/types/types";
+import { Area, Customer, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
@@ -165,6 +165,7 @@ const Customers = () => {
       setLoading(false); // Reset loading state
     }
   };
+
 
   // Initial data load
   useEffect(() => {
@@ -625,7 +626,7 @@ const Customers = () => {
           className="w-full text-sm text-left text-gray-500 "
         >
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-            <tr className="">
+            <tr className="text-center">
               <th scope="col" className="px-6 py-3">
                 Regular
               </th>
@@ -650,6 +651,9 @@ const Customers = () => {
                 Last Purchase
               </th>
 
+              <th scope="col" className="px-6 py-3">
+                Total Due (Rs.)
+              </th>
               <th scope="col" className="px-6 py-3">
                 Plan
               </th>
@@ -711,6 +715,15 @@ const Customers = () => {
                 const lastPurchaseDate = customer?.lastPurchaseDate
                   ? daysAgo(new Date(customer?.lastPurchaseDate))
                   : 1;
+
+                const customerInvoices = invoices?.filter((v) =>
+                  customer.invoices.includes(v.invoiceID)
+                );
+
+                const totalDue = customerInvoices?.reduce(
+                  (total, invoice) => total + invoice.due,
+                  0
+                );
 
                 return (
                   <tr
@@ -796,6 +809,18 @@ const Customers = () => {
                           }
                         </span>
                       }
+                    </td>
+
+                    {/* Total Due */}
+                    <td className="px-2  text-center py-4 text-gray-900 font-medium">
+                      <CurrencyFormat
+                        value={totalDue}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={""}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                      />
                     </td>
 
                     {/* Payment Plan */}
