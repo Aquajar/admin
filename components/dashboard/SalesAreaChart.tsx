@@ -48,7 +48,7 @@ const SalesAreaChart: FC<IProps> = ({ data }) => {
   );
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full pt-10">
       <div className="absolute top-5 z-50 flex flex-col md:flex-row items-baseline w-full">
         <span className="text-2xl font-medium">Sales Performance</span>
         <span className="md:ml-20 text-sm">Daily Average : {averageSales}</span>

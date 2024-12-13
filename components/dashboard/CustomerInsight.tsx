@@ -17,7 +17,7 @@ interface IProps {
 
 const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
   return (
-    <div className="bg-black rounded-2xl p-5 my-6">
+    <div className="bg-black rounded-2xl p-5 h-full">
       <span className="text-white text-lg">Customer Insight</span>
       {/* Stats */}
       <div className="grid mt-4 grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-8">
@@ -40,7 +40,7 @@ const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
         </div>
       </div>
       {/* Leaderboard */}
-      <div className="relative overflow-x-auto mt-6">
+      {/* <div className="relative overflow-x-auto mt-6">
         <table className="w-full text-sm text-left rtl:text-right text-gray-300">
           <thead className="text-xs  uppercase  border-b border-gray-500">
             <tr>
@@ -90,7 +90,7 @@ const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
             })}
           </tbody>
         </table>
-      </div>
+      </div> */}
     </div>
   );
 };

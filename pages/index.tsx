@@ -101,7 +101,7 @@ export default function Home() {
     setCurrMonthIndex(currMonthIndex - 1);
   };
 
-  console.log(data)
+  console.log(data);
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
@@ -365,18 +365,20 @@ export default function Home() {
         </div>
 
         {/*
-         * CUSTOMERS INSIGHT
+         * LEVEL 3
          */}
-        <CustomerInsight
-          // top={data?.customers.top}
-          total={data?.customers.total}
-          regular={data?.customers.regular}
-          newCustomers={data?.customers?.new}
-        />
-        {/*
-         * LEVEL 2
-         */}
-        <div className="flex flex-col w-full">
+        <div className="grid md:grid-cols-2 gap-5 w-full">
+          {/*
+           * CUSTOMERS INSIGHT
+           */}
+          <div className="w-full">
+            <CustomerInsight
+              // top={data?.customers.top}
+              total={data?.customers.total}
+              regular={data?.customers.regular}
+              newCustomers={data?.customers?.new}
+            />
+          </div>
           {/*
            * SALES SUMMARY
            */}
