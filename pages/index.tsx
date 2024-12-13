@@ -101,6 +101,8 @@ export default function Home() {
     setCurrMonthIndex(currMonthIndex - 1);
   };
 
+  console.log(data)
+
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       {/* <Loader visible /> */}

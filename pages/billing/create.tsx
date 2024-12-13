@@ -10,7 +10,7 @@ import DeliveryDetails from "@/components/billing/DeliveryDetails";
 import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
-import { DateTime } from "luxon";
+
 import {
   Area,
   Customer,
@@ -44,6 +44,8 @@ interface ItemProps {
   _id: string;
   quantity: number;
 }
+
+import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
 
 const Invoice = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -340,11 +342,21 @@ const Invoice = () => {
       invoices: invoices,
     };
 
+    const asiaKolkataTimezone = "Asia/Kolkata";
+
+    // Convert the date to the Asia/Kolkata timezone
+    const kolkataDate = toZonedTime(startDate, asiaKolkataTimezone);
+
+    // Format the date to ISO string with the Asia/Kolkata timezone
+    const invoiceDate = format(kolkataDate, "yyyy-MM-dd'T'HH:mm:ssXXX", {
+      timeZone: asiaKolkataTimezone,
+    });
+
     // create payload
     let payload: InvoiceType = {
       user: user,
       invoiceID: invoiceId,
-      invoiceDate: startDate.toISOString(),
+      invoiceDate: invoiceDate,
       customerID: customer?._id,
       customerName: customer?.name,
       vehicleID: orderType === "delivery" ? vehicle : null,
