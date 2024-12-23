@@ -16,29 +16,8 @@ import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
 import CurrencyFormat from "react-currency-format";
-
-Modal.setAppElement("#__next");
-
-const customStyles = {
-  overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-  },
-  content: {
-    top: "50%",
-    left: "50%",
-    right: "auto",
-    bottom: "auto",
-    width: "100%",
-    marginRight: "-50%",
-    transform: "translate(-50%, -50%)",
-    height: "100%",
-    padding: "0.5rem",
-    background: "none",
-    alignItems: "center",
-    justifyContent: "center",
-    display: "flex",
-  },
-};
+import { useRouter } from "next/router";
+import Link from "next/link";
 
 const BreadCrumb = [
   {
@@ -52,7 +31,6 @@ const Customers = () => {
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(1);
   const { data: session } = useSession();
-  const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedCustomerID, setSelectedCustomerID] = useState<number>();
   const [showSummary, setShowSummary] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>();
@@ -60,9 +38,6 @@ const Customers = () => {
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
-  const [selectedCustomerInvoices, setSelectedCustomerInvoices] = useState<
-    Invoice[] | undefined
-  >(undefined);
   const [purchasePatternData, setPurchasePatternData] = useState<
     {
       customerID: string;
@@ -88,14 +63,6 @@ const Customers = () => {
 
   const daysAgo = (date: Date): number =>
     Math.floor((new Date().getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
-
-  function openModal() {
-    setModalIsOpen(true);
-  }
-
-  function closeModal() {
-    setModalIsOpen(false);
-  }
 
   // Reset Customer State
   const resetCustomerState = () => {
@@ -166,7 +133,6 @@ const Customers = () => {
     }
   };
 
-
   // Initial data load
   useEffect(() => {
     if (initialLoad.current) {
@@ -196,7 +162,6 @@ const Customers = () => {
           return prev;
         });
 
-        closeModal();
         return res.data.message;
       },
       error: "Error Updating Customer",
@@ -259,7 +224,7 @@ const Customers = () => {
   // Fetch Areas
   useEffect(() => {
     if (!areas) {
-      // Fetch products from cookies
+      // Fetch area from cookies
       const cookieAreas = getCookie("areas");
       if (cookieAreas) {
         console.log("Fetching areas from cookies");
@@ -427,177 +392,6 @@ const Customers = () => {
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        style={customStyles}
-        contentLabel="Summary Modal"
-      >
-        <div className="bg-white h-fit relative md:h-10/12 w-full md:w-1/2 rounded-lg">
-          <MdCancelPresentation
-            onClick={closeModal}
-            className="absolute top-2 z-50 mx-2 md:mx-0 md:right-2 cursor-pointer text-4xl text-black"
-          />
-          {!showSummary ? (
-            <div className="flex flex-col w-full px-6 md:px-10 py-8">
-              <label htmlFor="name" className="text-gray-600">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={selectedCustomer?.name}
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    name: e.target.value,
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              />
-              <label htmlFor="phone" className="text-gray-600 mt-5">
-                Phone Number
-              </label>
-              <input
-                type="text"
-                id="phone"
-                name="phone"
-                value={selectedCustomer?.phone}
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    phone: e.target.value,
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              />
-              <label htmlFor="address" className="text-gray-600 mt-5">
-                Area
-              </label>
-              <select
-                id="address"
-                name="address"
-                value={selectedCustomer?.address?.text || "Select Area"}
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    address: {
-                      ...selectedCustomer?.address,
-                      text: e.target.value,
-                    },
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              >
-                <option selected={!selectedCustomer?.address?.text} disabled>
-                  Select Area
-                </option>
-                {areas?.map((area) => (
-                  <option
-                    disabled={area.serviceable === false}
-                    selected={area.name === selectedCustomer?.address?.text}
-                    key={area._id}
-                    value={area.name}
-                  >
-                    {area.name}
-                  </option>
-                ))}
-              </select>
-              <label htmlFor="landmark" className="text-gray-600 mt-5">
-                Landmark
-              </label>
-              <input
-                type="text"
-                id="landmark"
-                name="landmark"
-                value={selectedCustomer?.address?.landmark}
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    address: {
-                      ...selectedCustomer?.address,
-                      landmark: e.target.value,
-                    },
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              />
-
-              {/* Subscription Type */}
-              <label htmlFor="address" className="text-gray-600 mt-5">
-                Payment Plan
-              </label>
-              <select
-                id="paymentPlan"
-                name="paymentPlan"
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    paymentPlan: e.target.value,
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              >
-                <option
-                  value="D"
-                  selected={selectedCustomer?.paymentPlan === "D"}
-                >
-                  Daily
-                </option>
-                <option
-                  value="W"
-                  selected={selectedCustomer?.paymentPlan === "W"}
-                >
-                  Weekly
-                </option>
-                <option
-                  value="M"
-                  selected={
-                    selectedCustomer?.paymentPlan === "M" ||
-                    selectedCustomer?.paymentPlan === undefined
-                  }
-                >
-                  Monthly
-                </option>
-              </select>
-
-              {/* Profile Rate */}
-              <label htmlFor="profileRate" className="text-gray-600 mt-5">
-                Profile Rate
-              </label>
-              <input
-                type="number"
-                id="profileRate"
-                name="profileRate"
-                value={selectedCustomer?.profileRate}
-                onChange={(e) =>
-                  setSelectedCustomer({
-                    ...selectedCustomer,
-                    profileRate: parseInt(e.target.value),
-                  })
-                }
-                className="w-full p-2 mt-2 border border-gray-300 rounded-lg"
-              />
-
-              <button
-                onClick={handleSave}
-                className="w-full p-2 mt-10 bg-blue-600 text-white rounded-lg"
-              >
-                Save
-              </button>
-            </div>
-          ) : (
-            <CustomerInvoicesData
-              resetCustomerState={resetCustomerState}
-              products={products}
-              invoices={selectedCustomerInvoices}
-              setModalIsOpen={setModalIsOpen}
-              setInvoices={setInvoices}
-              selectedCustomerID={selectedCustomerID}
-            />
-          )}
-        </div>
-      </Modal>
       {/*
        * Render Search Bar
        */}
@@ -871,27 +665,17 @@ const Customers = () => {
                           setSelectedCustomerID(customer?.userID);
                           setSelectedCustomer(customer);
                           setShowSummary(false);
-                          openModal();
                         }}
                         className="font-medium text-blue-600 cursor-pointer  hover:underline"
                       >
                         Edit
                       </span>
-                      <span
-                        onClick={() => {
-                          setSelectedCustomerID(customer?.userID);
-                          setShowSummary(true);
-                          setSelectedCustomerInvoices(
-                            invoices?.filter(
-                              (invoice) => invoice.customerID === customer?._id
-                            )
-                          );
-                          openModal();
-                        }}
+                      <Link
+                        href={"/customers/profile/" + customer.userID}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"
                       >
                         Summary
-                      </span>
+                      </Link>
                       <a
                         href="#"
                         className="font-medium text-red-600 hover:underline ms-3"

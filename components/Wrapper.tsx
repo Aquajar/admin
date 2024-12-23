@@ -1,6 +1,5 @@
 import React, { FC } from "react";
 import BreadCrumb from "./BreadCrumb";
-import { BreadCrumbProps, SideBarItem } from "@/types/types";
 
 interface WrapperProps {
   children: React.ReactNode;

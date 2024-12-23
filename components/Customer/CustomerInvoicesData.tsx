@@ -2,14 +2,13 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
-import React, { FC } from "react";
+import React, { FC, useEffect, useState } from "react";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import { AiOutlineLoading } from "react-icons/ai";
 
 interface IProps {
   selectedCustomerID: number | undefined;
-  invoices: Invoice[] | null | undefined;
   setInvoices: React.Dispatch<
     React.SetStateAction<Invoice[] | null | undefined>
   >;
@@ -18,17 +17,42 @@ interface IProps {
   resetCustomerState: () => void;
 }
 
+type MonthwiseSummaries = {
+  totalAmount: number;
+  dueAmount: number;
+};
+
 const CustomerInvoicesData: FC<IProps> = ({
-  invoices,
   products,
-  setInvoices,
   setModalIsOpen,
   selectedCustomerID,
 }) => {
-  const [amount, setAmount] = React.useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [invoices, setInvoices] = useState<Invoice[] | null | undefined>(null);
+  const [monthwiseSummaries, setMonthwiseSummaries] = useState<
+    MonthwiseSummaries[]
+  >([]);
 
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+
+  // Get the invoice for the user
+  const handleFetchInvoice = async () => {
+    const url =
+      process.env.NEXT_PUBLIC_API_URL +
+      "/user/invoices?id=" +
+      selectedCustomerID;
+    const { data } = await axiosInstance.get(url);
+    console.log(data);
+    setInvoices(data.invoices);
+    setMonthwiseSummaries(data.monthwiseSummary);
+  };
+
+  useEffect(() => {
+    if (session) {
+      handleFetchInvoice();
+    }
+  }, [selectedCustomerID]);
 
   // Handle the payment to due invoices
   const handlePayNow = async () => {
