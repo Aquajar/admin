@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, Suspense } from "react";
 import BreadCrumb from "./BreadCrumb";
 
 interface WrapperProps {
@@ -11,10 +11,12 @@ interface WrapperProps {
 
 const Wrapper: FC<WrapperProps> = ({ children, breadcrumb }) => {
   return (
-    <div className="flex flex-col w-full h-full px-4 mb-28 md:pl-48 md:pr-8 pt-4">
-      <BreadCrumb items={breadcrumb} />
-      {children}
-    </div>
+    <Suspense fallback={<span>Loading...</span>}>
+      <div className="flex flex-col w-full h-full px-4 mb-28 md:pl-48 md:pr-8 pt-4">
+        <BreadCrumb items={breadcrumb} />
+        {children}
+      </div>
+    </Suspense>
   );
 };
 

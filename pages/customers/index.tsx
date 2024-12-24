@@ -374,7 +374,7 @@ const Customers = () => {
           .reduce((acc, curr) => acc + curr.due, 0)
           .toFixed(2)
           .toString()
-          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          ?.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
           .split(".")[0];
         return { ...customer, totalDue };
       });
@@ -671,7 +671,7 @@ const Customers = () => {
                         Edit
                       </span>
                       <Link
-                        href={"/customers/profile/" + customer.userID}
+                        href={"/customers/" + customer.userID + "?tab=invoices"}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"
                       >
                         Summary
