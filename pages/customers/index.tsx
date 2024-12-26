@@ -31,9 +31,6 @@ const Customers = () => {
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(1);
   const { data: session } = useSession();
-  const [selectedCustomerID, setSelectedCustomerID] = useState<number>();
-  const [showSummary, setShowSummary] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>();
   const { invoices, setInvoices } = useInvoicesStore();
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
@@ -67,9 +64,7 @@ const Customers = () => {
   // Reset Customer State
   const resetCustomerState = () => {
     setAutoLoad(true);
-    setSelectedCustomer(undefined);
     setCustomersState(customers);
-    setSelectedCustomerID(undefined);
     toast.success("Data updated successfully");
   };
 
@@ -142,31 +137,6 @@ const Customers = () => {
     }
   }, []);
 
-  // Update Customer Details
-  const handleSave = () => {
-    const payload = selectedCustomer;
-
-    const URL = process.env.NEXT_PUBLIC_API_URL + "/user/update";
-    const promise = axiosInstance.put(URL, payload);
-
-    toast.promise(promise, {
-      loading: "Updating Customer",
-      success: (res) => {
-        // Update the customer in the store
-        setCustomers((prev) => {
-          if (!prev) return;
-          const index = prev.findIndex(
-            (customer) => customer?.userID === selectedCustomer?.userID
-          );
-          prev[index] = selectedCustomer;
-          return prev;
-        });
-
-        return res.data.message;
-      },
-      error: "Error Updating Customer",
-    });
-  };
 
   // const checkIfUserPurchasedJar = (customerID: string) => {
   //   if (!invoices) return false;
@@ -660,16 +630,7 @@ const Customers = () => {
 
                     {/* Action Button */}
                     <td className="flex items-center px-2 text-center py-4">
-                      <span
-                        onClick={async () => {
-                          setSelectedCustomerID(customer?.userID);
-                          setSelectedCustomer(customer);
-                          setShowSummary(false);
-                        }}
-                        className="font-medium text-blue-600 cursor-pointer  hover:underline"
-                      >
-                        Edit
-                      </span>
+                      
                       <Link
                         href={"/customers/" + customer.userID + "?tab=invoices"}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"

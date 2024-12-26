@@ -1,8 +1,9 @@
 import { Accordion, AccordionItem } from "@/components/Accordion";
+import Profile from "@/components/Customer/Profile";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
-import { Invoice, Product } from "@/types/types";
+import { Customer, Invoice, Product } from "@/types/types";
 import { table } from "console";
 import { getCookie, setCookie } from "cookies-next";
 import { useSession } from "next-auth/react";
@@ -73,6 +74,7 @@ const tabs: { label: string; tabID: string }[] = [
 const CustomerInvoicesData = () => {
   const [amount, setAmount] = useState<string>("");
   const [invoices, setInvoices] = useState<Invoice[] | null | undefined>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [monthwiseSummaries, setMonthwiseSummaries] = useState<
     MonthwiseSummaries[]
   >([]);
@@ -122,8 +124,8 @@ const CustomerInvoicesData = () => {
       "/user/invoices?id=" +
       selectedCustomerID;
     const { data } = await axiosInstance.get(url);
-    console.log(data);
     setInvoices(data.invoices);
+    setCustomer(data.customer);
     setMonthwiseSummaries(data.monthwiseSummary);
   };
 
@@ -570,6 +572,16 @@ const CustomerInvoicesData = () => {
                   )}
                 </div>
               </>
+            )}
+
+            {router.query.tab === "profile" && customer ? (
+              <Profile
+                setCustomer={setCustomer}
+                customer={customer}
+                axiosInstance={axiosInstance}
+              />
+            ) : (
+              ""
             )}
           </>
         )}
