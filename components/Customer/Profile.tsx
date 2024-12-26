@@ -6,7 +6,7 @@ import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 
 interface IProps {
-  customer: Customer;
+  customer: Customer | null;
   axiosInstance: AxiosInstance;
   setCustomer: React.Dispatch<React.SetStateAction<Customer | null>>;
 }
@@ -18,6 +18,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
   console.log(customer);
 
   const handleSave = () => {
+    if (!customer) return;
     setLoading(true);
     const payload = customer;
 
@@ -36,6 +37,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log(e.target.value);
+    if (!customer) return;
     setCustomer({ ...customer, [e.target.name]: e.target.value });
   };
 
@@ -76,7 +78,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
               type="text"
               id="name"
               name="name"
-              value={customer.name}
+              value={customer?.name}
               onChange={handleChange}
               className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 "
               placeholder=""
@@ -130,6 +132,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
               required
               value={customer?.address?.text || ""}
               onChange={(e) => {
+                if (!customer) return;
                 setCustomer({
                   ...customer,
                   address: {

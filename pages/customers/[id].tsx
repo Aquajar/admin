@@ -581,7 +581,7 @@ const CustomerInvoicesData = () => {
               </>
             )}
 
-            {router.query.tab === "profile" && customer ? (
+            {router.query.tab === "profile" ? (
               <Profile
                 setCustomer={setCustomer}
                 customer={customer}
