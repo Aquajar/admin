@@ -242,7 +242,7 @@ const CustomerInvoicesData = () => {
         {/*
          * Tabs
          */}
-        <div className="border-b border-gray-200 mb-10">
+        <div className="border-b border-gray-200 mb-9 flex items-center justify-between">
           <ul className="flex flex-wrap -mb-px font-medium text-center text-gray-500">
             {tabs.map((tab) => (
               <li key={tab.tabID} className="me-2">
@@ -261,6 +261,9 @@ const CustomerInvoicesData = () => {
               </li>
             ))}
           </ul>
+          <span className="mr-5 font-medium text-gray-500">
+            Customer ID : <span className="font-bold text-black">{selectedCustomerID}</span>
+          </span>
         </div>
 
         {!invoices || !products ? (
@@ -271,7 +274,11 @@ const CustomerInvoicesData = () => {
           <>
             {router.query.tab === "invoices" && (
               <>
-                <div className="flex items-center flex-col  w-full h-[32rem] md:h-[30rem]  overflow-y-auto">
+                <div
+                  className={`flex items-center flex-col  w-full h-[32rem] ${
+                    invoices.length > 3 ? "md:h-[22rem]" : "md:h-[15rem]"
+                  }  overflow-y-auto`}
+                >
                   <div className="relative bg-white border border-gray-400 overflow-y-auto justify-end w-full">
                     <table className="w-full text-sm text-center">
                       <thead className="text-sm uppercase border-b border-gray-400 bg-gray-100 sticky top-0">
@@ -410,7 +417,7 @@ const CustomerInvoicesData = () => {
                     </table>
                   </div>
                 </div>
-                <div className="flex flex-col justify-end w-full my-10">
+                <div className="flex flex-col justify-end w-full my-12">
                   {/* Figure Summary */}
                   <div className="relative overflow-x-auto">
                     <table className="w-full text-left border border-gray-400">

@@ -48,7 +48,7 @@ const Summary: FC<IProps> = ({
   }, [discount, subTotal, tax, setTotal]);
 
   return (
-    <div className="bg-white mt-4 md:mt-0 mb-20 md:mb-0 md:ml-3.5 p-5 pb-8 relative rounded-md shadow-sm flex flex-col w-full md:w-3/12">
+    <div className="bg-white border border-gray-200 mt-4 md:mt-0 mb-20 md:mb-0 md:ml-3.5 p-5 pb-8 relative rounded-md shadow-sm flex flex-col w-full md:w-3/12">
       <h1 className="text-xl font-bold text-gray-700">Summary</h1>
       <div className="flex flex-col">
         {/* Sub Total */}

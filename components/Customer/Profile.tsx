@@ -64,8 +64,8 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
   return (
     <div className="flex w-full">
       <form className="w-full md:w-10/12" onSubmit={(e) => e.preventDefault()}>
-        <div className="grid md:grid-cols-2 gap-5">
-          <div className="mb-5">
+        <div className="grid md:grid-cols-2 gap-7">
+          <div className="">
             <label
               htmlFor="email"
               className="block mb-2 text-sm font-medium text-gray-900 "
@@ -82,7 +82,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
               placeholder=""
             />
           </div>
-          <div className="mb-5">
+          <div className="">
             <label
               htmlFor="phone"
               className="block mb-2 text-sm font-medium text-gray-900 "
@@ -99,7 +99,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
                "
             />
           </div>
-          <div className="mb-5">
+          <div className="">
             <label
               htmlFor="profileRate"
               className="block mb-2 text-sm font-medium text-gray-900 "
@@ -116,7 +116,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
               value={customer?.profileRate || 25}
             />
           </div>
-          <div className="mb-5">
+          <div className="">
             <label
               htmlFor="profileRate"
               className="block mb-2 text-sm font-medium text-gray-900 "
@@ -155,7 +155,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
             type="submit"
             onClick={handleSave}
             disabled={loading}
-            className="text-white mt-6 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            className="text-white mt-8 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
           >
             Save Changes
           </button>

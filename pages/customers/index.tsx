@@ -137,7 +137,6 @@ const Customers = () => {
     }
   }, []);
 
-
   // const checkIfUserPurchasedJar = (customerID: string) => {
   //   if (!invoices) return false;
   //   const customerInvoices = invoices.filter(
@@ -381,15 +380,15 @@ const Customers = () => {
         setCustomers={setCustomersState}
       />
 
-      <div className="relative overflow-x-auto mt-2 shadow-md sm:rounded-lg">
+      <div className="relative overflow-x-auto mt-2 shadow-md sm:rounded-lg  border border-gray-200">
         {/*
          * Render Table
          */}
         <table
           ref={tableRef}
-          className="w-full text-sm text-left text-gray-500 "
+          className="w-full text-sm text-left text-gray-500 relative"
         >
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-100 top-0">
             <tr className="text-center">
               <th scope="col" className="px-6 py-3">
                 Regular
@@ -630,7 +629,6 @@ const Customers = () => {
 
                     {/* Action Button */}
                     <td className="flex items-center px-2 text-center py-4">
-                      
                       <Link
                         href={"/customers/" + customer.userID + "?tab=invoices"}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"

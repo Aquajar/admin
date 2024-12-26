@@ -334,7 +334,7 @@ const Invoices = () => {
       {/*
        * TABLE
        */}
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 md:mt-2.5">
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 md:mt-2.5 border border-gray-200">
         <table className="w-full text-sm text-left text-gray-500 ">
           <thead className="text-xs uppercase bg-gray-50">
             <tr className="">

@@ -518,9 +518,9 @@ const Invoice = () => {
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="flex flex-col">
-        <div className="flex flex-col md:flex-row justify-between items-start">
+        <div className="flex flex-col md:flex-row justify-between items-start ">
           {/* Form */}
-          <div className="bg-white p-8 relative rounded-md shadow-sm flex flex-col w-full md:w-9/12">
+          <div className="bg-white p-8 relative rounded-md shadow-sm flex flex-col w-full md:w-9/12 border border-gray-200">
             {/* Invoice ID */}
             <span className="text-xs text-slate-400 absolute left-8 top-3 text-right">
               ID: {invoiceId}
