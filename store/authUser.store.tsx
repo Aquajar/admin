@@ -1,7 +1,7 @@
 import React, { Dispatch, createContext, useContext, useState } from "react";
 
 interface User {
-  role: "admin" | "customer";
+  role: "admin" | "customer" | "super_admin";
   name: string;
   phone: string;
   profilePicture: string;

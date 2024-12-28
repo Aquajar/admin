@@ -1,11 +1,9 @@
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import useCustomers from "@/lib/hooks/useCustomers";
-import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Card from "@/components/dashboard/Card";
 import {
   FaCaretLeft,
@@ -22,7 +20,6 @@ import Greetings from "@/components/dashboard/Greetings";
 import SalesAreaChart from "@/components/dashboard/SalesAreaChart";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import Loader from "@/components/Loader";
 
 const BreadCrumb = [
   {
@@ -101,8 +98,6 @@ export default function Home() {
     setCurrMonthIndex(currMonthIndex - 1);
   };
 
-  console.log(data);
-
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       {/* <Loader visible /> */}
@@ -132,33 +127,15 @@ export default function Home() {
         {/*
          * LEVEL 1
          */}
-        <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-31 gap-3 mt-6 md:mt-0">
-          {/* Total Sales */}
-          <Card title="Total Sales">
-            <CurrencyFormat
-              value={
-                data?.summary.monthly.filter(
-                  (data) => data.month === currMonth
-                )[0]?.sales
-              }
-              displayType={"text"}
-              thousandSeparator={true}
-              prefix={"₹"}
-              decimalScale={0}
-              fixedDecimalScale={true}
-              renderText={(value) => (
-                <p className="text-3xl font-semibold">{value}</p>
-              )}
-            />
-          </Card>
-          {/* Total Dues */}
-          <Card title="Total Dues">
-            <div className="flex justify-between items-start">
+        {user?.role === "super_admin" && (
+          <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-31 gap-3 mt-6 md:mt-0">
+            {/* Total Sales */}
+            <Card title="Total Sales">
               <CurrencyFormat
                 value={
                   data?.summary.monthly.filter(
                     (data) => data.month === currMonth
-                  )[0]?.due
+                  )[0]?.sales
                 }
                 displayType={"text"}
                 thousandSeparator={true}
@@ -169,27 +146,47 @@ export default function Home() {
                   <p className="text-3xl font-semibold">{value}</p>
                 )}
               />
-            </div>
-          </Card>
-          {/* Total Collected */}
-          <Card title="Total Collected">
-            <CurrencyFormat
-              value={
-                data?.summary.monthly.filter(
-                  (data) => data.month === currMonth
-                )[0]?.collected
-              }
-              displayType={"text"}
-              thousandSeparator={true}
-              prefix={"₹"}
-              decimalScale={0}
-              fixedDecimalScale={true}
-              renderText={(value) => (
-                <p className="text-3xl font-semibold">{value}</p>
-              )}
-            />
-          </Card>
-        </div>
+            </Card>
+            {/* Total Dues */}
+            <Card title="Total Dues">
+              <div className="flex justify-between items-start">
+                <CurrencyFormat
+                  value={
+                    data?.summary.monthly.filter(
+                      (data) => data.month === currMonth
+                    )[0]?.due
+                  }
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={"₹"}
+                  decimalScale={0}
+                  fixedDecimalScale={true}
+                  renderText={(value) => (
+                    <p className="text-3xl font-semibold">{value}</p>
+                  )}
+                />
+              </div>
+            </Card>
+            {/* Total Collected */}
+            <Card title="Total Collected">
+              <CurrencyFormat
+                value={
+                  data?.summary.monthly.filter(
+                    (data) => data.month === currMonth
+                  )[0]?.collected
+                }
+                displayType={"text"}
+                thousandSeparator={true}
+                prefix={"₹"}
+                decimalScale={0}
+                fixedDecimalScale={true}
+                renderText={(value) => (
+                  <p className="text-3xl font-semibold">{value}</p>
+                )}
+              />
+            </Card>
+          </div>
+        )}
 
         {/*
          * LEVEL 2
@@ -382,13 +379,15 @@ export default function Home() {
           {/*
            * SALES SUMMARY
            */}
-          <div className="w-full">
-            <SalesSummary
-              totalSales={data?.summary.total.sales || 0}
-              totalDue={data?.summary.total.due || 0}
-              totalCollected={data?.summary.total.collected || 0}
-            />
-          </div>
+          {user?.role === "super_admin" && (
+            <div className="w-full">
+              <SalesSummary
+                totalSales={data?.summary.total.sales || 0}
+                totalDue={data?.summary.total.due || 0}
+                totalCollected={data?.summary.total.collected || 0}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Wrapper>

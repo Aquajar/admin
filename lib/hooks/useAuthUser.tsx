@@ -27,7 +27,9 @@ const useAuthUser = () => {
           refreshToken,
         });
 
-        if (data.role !== "admin") {
+        console.log(data);
+
+        if (data.role === "customer") {
           toast.error("You are not authorized to access this page");
           signOut();
         }
