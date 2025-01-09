@@ -166,4 +166,19 @@ export const ActivityTypes: {
   },
 ];
 
-export { SidebarItems, paymentMethods, sortByOptions, reportTypes, monthAbbr };
+const monthsInAnYear = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+export { SidebarItems, paymentMethods, sortByOptions, reportTypes, monthAbbr, monthsInAnYear };

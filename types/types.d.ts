@@ -103,6 +103,28 @@ export interface BreadCrumbProps {
   }[];
 }
 
+interface MonthlyData {
+  month: string; // The name of the month (e.g., "February")
+  sales: number; // Total sales for the month
+  due: number; // Pending due amount for the month
+  collected: number; // Collected amount for the month
+  jars: number; // Number of jars sold in the month
+}
+
+interface YearlyData {
+  year: string; // The year (e.g., 2024)
+  data: MonthlyData[]; // Array of monthly data for the year
+}
+
+export interface DriverSummary {
+  name: string; // Customer's name
+  invoices: any[]; // Array of invoices (replace 'any' with a more specific type if invoice details are known)
+  totalSales: number; // Total sales amount
+  due: number; // Due amount
+  collection: number; // Collected amount
+  jars: number; // Number of jars sold
+}
+
 export type DashBoardData = {
   customers: {
     total: number;
@@ -115,13 +137,7 @@ export type DashBoardData = {
     }>;
   };
   summary: {
-    monthly: Array<{
-      month: string;
-      sales: number;
-      due: number;
-      collected: number;
-      jars: number;
-    }>;
+    monthly: YearlyData[];
     total: {
       sales: number;
       jars: number;
@@ -135,6 +151,7 @@ export type DashBoardData = {
         jars: number;
         due: number;
         collected: number;
+        driverSummary: DriverData;
       }>;
     };
   };

@@ -31,7 +31,7 @@ export default function App({
             <ActivityStoreProvider>
               <InvoiceStoreProvider>
                 <QueryClientProvider client={queryClient}>
-                  <div className="bg-quaternary">
+                  <div className="bg-tertiary">
                     <Toaster position="top-center" reverseOrder={false} />
                     <Sidebar />
                     <Component {...pageProps} />

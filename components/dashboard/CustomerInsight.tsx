@@ -20,7 +20,7 @@ const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
     <div className="bg-black rounded-2xl p-5 h-full">
       <span className="text-white text-lg">Customer Insight</span>
       {/* Stats */}
-      <div className="grid mt-4 grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-8">
+      <div className="grid mt-4 grid-cols-1 w-full md:grid-cols-3 md:grid-rows-1 gap-4">
         {/* Total customers */}
         <div className="bg-[#FE7B50] rounded-2xl p-5 flex flex-col items-center justify-center">
           <span className="text-white text-3xl font-semibold">{total}</span>
@@ -32,7 +32,7 @@ const CustomerInsight: FC<IProps> = ({ top, total, regular, newCustomers }) => {
           <span className="text-white text-sm">Regular</span>
         </div>
         {/* New Regular Customer added this month */}
-        <div className="bg-[#ACA081] rounded-2xl p-5 flex flex-col items-center justify-center">
+        <div className="bg-[#ACA081] text-center rounded-2xl p-5 flex flex-col items-center justify-center">
           <span className="text-white text-3xl font-semibold">
             +{newCustomers}
           </span>

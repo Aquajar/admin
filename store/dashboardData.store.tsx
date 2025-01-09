@@ -28,13 +28,36 @@ type StoreData = {
   setData: React.Dispatch<React.SetStateAction<DashBoardData>>;
   setCurrDay: React.Dispatch<React.SetStateAction<string | undefined>>;
   setCurrMonth: React.Dispatch<React.SetStateAction<string>>;
+  setCurrYear: React.Dispatch<React.SetStateAction<number>>;
   setCurrDayIndex: React.Dispatch<React.SetStateAction<number>>;
   setCurrMonthIndex: React.Dispatch<React.SetStateAction<number>>;
+  setCurrMonthlyData: React.Dispatch<
+    React.SetStateAction<
+      | {
+          month: string;
+          sales: number;
+          due: number;
+          collected: number;
+          jars: number;
+        }
+      | undefined
+    >
+  >;
   data: null | undefined | DashBoardData;
   currDay: string | undefined;
   currMonth: string;
+  currYear: number;
   currDayIndex: number;
   currMonthIndex: number;
+  currMonthlyData:
+    | {
+        month: string;
+        sales: number;
+        due: number;
+        collected: number;
+        jars: number;
+      }
+    | undefined;
 };
 
 // Create a context for your store
@@ -58,20 +81,35 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
   const [data, setData] = useState<DashBoardData>(initalState);
   const [currDay, setCurrDay] = useState<string | undefined>("");
   const [currMonth, setCurrMonth] = useState("");
+  const [currYear, setCurrYear] = useState(new Date().getFullYear());
   const [currDayIndex, setCurrDayIndex] = useState<number>(0);
   const [currMonthIndex, setCurrMonthIndex] = useState<number>(0);
+  const [currMonthlyData, setCurrMonthlyData] = useState<
+    | {
+        month: string;
+        sales: number;
+        due: number;
+        collected: number;
+        jars: number;
+      }
+    | undefined
+  >(undefined);
 
   const store: StoreData = {
     data,
     currDay,
     currMonth,
+    currYear,
+    setCurrYear,
     currDayIndex,
     currMonthIndex,
+    currMonthlyData,
     setData,
     setCurrDay,
     setCurrMonth,
     setCurrDayIndex,
     setCurrMonthIndex,
+    setCurrMonthlyData,
   };
 
   return (

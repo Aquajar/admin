@@ -3,9 +3,9 @@ const colors = require("tailwindcss/colors");
 
 const config: Config = {
   content: [
+    "./node_modules/flowbite/**/*.js",
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -19,8 +19,8 @@ const config: Config = {
       ...colors,
       primary: "#0c70e8",
       secondary: "#0199fe",
-      tertiary: "#1848a0",
-      quaternary: "#FAFAFA",
+      tertiary: "#F8FBFC",
+      quaternary: "#FFFFFF",
     },
   },
   plugins: [],
