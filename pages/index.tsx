@@ -3,7 +3,7 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useSession } from "next-auth/react";
 import CurrencyFormat from "react-currency-format";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Card from "@/components/dashboard/Card";
 import { SlCalender } from "react-icons/sl";
 import {
@@ -24,7 +24,7 @@ import { useInvoicesStore } from "@/store/invoices.store";
 import DriverSalesBarGraph from "@/components/dashboard/Driver/BarGraph";
 import { monthAbbr, monthsInAnYear } from "@/lib/constants";
 import DriverSalesCollection from "@/components/dashboard/Driver/Collection";
-import { IoIosTrendingUp } from "react-icons/io";
+import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 
 const BreadCrumb = [
   {
@@ -39,6 +39,9 @@ export default function Home() {
   useRefreshTokenRotation(axiosInstance);
   const { setCustomers } = useCustomersStore();
   const { setInvoices } = useInvoicesStore();
+
+  const [jarPercertageChange, setJarPercertageChange] = useState(0);
+  const [salePercertageChange, setSalePercertageChange] = useState(0);
 
   const {
     data,
@@ -184,6 +187,56 @@ export default function Home() {
     setCurrMonth(nextMonthyData?.month || currMonth);
   };
 
+  function calculatePercentageDifference(
+    a: number | undefined,
+    b: number | undefined
+  ): number {
+    if (a === undefined || b === undefined) return 0;
+    let result = ((b - a) / a) * 100;
+    return result;
+  }
+
+  useEffect(() => {
+    let jarsToday = data?.summary?.last7Days?.refilling?.find(
+      (data) => data?.date === currDay
+    )?.jars;
+
+    let salesToday = data?.summary?.last7Days?.refilling?.find(
+      (data) => data?.date === currDay
+    )?.sales;
+
+    let jarsYesterday =
+      data?.summary?.last7Days?.refilling[
+        data?.summary?.last7Days?.refilling.indexOf(
+          data?.summary?.last7Days?.refilling?.filter(
+            (data) => data?.date === currDay
+          )[0]
+        ) + 1
+      ]?.jars;
+
+    let salesYesterday =
+      data?.summary?.last7Days?.refilling[
+        data?.summary?.last7Days?.refilling.indexOf(
+          data?.summary?.last7Days?.refilling?.filter(
+            (data) => data?.date === currDay
+          )[0]
+        ) + 1
+      ]?.sales;
+
+    let jarPercentageChange = calculatePercentageDifference(
+      jarsYesterday,
+      jarsToday
+    );
+
+    let salePercentageChange = calculatePercentageDifference(
+      salesYesterday,
+      salesToday
+    );
+
+    setJarPercertageChange(jarPercentageChange);
+    setSalePercertageChange(salePercentageChange);
+  }, [currDay]);
+
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       {/* <Loader visible /> */}
@@ -211,7 +264,7 @@ export default function Home() {
             <FaChevronRight className="text-lg" />
           </button>
         </div>
-        <div className="inline-flex rounded-md shadow-sm" role="group">
+        <div className="inline-flex rounded-md shadow-md" role="group">
           <button
             type="button"
             className="px-4 py-2 flex justify-center text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
@@ -310,20 +363,39 @@ export default function Home() {
             {/*
              * JARS
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-sm rounded-3xl">
+            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Jars Processed</span>
               <span className="text-4xl font-bold">
                 {
-                  data?.summary?.last7Days?.refilling?.filter(
+                  data?.summary?.last7Days?.refilling?.find(
                     (data) => data?.date === currDay
-                  )[0]?.jars
+                  )?.jars
                 }
               </span>
-              <div className="flex space-x-2">
-                <IoIosTrendingUp className="text-green-500" size={25} />
-                <span className="text-green-500 text-sm">+21%</span>
-                <span className="text-sm">from yesterday</span>
-              </div>
+              {/* Performance Stats */}
+              {jarPercertageChange === -100 ? (
+                <div>
+                  <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                </div>
+              ) : (
+                <div className="flex space-x-2">
+                  {jarPercertageChange > 0 ? (
+                    <IoIosTrendingUp className="text-green-500" size={22} />
+                  ) : (
+                    <IoIosTrendingDown className="text-red-500" size={22} />
+                  )}
+                  <span
+                    className={`${
+                      jarPercertageChange > 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    } text-sm font-semibold`}
+                  >
+                    {jarPercertageChange.toFixed(0)}%
+                  </span>
+                  <span className="text-sm">from yesterday</span>
+                </div>
+              )}
               {/* <span className="text-xl mt-2 text-white">
                       {(data?.summary.last7Days.refilling.filter(
                         (data) => data?.date === currDay
@@ -337,7 +409,7 @@ export default function Home() {
             {/*
              * TOTAL SALES
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-sm rounded-3xl">
+            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Total Sales</span>
               <CurrencyFormat
                 value={
@@ -354,16 +426,35 @@ export default function Home() {
                 decimalScale={0}
                 fixedDecimalScale={true}
               />
-              <div className="flex space-x-2">
-                <IoIosTrendingUp className="text-green-500" size={25} />
-                <span className="text-green-500 text-sm">+21%</span>
-                <span className="text-sm">from yesterday</span>
-              </div>
+              {/* Performance Stats */}
+              {salePercertageChange === -100 ? (
+                <div>
+                  <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                </div>
+              ) : (
+                <div className="flex space-x-2">
+                  {salePercertageChange > 0 ? (
+                    <IoIosTrendingUp className="text-green-500" size={22} />
+                  ) : (
+                    <IoIosTrendingDown className="text-red-500" size={22} />
+                  )}
+                  <span
+                    className={`${
+                      salePercertageChange > 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    } text-sm font-semibold`}
+                  >
+                    {salePercertageChange.toFixed(0)}%
+                  </span>
+                  <span className="text-sm">from yesterday</span>
+                </div>
+              )}
             </div>
             {/*
              * TOTAL COLLECTION
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white border  shadow-sm rounded-3xl">
+            <div className="flex flex-col space-y-5 p-4 bg-white border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Collection</span>
               <CurrencyFormat
                 value={
@@ -395,7 +486,7 @@ export default function Home() {
               {/*
                * SUGGESTION
                */}
-              <div className="h-full border rounded-3xl flex flex-col shadow-sm bg-white p-4">
+              <div className="h-full border rounded-3xl flex flex-col shadow-md bg-white p-4">
                 <span className="text-2xl font-medium">Suggestion</span>
                 <span className="text-gray-400 text-sm mt-2">
                   Showing the suggestion of customers that require the delivery
@@ -422,9 +513,7 @@ export default function Home() {
                       </svg>
                       <span className="sr-only">Loading...</span>
                     </div> */}
-                    <span className="" >
-                      Coming Soon
-                    </span>
+                    <span className="">Coming Soon</span>
                   </div>
                 </div>
               </div>
@@ -443,7 +532,7 @@ export default function Home() {
              */}
             <div className="flex flex-col gap-5">
               {/*
-               * DRIVER SALES COLLECTION
+               * DRIVER SALES STATS
                */}
               <DriverSalesCollection
                 data={
@@ -491,7 +580,7 @@ export default function Home() {
           {/*
            * ORDERS
            */}
-          <div className="flex flex-col p-4 bg-white border shadow-sm rounded-3xl w-full">
+          <div className="flex flex-col p-4 bg-white border shadow-md rounded-3xl w-full">
             <span className="text-2xl font-medium">Orders</span>
             <span className="text-sm text-gray-400 mt-2">
               Showing orders by priority of the delivery

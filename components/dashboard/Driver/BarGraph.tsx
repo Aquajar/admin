@@ -18,7 +18,7 @@ const DriverSalesSummary = ({ data }: { data: DriverSummary[] }) => {
   }, [data]);
 
   return (
-    <div className="w-full bg-white rounded-3xl border shadow-sm p-4 md:p-6">
+    <div className="w-full bg-white rounded-3xl border shadow-md p-4 md:p-6">
       <div className="flex justify-between pb-1">
         <span className="text-2xl font-medium">Driver Insight</span>
       </div>

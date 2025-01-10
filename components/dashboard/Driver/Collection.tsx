@@ -6,16 +6,16 @@ import { GoKebabHorizontal } from "react-icons/go";
 
 const Collection = ({ data }: { data: DriverSummary[] }) => {
   return (
-    <div className="w-full bg-white rounded-3xl border shadow-sm p-4 pb-6">
-      <div className="flex justify-between items-center pb-3">
-        <span className="text-2xl font-medium">Driver Collections</span>
+    <div className="w-full bg-white rounded-3xl border shadow-md p-4 pb-6">
+      <div className="flex justify-between items-center pb-3 border-b">
+        <span className="text-2xl font-medium">Driver Statistics</span>
         <GoKebabHorizontal size={20} className="cursor-pointer" />
       </div>
 
       {/* Data */}
       {data?.map((driver) => {
         return (
-          <div className="flex flex-col mt-4" key={driver.name}>
+          <div className="flex flex-col mt-5" key={driver.name}>
             <div className="flex items-center space-x-2">
               <span className="">
                 <FaPerson className="text-" size={22} />
