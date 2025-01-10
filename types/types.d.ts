@@ -155,6 +155,11 @@ export type DashBoardData = {
       }>;
     };
   };
+  suggestion: {
+    customerID: string;
+    customerName: string;
+    priority: number;
+  }[];
   iat: string;
 };
 

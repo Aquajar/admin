@@ -21,6 +21,7 @@ const initalState: DashBoardData = {
       due: 0,
     },
   },
+  suggestion: [],
 };
 
 // Define the type for your store data
