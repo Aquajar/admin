@@ -158,7 +158,8 @@ export type DashBoardData = {
   suggestion: {
     customerID: string;
     customerName: string;
-    priority: number;
+    lastPurchaseDate: number;
+    daysFromLastPurchase: number;
   }[];
   iat: string;
 };

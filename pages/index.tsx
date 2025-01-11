@@ -61,8 +61,6 @@ export default function Home() {
     setCurrMonthlyData,
   } = useDashboardStore();
 
-  console.log(data);
-
   const { user } = useAuthUser();
 
   // Fetch dashboard data
