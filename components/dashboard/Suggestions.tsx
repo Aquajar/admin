@@ -6,7 +6,8 @@ interface IProps {
     | {
         customerID: string;
         customerName: string;
-        priority: number;
+        lastPurchaseDate: number;
+        daysFromLastPurchase: number;
       }[]
     | undefined;
 }
@@ -20,7 +21,10 @@ const Suggestions: FC<IProps> = ({ data }) => {
       </span>
 
       <div className="flex items-center justify-center h-full mt-5">
-        <div className="flex p-4 w-full h-full border border-gray-200 rounded-lg bg-gray-50">
+        <div className="flex p-5 w-full h-[51vh] border border-gray-200 rounded-lg bg-gray-50 relative">
+          <span className="font-semibold absolute right-[30%] bottom-1 text-xs text-gray-400">
+            Scroll down for more
+          </span>
           <ul className="space-y-3.5 list-inside w-full text-gray-700 overflow-y-auto">
             {!data ? (
               <div role="status" className="">
@@ -44,19 +48,33 @@ const Suggestions: FC<IProps> = ({ data }) => {
               </div>
             ) : (
               data.map((item) => (
-                <li key={item.customerID} className="flex items-center font-medium">
-                  <span
-                    className={`h-6 w-6 flex items-center justify-center rounded-full mr-3 ${
-                      item.priority > 1 ? "bg-red-200" : "bg-green-200"
-                    }`}
-                  >
-                    <MdOutlinePriorityHigh
-                      className={`w-4 h-4
-                    ${item.priority > 1 ? "text-red-500" : "text-green-500"}
+                <li
+                  key={item.customerID}
+                  className="flex items-center justify-between font-medium"
+                >
+                  <div className="flex space-x-3">
+                    <span
+                      className={`h-6 w-6 flex items-center justify-center rounded-full mr-3 ${
+                        item.daysFromLastPurchase > 3
+                          ? "bg-red-200"
+                          : "bg-green-200"
+                      }`}
+                    >
+                      <MdOutlinePriorityHigh
+                        className={`w-4 h-4
+                    ${
+                      item.daysFromLastPurchase > 3
+                        ? "text-red-500"
+                        : "text-green-500"
+                    }
                     `}
-                    />
+                      />
+                    </span>
+                    {item.customerName}
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {new Date(item.lastPurchaseDate).toLocaleDateString()}
                   </span>
-                  {item.customerName}
                 </li>
               ))
             )}

@@ -5,3 +5,4 @@ export const copyTextToKeyboard = (text: string) => {
   copy(text);
   toast.success("Copied to clipboard");
 };
+
