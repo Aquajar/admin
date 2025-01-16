@@ -26,6 +26,7 @@ import { monthAbbr, monthsInAnYear } from "@/lib/constants";
 import DriverSalesCollection from "@/components/dashboard/Driver/Collection";
 import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 import Suggestions from "@/components/dashboard/Suggestions";
+import MonthlySummary from "@/components/dashboard/MonthlySummary";
 
 const BreadCrumb = [
   {
@@ -292,69 +293,87 @@ export default function Home() {
            * MONTHLY INSIGHT
            */}
           {user?.role === "super_admin" && (
-            <div className="grid grid-cols-1 w-full md:grid-cols-3 md:grid-rows-31 gap-3 mt-6 md:mt-0">
-              {/* Total Sales */}
-              <Card title="Total Sales">
-                <CurrencyFormat
-                  value={currMonthlyData?.sales}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={"₹"}
-                  decimalScale={0}
-                  fixedDecimalScale={true}
-                  renderText={(value) => (
-                    <p className="text-3xl font-semibold">{value}</p>
-                  )}
-                />
-                {/* <span className="bg-green-100 text-green-800 text-xs font-medium inline-flex items-center px-2.5 py-1 rounded-md dark:bg-green-900 dark:text-green-300">
-                  <svg
-                    className="w-2.5 h-2.5 me-1.5"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 10 14"
-                  >
-                    <path
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13V1m0 0L1 5m4-4 4 4"
-                    />
-                  </svg>
-                  Profit rate 23.5%
-                </span> */}
-              </Card>
-              {/* Total Dues */}
-              <Card title="Total Dues">
-                <div className="flex justify-between items-start">
-                  <CurrencyFormat
-                    value={currMonthlyData?.due}
-                    displayType={"text"}
-                    thousandSeparator={true}
-                    prefix={"₹"}
-                    decimalScale={0}
-                    fixedDecimalScale={true}
-                    renderText={(value) => (
-                      <p className="text-3xl font-semibold">{value}</p>
-                    )}
+            <div className="flex flex-col border-b pb-5">
+              <span className="font-medium text-gray-400 md:mb-3">
+                Super Admin Tools
+              </span>
+              <div className="grid grid-cols-1 w-full md:grid-cols-2 md:grid-rows-31 gap-4 md:gap-3 mt-6 md:mt-0">
+                {/*
+                 * MONTHLY SALES SUMMARY
+                 */}
+                <div className="flex flex-col space-y-4 h-full">
+                  {/* Total Sales */}
+                  <Card title="Total Sales">
+                    <div className="flex flex-col">
+                      <span className="text-md text-gray-600 font-light mb-4">
+                        Total Sales
+                      </span>
+
+                      <CurrencyFormat
+                        value={currMonthlyData?.sales}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                        renderText={(value) => (
+                          <p className="text-3xl font-semibold">{value}</p>
+                        )}
+                      />
+                    </div>
+
+                    <div className="rounded-2xl bg-gray-100 p-3 flex flex-col items-center">
+                      <span className="text-sm text-gray-600">Average/day</span>
+                      <CurrencyFormat
+                        value={
+                          currMonthlyData?.sales &&
+                          currMonthlyData?.sales / new Date().getDate()
+                        }
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                        renderText={(value) => (
+                          <p className="text-lg text-gray-600 font-semibold">
+                            {value}
+                          </p>
+                        )}
+                      />
+                    </div>
+                  </Card>
+                  {/* Total Receivables */}
+                  <Card title="Receivables">
+                    <div className="flex flex-col">
+                      <span className="text-md text-gray-600 font-light mb-4">
+                        Receivables
+                      </span>
+                      <CurrencyFormat
+                        value={currMonthlyData?.due}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                        renderText={(value) => (
+                          <p className="text-3xl font-semibold">{value}</p>
+                        )}
+                      />
+                    </div>
+                  </Card>
+                </div>
+
+                {/*
+                 * SALES SUMMARY
+                 */}
+                <div className="w-full">
+                  <SalesSummary
+                    totalSales={data?.summary.total.sales || 0}
+                    totalDue={data?.summary.total.due || 0}
+                    totalCollected={data?.summary.total.collected || 0}
                   />
                 </div>
-              </Card>
-              {/* Total Collected */}
-              <Card title="Total Collected">
-                <CurrencyFormat
-                  value={currMonthlyData?.collected}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={"₹"}
-                  decimalScale={0}
-                  fixedDecimalScale={true}
-                  renderText={(value) => (
-                    <p className="text-3xl font-semibold">{value}</p>
-                  )}
-                />
-              </Card>
+              </div>
             </div>
           )}
           {/*
@@ -484,10 +503,13 @@ export default function Home() {
            */}
           <div className="grid md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-5">
+              {/* {currMonthlyData && <MonthlySummary />} */}
+
               {/*
                * SUGGESTION
                */}
               <Suggestions data={data?.suggestion} />
+
               <div className="w-full">
                 <CustomerInsight
                   // top={data?.customers.top}
@@ -523,19 +545,6 @@ export default function Home() {
                   )[0]?.driverSummary
                 }
               />
-
-              {/*
-               * SALES SUMMARY
-               */}
-              {user?.role === "super_admin" && (
-                <div className="w-full">
-                  <SalesSummary
-                    totalSales={data?.summary.total.sales || 0}
-                    totalDue={data?.summary.total.due || 0}
-                    totalCollected={data?.summary.total.collected || 0}
-                  />
-                </div>
-              )}
             </div>
           </div>
           {/*

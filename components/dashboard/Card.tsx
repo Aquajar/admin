@@ -1,5 +1,4 @@
 import React, { FC } from "react";
-import { motion } from "framer-motion";
 
 interface IProps {
   children: React.ReactNode;
@@ -8,13 +7,9 @@ interface IProps {
 
 const Card: FC<IProps> = ({ children, title }) => {
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      className="px-5 py-6 bg-tertiary border rounded-2xl flex flex-col w-full"
-    >
-      <span className="text-md text-gray-600 font-light mb-4">{title}</span>
+    <div className="flex w-full justify-between space-y-1 py-3 px-4 bg-white  border  shadow rounded-3xl">
       {children}
-    </motion.div>
+    </div>
   );
 };
 

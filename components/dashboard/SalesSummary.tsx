@@ -10,7 +10,7 @@ interface IProps {
 
 const SalesSummary: FC<IProps> = ({ totalSales, totalDue, totalCollected }) => {
   return (
-    <div className="flex flex-col p-7 bg-black rounded-2xl">
+    <div className="flex flex-col p-6 bg-black rounded-2xl">
       <div className="flex flex-col">
         <span className="text-sm text-gray-300 font-medium">Total Sales</span>
         <CurrencyFormat
