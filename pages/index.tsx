@@ -126,15 +126,15 @@ export default function Home() {
   // Change the current month
   const handleChangeMonth = (month: string) => {
     setCurrMonth(month);
-    
+
     const yearlyData = data?.summary.monthly.find((data) => {
       return parseInt(data.year) === currYear;
     });
-    
+
     const newMonthlyData = yearlyData?.data.find(
       (item) => item.month === month
     );
-    
+
     setCurrMonthlyData(newMonthlyData);
     setShowMonthOptions(false);
   };
@@ -377,7 +377,11 @@ export default function Home() {
             <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Total Sales</span>
               <CurrencyFormat
-                value={currMonthlyData?.sales}
+                value={
+                  data?.summary?.last7Days?.refilling?.find(
+                    (data) => data?.date === currDay
+                  )?.sales
+                }
                 displayType={"text"}
                 thousandSeparator={true}
                 prefix={"₹"}
@@ -415,10 +419,15 @@ export default function Home() {
             {/*
              * TOTAL COLLECTION
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white border  shadow-md rounded-3xl">
-              <span className="text-sm text-gray-600">Collection</span>
+            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
+              <span className="text-sm text-gray-600">Total Sales</span>
               <CurrencyFormat
-                value={currMonthlyData?.collected}
+                value={
+                  data?.summary?.last7Days?.refilling?.find(
+                    (data) => data?.date === currDay
+                  )?.collected
+                }
+                displayType={"text"}
                 thousandSeparator={true}
                 prefix={"₹"}
                 renderText={(value) => (
