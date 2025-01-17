@@ -27,6 +27,7 @@ import DriverSalesCollection from "@/components/dashboard/Driver/Collection";
 import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 import Suggestions from "@/components/dashboard/Suggestions";
 import MonthlySummary from "@/components/dashboard/MonthlySummary";
+import DateSelector from "@/components/dashboard/DateSelector";
 
 const BreadCrumb = [
   {
@@ -44,6 +45,9 @@ export default function Home() {
 
   const [jarPercertageChange, setJarPercertageChange] = useState(0);
   const [salePercertageChange, setSalePercertageChange] = useState(0);
+
+  const [showMonthOptions, setShowMonthOptions] = useState(false);
+  const [showYearOptions, setShowYearOptions] = useState(false);
 
   const {
     data,
@@ -119,74 +123,38 @@ export default function Home() {
     setCurrDayIndex(currDayIndex - 1);
   };
 
-  // set summary month to previous month and update the summary month
-  const handlePrevMonth = () => {
-    let year = currYear;
-
-    if (currMonth === "January") {
-      year = currYear - 1;
-      setCurrYear(year);
-    }
-
-    // update current month data
+  // Change the current month
+  const handleChangeMonth = (month: string) => {
+    setCurrMonth(month);
+    
     const yearlyData = data?.summary.monthly.find((data) => {
-      return parseInt(data.year) === year;
+      return parseInt(data.year) === currYear;
     });
-
-    function getPreviousItem(
-      list: string[],
-      currentItem: string
-    ): string | null {
-      const index = list.indexOf(currentItem);
-      if (index > 0) {
-        return list[index - 1]; // Return the previous item if it exists
-      }
-      if (index === 0) {
-        return list[list.length - 1]; // Return the last element if currentItem is the first element
-      }
-      return null; // Return null if currentItem is not found in the list
-    }
-
-    const prevMonth = getPreviousItem(monthsInAnYear, currMonth);
-    const prevMonthyData = yearlyData?.data.find(
-      (item) => item.month === prevMonth
+    
+    const newMonthlyData = yearlyData?.data.find(
+      (item) => item.month === month
     );
-    setCurrMonthlyData(prevMonthyData);
-    setCurrMonth(prevMonthyData?.month || currMonth);
+    
+    setCurrMonthlyData(newMonthlyData);
+    setShowMonthOptions(false);
   };
 
-  // set summary month to next month
-  const handleNextMonth = () => {
-    let year = currYear;
-    if (currMonth === "December") {
-      year = currYear + 1;
-      setCurrYear(year);
-    }
+  // Change the current year
+  const handleChangeYear = (year: number) => {
+    setCurrYear(year);
+    setShowMonthOptions(false);
 
-    // update current month data
     const yearlyData = data?.summary.monthly.find((data) => {
       return parseInt(data.year) === year;
     });
 
-    function getNextItem(list: string[], currentItem: string): string | null {
-      const index = list.indexOf(currentItem);
-      if (index < list.length - 1) {
-        return list[index + 1]; // Return the next item if it exists
-      }
-      if (index === list.length - 1) {
-        return list[0]; // Return the first element if currentItem is the last element
-      }
-      return null; // Return null if currentItem is not found in the list
-    }
-
-    const nextMonth = getNextItem(monthsInAnYear, currMonth);
-
-    const nextMonthyData = yearlyData?.data.find(
-      (item) => item.month === nextMonth
+    const newMonthlyData = yearlyData?.data.find(
+      (item) => item.month === currMonth
     );
 
-    setCurrMonthlyData(nextMonthyData);
-    setCurrMonth(nextMonthyData?.month || currMonth);
+    setCurrMonthlyData(newMonthlyData);
+
+    setShowYearOptions(false);
   };
 
   function calculatePercentageDifference(
@@ -246,44 +214,21 @@ export default function Home() {
       {/*
        * DATE SELECTOR
        */}
-      <div className="flex justify-between my-3">
-        <div className="flex justify-between space-x-2 items-center">
-          <button
-            onClick={handlePrevDay}
-            disabled={
-              currDayIndex + 1 === data?.summary.last7Days.refilling.length
-            }
-            className="disabled:opacity-50"
-          >
-            <FaChevronLeft className="text-lg" />
-          </button>
-          <span className={`text-lg font-semibold`}>{currDay}</span>
-          <button
-            onClick={handleNextDay}
-            disabled={currDayIndex === 0}
-            className="disabled:opacity-50"
-          >
-            <FaChevronRight className="text-lg" />
-          </button>
-        </div>
-        <div className="inline-flex rounded-md shadow-md" role="group">
-          <button
-            type="button"
-            className="px-4 py-2 flex justify-center text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700"
-          >
-            <SlCalender size={16} className="mr-3" />
-            {currMonth}
-          </button>
-
-          <button
-            type="button"
-            className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700
-            "
-          >
-            {currYear}
-          </button>
-        </div>
-      </div>
+      <DateSelector
+        showYearOptions={showYearOptions}
+        setShowYearOptions={setShowYearOptions}
+        totalDataLength={data?.summary.last7Days.refilling.length}
+        currDay={currDay}
+        handlePrevDay={handlePrevDay}
+        handleNextDay={handleNextDay}
+        handleChangeMonth={handleChangeMonth}
+        handleChangeYear={handleChangeYear}
+        setShowMonthOptions={setShowMonthOptions}
+        showMonthOptions={showMonthOptions}
+        currMonth={currMonth}
+        currDayIndex={currDayIndex}
+        currYear={currYear}
+      />
       {/*
        * CARDS
        */}
@@ -432,11 +377,7 @@ export default function Home() {
             <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Total Sales</span>
               <CurrencyFormat
-                value={
-                  data?.summary.last7Days.refilling.filter(
-                    (data) => data?.date === currDay
-                  )[0]?.sales
-                }
+                value={currMonthlyData?.sales}
                 displayType={"text"}
                 thousandSeparator={true}
                 prefix={"₹"}
@@ -477,12 +418,7 @@ export default function Home() {
             <div className="flex flex-col space-y-5 p-4 bg-white border  shadow-md rounded-3xl">
               <span className="text-sm text-gray-600">Collection</span>
               <CurrencyFormat
-                value={
-                  data?.summary.last7Days.refilling.filter(
-                    (data) => data?.date === currDay
-                  )[0]?.collected
-                }
-                displayType={"text"}
+                value={currMonthlyData?.collected}
                 thousandSeparator={true}
                 prefix={"₹"}
                 renderText={(value) => (
