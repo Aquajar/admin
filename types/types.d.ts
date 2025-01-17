@@ -199,3 +199,16 @@ export interface Activity {
   tag: string;
   updatesAt: Date;
 }
+
+export interface Order {
+  _id: string;
+  orderDate: Date;
+  customer: {
+    name: string;
+    phone: string;
+    address: string;
+  };
+  note?: string; // Optional field
+  status: "pending" | "delivered"; // Enum for status
+  deliveryDate?: Date | null; // Optional field, can be null
+}

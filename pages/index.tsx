@@ -28,6 +28,8 @@ import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 import Suggestions from "@/components/dashboard/Suggestions";
 import MonthlySummary from "@/components/dashboard/MonthlySummary";
 import DateSelector from "@/components/dashboard/DateSelector";
+import OrdersDashBoard from "@/components/dashboard/Orders/Index";
+import { Order } from "@/types/types";
 
 const BreadCrumb = [
   {
@@ -48,6 +50,8 @@ export default function Home() {
 
   const [showMonthOptions, setShowMonthOptions] = useState(false);
   const [showYearOptions, setShowYearOptions] = useState(false);
+
+  const [orders, setOrders] = useState<Order[] | null>(null);
 
   const {
     data,
@@ -165,6 +169,18 @@ export default function Home() {
     let result = ((b - a) / a) * 100;
     return result;
   }
+
+  // GET ORDERS
+  const getOrders = () => {
+    let URL = process.env.NEXT_PUBLIC_API_URL + "/order/all";
+    axiosInstance.get(URL).then((response) => {
+      setOrders(response.data.orders);
+    });
+  };
+
+  useEffect(() => {
+    if (session && orders === null) getOrders();
+  }, [orders, session]);
 
   useEffect(() => {
     let jarsToday = data?.summary?.last7Days?.refilling?.find(
@@ -505,40 +521,7 @@ export default function Home() {
           {/*
            * ORDERS
            */}
-          <div className="flex flex-col p-4 bg-white border shadow-md rounded-3xl w-full">
-            <span className="text-2xl font-medium">Orders</span>
-            <span className="text-sm text-gray-400 mt-2">
-              Showing orders by priority of the delivery
-            </span>
-            {/* Sort Buttons */}
-            <div
-              className="grid max-w-xs grid-cols-3 gap-1 p-1 mx-auto my-2 mt-8 bg-gray-100 rounded-lg"
-              role="group"
-            >
-              <button
-                type="button"
-                className="px-5 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 rounded-lg"
-              >
-                Old
-              </button>
-              <button
-                type="button"
-                className="px-5 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                className="px-5 py-1.5 text-xs font-medium text-gray-900 hover:bg-gray-200 rounded-lg"
-              >
-                Future
-              </button>
-            </div>
-            {/* Body */}
-            <div className="flex justify-center w-full h-full border border-gray-200 mt-5 rounded-lg bg-gray-50">
-              <span className="mt-20 text-lg">No Orders</span>
-            </div>
-          </div>
+          <OrdersDashBoard orders={orders} />
         </div>
       </div>
     </Wrapper>
