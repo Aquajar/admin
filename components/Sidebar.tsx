@@ -38,21 +38,27 @@ const Sidebar = () => {
                   key={index}
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center my-1.5 p-1.5 rounded-md text-white ${
-                    router.pathname.includes(item.name.toLowerCase())
+                    router.pathname
+                      .replace("-", " ")
+                      .includes(item.name.toLowerCase())
                       ? "bg-gray-200 text-black"
                       : "hover:bg-gray-700"
                   }`}
                 >
                   <IconComponent
                     className={`w-5 h-5 ${
-                      router.pathname.includes(item.name.toLowerCase())
+                      router.pathname
+                        .replace("-", " ")
+                        .includes(item.name.toLowerCase())
                         ? "text-black"
                         : "text-white"
                     }`}
                   />
                   <p
                     className={`text-lg md:text-sm mx-3 ${
-                      router.pathname.includes(item.name.toLowerCase())
+                      router.pathname
+                        .replace("-", " ")
+                        .includes(item.name.toLowerCase())
                         ? "text-black"
                         : "text-white"
                     }`}

@@ -212,3 +212,33 @@ export interface Order {
   status: "pending" | "delivered"; // Enum for status
   deliveryDate?: Date | null; // Optional field, can be null
 }
+
+interface BankAccount {
+  holderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  address: string;
+  vpa?: string; // Optional
+}
+
+interface Salary {
+  value: number;
+  startDate: Date;
+}
+
+export interface Staff {
+  _id: string;
+  employeeID: number;
+  name: string;
+  phone: string;
+  address: string;
+  licenseNumber?: string; // Optional, only required for 'driver'
+  bankAccount?: BankAccount; // Optional
+  salary: Salary[]; // Array of salary objects
+  joiningDate: Date;
+  status: "active" | "inactive"; // Enum for status
+  type: "driver" | "labour" | "manager" | "salesman"; // Enum for type
+  createdAt?: Date; // Automatically added by Mongoose with timestamps
+  updatedAt?: Date; // Automatically added by Mongoose with timestamps
+}

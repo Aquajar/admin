@@ -3,7 +3,7 @@ import { RxDashboard } from "react-icons/rx";
 import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
-import { FaShop } from "react-icons/fa6";
+import { FaShop, FaPeopleGroup } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits } from "react-icons/md";
@@ -42,6 +42,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Account Groups",
     icon: GrOrganization,
     href: "/account-groups",
+  },
+  {
+    name: "HR Manager",
+    icon: FaPeopleGroup,
+    href: "/hr-manager",
   },
   {
     name: "Fueling",
@@ -181,4 +186,11 @@ const monthsInAnYear = [
   "December",
 ];
 
-export { SidebarItems, paymentMethods, sortByOptions, reportTypes, monthAbbr, monthsInAnYear };
+export {
+  SidebarItems,
+  paymentMethods,
+  sortByOptions,
+  reportTypes,
+  monthAbbr,
+  monthsInAnYear,
+};
