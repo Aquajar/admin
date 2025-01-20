@@ -270,7 +270,7 @@ export default function Home() {
           >
             <AccordionItem
               header={() => (
-                <span className="font-medium flex items-center justify-center text-gray-400 md:mb-3">
+                <span className="font-medium flex items-center justify-center text-gray-400">
                   Super Admin Tools
                   {!superAdminToolsIsexpanded ? (
                     <TbLayoutNavbarExpand className="ml-2 text-gray-700" size={19} />
