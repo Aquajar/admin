@@ -94,12 +94,11 @@ const Invoice = () => {
 
   // Fetch drivers
   const getDrivers = async () => {
-    const { data } = await axios.get(
+    const { data } = await axiosInstance.get(
       process.env.NEXT_PUBLIC_API_URL! + "/staff?status=active&type=driver"
     );
-    console.log(data);
-    setCookie("_driversD", data.data);
-    setDrivers(data.data);
+    setCookie("_driversD", data);
+    setDrivers(data);
   };
 
   useRefreshTokenRotation(axiosInstance);
@@ -145,7 +144,7 @@ const Invoice = () => {
 
   // Fetch driver information from cookies
   useEffect(() => {
-    if (drivers === undefined) {
+    if (drivers === undefined && session) {
       let rawData = getCookie("_driversD");
       let selectedDriverID = getCookie("_selectedDriverID");
 
@@ -158,7 +157,7 @@ const Invoice = () => {
         setDrivers(parsedData);
       }
     }
-  }, [drivers]);
+  }, [drivers, session]);
 
   // Fetch products from cookies
   useEffect(() => {
