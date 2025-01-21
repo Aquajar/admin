@@ -84,7 +84,6 @@ export default function Home() {
       const response = await axiosInstance.get(URL);
       console.log(response.data);
       setCustomers(response.data.data.users);
-      setInvoices(response.data.data.invoices);
       setData(response.data);
       setCurrDay(response.data?.summary.last7Days.refilling[currDayIndex].date);
       let month = monthsInAnYear[new Date().getMonth()];
@@ -176,16 +175,16 @@ export default function Home() {
   }
 
   // GET ORDERS
-  const getOrders = () => {
-    let URL = process.env.NEXT_PUBLIC_API_URL + "/order/all";
-    axiosInstance.get(URL).then((response) => {
-      setOrders(response.data.orders);
-    });
-  };
+  // const getOrders = () => {
+  //   let URL = process.env.NEXT_PUBLIC_API_URL + "/order/all";
+  //   axiosInstance.get(URL).then((response) => {
+  //     setOrders(response.data.orders);
+  //   });
+  // };
 
-  useEffect(() => {
-    if (session && orders === null) getOrders();
-  }, [orders, session]);
+  // useEffect(() => {
+  //   if (session && orders === null) getOrders();
+  // }, [orders, session]);
 
   useEffect(() => {
     let jarsToday = data?.summary?.last7Days?.refilling?.find(
@@ -273,7 +272,10 @@ export default function Home() {
                 <span className="font-medium flex items-center justify-center text-gray-400">
                   Super Admin Tools
                   {!superAdminToolsIsexpanded ? (
-                    <TbLayoutNavbarExpand className="ml-2 text-gray-700" size={19} />
+                    <TbLayoutNavbarExpand
+                      className="ml-2 text-gray-700"
+                      size={19}
+                    />
                   ) : (
                     <FaAngleUp className="ml-2 text-gray-700" size={18} />
                   )}

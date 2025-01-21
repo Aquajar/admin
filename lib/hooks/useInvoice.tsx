@@ -8,9 +8,9 @@ const useInvoice = (axiosInstance: AxiosInstance, session: Session | null) => {
   const { invoices, setInvoices } = useInvoicesStore();
   // Fetch invoices
   const getInvoices = async () => {
-    // 3 months ago
+    // 1 week
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 10);
+    startDate.setDate(startDate.getDate() - 7);
 
     const endDate = new Date();
 
@@ -19,11 +19,12 @@ const useInvoice = (axiosInstance: AxiosInstance, session: Session | null) => {
         process.env.NEXT_PUBLIC_API_URL +
         `/invoice/filter?startDate=${+startDate}&endDate=${+endDate}`;
       const { data } = await axiosInstance.get(URL);
-      console.log(data)
+      console.log(data);
       //   filter invoices by latest at the top
       const filteredInvoices = data.invoices.sort(
         (a: Invoice, b: Invoice) =>
-          new Date(b.invoiceDate!).getTime() - new Date(a.invoiceDate!).getTime()
+          new Date(b.invoiceDate!).getTime() -
+          new Date(a.invoiceDate!).getTime()
       );
 
       if (data.invoices) setInvoices(filteredInvoices);
