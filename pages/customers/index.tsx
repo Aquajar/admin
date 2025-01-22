@@ -31,7 +31,7 @@ const Customers = () => {
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(1);
   const { data: session } = useSession();
-  const { invoices, setInvoices } = useInvoicesStore();
+  const { invoices} = useInvoicesStore();
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);

@@ -46,7 +46,6 @@ export default function Home() {
   const axiosInstance = useAxiosInstance(session);
   useRefreshTokenRotation(axiosInstance);
   const { setCustomers } = useCustomersStore();
-  const { setInvoices, invoices } = useInvoicesStore();
 
   const [jarPercertageChange, setJarPercertageChange] = useState(0);
   const [salePercertageChange, setSalePercertageChange] = useState(0);

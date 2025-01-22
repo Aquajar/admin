@@ -80,7 +80,6 @@ const Invoice = () => {
   const [driverID, setDriverID] = useState<string | undefined>(undefined);
 
   const { data: session } = useSession();
-  const { setInvoices } = useInvoicesStore();
 
   const { user } = useAuthUser();
 
