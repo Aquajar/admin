@@ -15,6 +15,7 @@ import "@szhsin/react-menu/dist/transitions/slide.css";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import toast from "react-hot-toast";
 import { reportTypes } from "@/lib/constants";
+import CurrencyFormat from "react-currency-format";
 
 const BreadCrumb = [
   {
@@ -80,7 +81,7 @@ const Reports = () => {
       );
     }
 
-    setReportData({ data: sortedData });
+    setReportData({ data: sortedData, totalDue: reportData.totalDue });
   };
 
   // Fetch Areas
@@ -110,6 +111,11 @@ const Reports = () => {
     }
   }, [areas]);
 
+  //  Set start Date
+  useEffect(() => {
+    startDate.setFullYear(2024);
+  }, [areas]);
+
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="mb-28">
@@ -125,7 +131,7 @@ const Reports = () => {
             <ReactDatePicker
               wrapperClassName="w-full"
               dateFormat={"dd/MM/yyyy"}
-              className="border rounded-md cursor-pointer px-3 mt-1.5 py-2 bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer px-3 mt-1.5 py-2 bg-white w-full"
               selected={startDate}
               onChange={(date) => setStartDate(date as Date)}
             />
@@ -139,7 +145,7 @@ const Reports = () => {
 
             <ReactDatePicker
               dateFormat={"dd/MM/yyyy"}
-              className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-white w-full"
               selected={endDate}
               wrapperClassName="w-full"
               onChange={(date) => setEndDate(date as Date)}
@@ -152,7 +158,7 @@ const Reports = () => {
             {/* <label>Select Area</label> */}
             <select
               onChange={(e) => setAddress(e.target.value)}
-              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-white w-full"
             >
               <option selected={address === "all"} value="all">
                 All
@@ -172,7 +178,7 @@ const Reports = () => {
             {/* <label>Select Area</label> */}
             <select
               onChange={(e) => setReportType(e.target.value)}
-              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-gray-50 w-full"
+              className="border rounded-md cursor-pointer pl-3 pr-10 py-2  bg-white w-full"
             >
               {reportTypes.map((type, index) => (
                 <option
@@ -215,6 +221,32 @@ const Reports = () => {
         </div>
 
         {/*
+         * Analytics
+         */}
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-8">
+          <div className="flex items-center gap-2">
+            Total Invoices:{" "}
+            <span className="text-md font-medium text-gray-700">
+              {reportData?.data?.length || "0"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            Total Due Amount:{" "}
+            <CurrencyFormat
+              value={reportData?.totalDue || 0}
+              displayType={"text"}
+              thousandSeparator={true}
+              prefix={"₹"}
+              renderText={(value: string) => (
+                <span className="text-md font-medium text-gray-700">
+                  {value}
+                </span>
+              )}
+            />
+          </div>
+        </div>
+
+        {/*
          * Table
          */}
         {reportData.data && (
@@ -223,7 +255,7 @@ const Reports = () => {
               ref={tableRef}
               className="w-full text-sm text-left rtl:text-right text-gray-900"
             >
-              <thead className="text-sm text-gray-700 uppercase bg-gray-50">
+              <thead className="text-sm text-gray-700 uppercase bg-white">
                 <tr>
                   <th scope="col" className="px-6 py-3">
                     SL No.
@@ -238,7 +270,7 @@ const Reports = () => {
                     Phone
                   </th>
                   <th scope="col" className="px-6 py-3 flex items-center">
-                    Total Due
+                    Due Amount
                     <Menu
                       menuButton={
                         <MenuButton className="flex items-center">

@@ -1,9 +1,10 @@
 import { Accordion, AccordionItem } from "@/components/Accordion";
+import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
-import { Customer, Invoice, Product } from "@/types/types";
+import { Activity, Customer, Invoice, Product } from "@/types/types";
 import { table } from "console";
 import { getCookie, setCookie } from "cookies-next";
 import { useSession } from "next-auth/react";
@@ -66,8 +67,8 @@ const tabs: { label: string; tabID: string }[] = [
     tabID: "monthwise_summary",
   },
   {
-    label: "Analytics",
-    tabID: "analytics",
+    label: "Activities",
+    tabID: "activities",
   },
 ];
 
@@ -78,6 +79,7 @@ const CustomerInvoicesData = () => {
   const [monthwiseSummaries, setMonthwiseSummaries] = useState<
     MonthwiseSummaries[]
   >([]);
+  const [activities, setActivities] = useState<Activity[] | null>(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
   const router = useRouter();
 
@@ -124,8 +126,10 @@ const CustomerInvoicesData = () => {
       "/user/invoices?id=" +
       selectedCustomerID;
     const { data } = await axiosInstance.get(url);
+    console.log(data);
     setInvoices(data.invoices);
     setCustomer(data.customer);
+    setActivities(data.activities);
     setMonthwiseSummaries(data.monthwiseSummary);
   };
 
@@ -262,7 +266,8 @@ const CustomerInvoicesData = () => {
             ))}
           </ul>
           <span className="mr-5 font-medium text-gray-500">
-            Customer ID : <span className="font-bold text-black">{selectedCustomerID}</span>
+            Customer ID :{" "}
+            <span className="font-bold text-black">{selectedCustomerID}</span>
           </span>
         </div>
 
@@ -589,6 +594,12 @@ const CustomerInvoicesData = () => {
               />
             ) : (
               ""
+            )}
+
+            {router.query.tab === "activities" ? (
+              <Activities activities={activities} />
+            ) : (
+              " "
             )}
           </>
         )}
