@@ -59,15 +59,17 @@ const ActivityMain = () => {
       <div className="w-full flex flex-col md:flow-row mt-5">
         <div className="md:w-[75%] flex flex-col">
           {/* Navigation */}
-          <div className="w-full grid grid-cols-5 gap-0.5 bg-gray-200 rounded-md">
-            {ActivityTypes.map((activityType) => {
+          <div className="w-full grid grid-cols-5 p-2 bg-gray-200 rounded-t-lg">
+            {ActivityTypes.map((activityType, index) => {
               return (
                 <button
                   key={activityType.id}
-                  className={`p-4 ${
+                  className={`p-2 ${
                     selectedTag === activityType.id
-                      ? "bg-black rounded-t-lg text-white"
-                      : "bg-gray-300 text-sm md:text-md"
+                      ? "bg-white font-medium shadow rounded-lg text-black translate-x-1"
+                      : `${
+                          index !== 0 && "border-l"
+                        } border-gray-300 text-sm md:text-md`
                   }`}
                   onClick={() => setSelectedTag(activityType.id)}
                 >
