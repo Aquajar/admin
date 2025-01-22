@@ -127,6 +127,7 @@ const CustomerInvoicesData = () => {
       selectedCustomerID;
     const { data } = await axiosInstance.get(url);
     console.log(data);
+    setInvoices(data.invoices);
     setCustomer(data.customer);
     setActivities(data.activities);
     setMonthwiseSummaries(data.monthwiseSummary);
