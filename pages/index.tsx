@@ -465,7 +465,7 @@ export default function Home() {
              * TOTAL COLLECTION
              */}
             <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
-              <span className="text-sm text-gray-600">Total Sales</span>
+              <span className="text-sm text-gray-600">Total Collection</span>
               <CurrencyFormat
                 value={
                   data?.summary?.last7Days?.refilling?.find(
