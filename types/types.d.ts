@@ -242,3 +242,17 @@ export interface Staff {
   createdAt?: Date; // Automatically added by Mongoose with timestamps
   updatedAt?: Date; // Automatically added by Mongoose with timestamps
 }
+export interface Order {
+  _id: string;
+  orderDate: string;
+  customer: {
+    _id: string;
+    name: string;
+    phone: string;
+    address: string;
+  };
+  note: string;
+  status: "pending" | "completed" | "cancelled"; // Use union type for status
+  deliveryDate: string;
+  __v: number;
+}
