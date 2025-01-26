@@ -186,6 +186,24 @@ const monthsInAnYear = [
   "December",
 ];
 
+export const customModalStyles = {
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    padding: "2rem",
+    transform: "translate(-50%, -50%)",
+    backgroundColor: "white",
+    borderRadius: "0.5rem",
+    border: "1px solid #ccc",
+  },
+};
+
 export {
   SidebarItems,
   paymentMethods,

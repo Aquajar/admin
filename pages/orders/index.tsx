@@ -1,11 +1,25 @@
 import Wrapper from "@/components/Wrapper";
-import { SidebarItems } from "@/lib/constants";
+import { customModalStyles, SidebarItems } from "@/lib/constants";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import { Order, SideBarItem } from "@/types/types";
+import { Customer, Item, Order, Product, SideBarItem } from "@/types/types";
+import axios from "axios";
+import { getCookie } from "cookies-next";
+import { toZonedTime, format } from "date-fns-tz";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
-import { GoKebabHorizontal } from "react-icons/go";
+import { GoKebabHorizontal, GoPlus } from "react-icons/go";
+import { MdOutlineDeleteForever } from "react-icons/md";
+import { RiAddCircleLine } from "react-icons/ri";
+import Modal from "react-modal";
+import { Menu, MenuItem, MenuButton } from "@szhsin/react-menu";
+import "@szhsin/react-menu/dist/index.css";
+import "@szhsin/react-menu/dist/transitions/slide.css";
+import { useRouter } from "next/router";
+
+Modal.setAppElement("#__next");
 
 const breadCrumbData: SideBarItem[] = [
   {
@@ -19,17 +33,83 @@ const Orders = () => {
   const [sort, setSort] = useState<"today" | "all" | "future">("today");
   const [orders, setOrders] = useState<Order[] | null | undefined>(null);
   const [sortedOrders, setSortedOrders] = useState<Order[]>([]);
+  const [modalIsOpen, setIsOpen] = useState(false);
+  const [items, setItems] = useState<Item[]>([]);
+  const [products, setProducts] = useState<Product[] | undefined>(undefined);
+  const [customer, setCustomer] = useState<undefined | null | Customer>(
+    undefined
+  );
+  const [customerID, setCustomerID] = useState<string>("");
+  const [isLoading, setIsloading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState(new Date());
 
-  const { data: session } = useSession();
-
-  const axiosInstance = useAxiosInstance(session);
-
-  const fetchOrders = async () => {
-    const URL = process.env.NEXT_PUBLIC_API_URL;
-    const { data } = await axiosInstance.get(`${URL}/order/all`);
-    setOrders(data.orders);
+  const closeModal = () => {
+    setIsOpen(false);
+    setCustomer(undefined);
+    setCustomerID("");
+    setPhoneNumber("");
+    setItems([]);
   };
 
+  // Create a new order
+  const handleCreateOrder = async () => {
+    setIsloading(true);
+
+    let URL = process.env.NEXT_PUBLIC_API_URL! + "/order/create";
+    let note = "";
+
+    items.map((item) => {
+      let n = item.name + " : " + item.quantity;
+      note += n + "\n";
+    });
+
+    const asiaKolkataTimezone = "Asia/Kolkata";
+
+    // Convert the date to the Asia/Kolkata timezone
+    const kolkataDate = toZonedTime(deliveryDate, asiaKolkataTimezone);
+
+    // Format the date to ISO string with the Asia/Kolkata timezone
+    const formatedDeliveryDate = format(
+      kolkataDate,
+      "yyyy-MM-dd'T'HH:mm:ssXXX",
+      {
+        timeZone: asiaKolkataTimezone,
+      }
+    );
+
+    const payload = {
+      customer: {
+        name: customer?.name,
+        phone: customer?.phone,
+        address: `${customer?.address?.landmark}, ${customer?.address?.text}`,
+      },
+      status: "pending",
+      note: note,
+      deliveryDate: formatedDeliveryDate,
+      orderDate: new Date().toUTCString(),
+    };
+
+    try {
+      const { data } = await axiosInstance.post(URL, payload);
+
+      if (data.status === "success") {
+        toast.success("Order created successfully!");
+        setOrders((prev) => {
+          if (!prev) return;
+          return [...prev, data.order];
+        });
+        setIsloading(false);
+        closeModal();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create order!");
+      setIsloading(false);
+    }
+  };
+
+  // Change the order status as delivered
   const handleOnClickDelivered = async (orderID: string) => {
     const orderStatus: "delivered" | "pending" = "delivered";
 
@@ -48,6 +128,38 @@ const Orders = () => {
     } else {
       toast.error("Failed to update order!");
     }
+  };
+
+  const handleOnClickDeleteOrder = async (orderID: string) => {
+    const URL = process.env.NEXT_PUBLIC_API_URL;
+
+    try {
+      const { data } = await axiosInstance.delete(
+        `${URL}/order/delete/${orderID}`
+      );
+
+      if (data.status === "success") {
+        toast.success("Order deleted successfully!");
+        // Update State of Orders
+        const updatedOrders = orders?.filter((order) => order._id !== orderID);
+        setOrders(updatedOrders);
+      } else {
+        toast.error("Failed to delete order!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete order!");
+    }
+  };
+
+  const { data: session } = useSession();
+
+  const axiosInstance = useAxiosInstance(session);
+
+  const fetchOrders = async () => {
+    const URL = process.env.NEXT_PUBLIC_API_URL;
+    const { data } = await axiosInstance.get(`${URL}/order/all`);
+    setOrders(data.orders);
   };
 
   function filterAndSortOrders(
@@ -88,52 +200,336 @@ const Orders = () => {
     }
   }, [sort, orders]);
 
+  // Auto Fetch customer details by phone number/customer ID
+  useEffect(() => {
+    if (customer === undefined && phoneNumber.length === 10) {
+      setIsloading(true);
+      const URL =
+        process.env.NEXT_PUBLIC_API_URL + "/user/find-by-phone/" + phoneNumber;
+      axios
+        .get(URL)
+        .then((res) => {
+          const customer: Customer = res.data.user;
+          setCustomer(customer);
+          customer?.userID && setCustomerID(customer?.userID?.toString() || "");
+          setIsloading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setCustomer(null);
+          setIsloading(false);
+        });
+    } else if (customer === undefined && customerID.length === 4) {
+      setIsloading(true);
+      const URL =
+        process.env.NEXT_PUBLIC_API_URL + "/user/find-by-userid/" + customerID;
+      axiosInstance
+        .get(URL)
+        .then((res) => {
+          const customer: Customer = res.data.user;
+          setCustomer(customer);
+          customer.phone && setPhoneNumber(customer.phone);
+          setIsloading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setCustomer(null);
+          setIsloading(false);
+        });
+    }
+  }, [phoneNumber, customer, customerID]);
+
+  // Fetch products from cookies
+  useEffect(() => {
+    if (products === undefined) {
+      let rawData = getCookie("products");
+
+      let parsedData = rawData ? JSON.parse(rawData) : [];
+
+      setProducts(parsedData);
+    }
+  }, [products]);
+
+  const router = useRouter();
+
   return (
     <Wrapper breadcrumb={breadCrumbData}>
+      {/*
+       * Create order model
+       */}
+      <Modal
+        style={customModalStyles}
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Delete Invoice Modal"
+      >
+        <div className="flex flex-col relative md:w-[50vh]">
+          <div className="flex justify-between items-center py-2 w-full">
+            <button
+              onClick={closeModal}
+              className="text-gray-700 hover:text-gray-900 absolute text-sm -top-4 -right-2"
+            >
+              Close
+            </button>
+
+            <form className="w-full" onSubmit={(e) => e.preventDefault()}>
+              <div className="mb-8">
+                <label
+                  htmlFor="email"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Customer ID
+                </label>
+                <input
+                  value={customerID}
+                  onChange={(e) => {
+                    setCustomerID(e.target.value);
+                    setCustomer(undefined);
+                    setPhoneNumber("");
+                  }}
+                  type="text"
+                  id="customerID"
+                  className="font-medium bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  placeholder=""
+                />
+                {customer && (
+                  <span className="text-sm text-green-600 font-medium mt-1 float-right">
+                    {customer.name}
+                  </span>
+                )}
+              </div>
+              <div className="mb-8">
+                <label
+                  htmlFor="phoneNumber"
+                  className="block mb-2 text-sm font-medium text-gray-900"
+                >
+                  Phone Number
+                </label>
+                <input
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    setCustomer(undefined);
+                    setCustomerID("");
+                  }}
+                  type="text"
+                  id="phoneNumber"
+                  className="bg-gray-50 font-medium border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                />
+              </div>
+              <div className="flex items-start flex-col mb-8">
+                {/* Items */}
+                <div className="relative overflow-x-auto shadow-sm rounded-lg w-full">
+                  <table className="w-full text-justify">
+                    <thead className="bg-slate-200">
+                      <tr className="">
+                        {/* Sl no. */}
+                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
+                          Sl No.
+                        </th>
+                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
+                          Item Name
+                        </th>
+                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
+                          Qty
+                        </th>
+                        <th className="text-md font-medium py-1.5 px-2 text-gray-700">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-slate-100">
+                      {items.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            {/* Sl no. */}
+                            <td className="text-md font-medium text-gray-700 px-4 py-2">
+                              {index + 1}.
+                            </td>
+                            {/* Item Name */}
+                            <td className="text-md font-medium text-gray-700 px-2 py-2">
+                              <select
+                                onChange={(e) => {
+                                  const newItems = [...items];
+                                  newItems[index].name = e.target.value;
+
+                                  const product = products?.find(
+                                    (product: Product) =>
+                                      product.name === e.target.value
+                                  );
+
+                                  if (product === undefined) return;
+
+                                  newItems[index].price =
+                                    parseInt(
+                                      product?.price.delivery as string
+                                    ) || 0;
+                                  newItems[index].total =
+                                    newItems[index].quantity *
+                                    newItems[index].price;
+                                  setItems(newItems);
+                                }}
+                                className="border text-md rounded-md capitalize px-2 w-36 md:pr-14 md:pl-4 py-2 mt-1 bg-white"
+                              >
+                                {products &&
+                                  products?.map((product: Product) => {
+                                    return (
+                                      <option
+                                        key={product._id}
+                                        value={product.name}
+                                      >
+                                        {product.name}
+                                      </option>
+                                    );
+                                  })}
+                              </select>
+                            </td>
+                            {/* Quantity */}
+                            <td className="text-md font-medium text-gray-700 px-4 py-2">
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const newItems = [...items];
+                                  newItems[index].quantity = parseInt(
+                                    e.target.value
+                                  );
+                                  newItems[index].total =
+                                    parseInt(e.target.value) *
+                                    (customer?.profileRate
+                                      ? customer?.profileRate
+                                      : newItems[index].price);
+                                  setItems(newItems);
+                                }}
+                                className="border w-14 text-center text-md rounded-md px-1 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white"
+                              />
+                            </td>
+                            {/* Delete Button */}
+                            <td className="text-md font-medium text-gray-700 px-4 py-2">
+                              <button
+                                onClick={() => {
+                                  const newItems = [...items];
+                                  newItems.splice(index, 1);
+                                  setItems(newItems);
+                                }}
+                                className="text-[#ED5E68]"
+                              >
+                                <MdOutlineDeleteForever className="w-6 h-6" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add Item */}
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      setItems([
+                        ...items,
+                        {
+                          name: products ? products[0].name : "jar",
+                          quantity: 0,
+                          price: products
+                            ? parseInt(products[0].price.delivery || "0")
+                            : 0,
+                          total: 0,
+                        },
+                      ]);
+                    }}
+                    className="py-2 flex items-center justify-start"
+                  >
+                    <RiAddCircleLine className="w-6 h-6 mx-2" />
+                    Add Item
+                  </button>
+                </div>
+              </div>
+              <div className="mb-8 flex flex-col">
+                <label className="text-md font-medium text-gray-700">
+                  Delivery Date
+                </label>
+                <ReactDatePicker
+                  showTimeSelect
+                  dateFormat={"dd/MM/yyyy"}
+                  className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
+                  selected={deliveryDate}
+                  onChange={(date) => {
+                    if (!date) return;
+                    setDeliveryDate(date);
+                  }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                onClick={handleCreateOrder}
+                className="text-white disabled:bg-gray-300 disabled:opacity-70 bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center float-right"
+              >
+                Create
+              </button>
+            </form>
+          </div>
+        </div>
+      </Modal>
       <div className="flex w-full">
         <div></div>
         <div className="flex flex-col w-full">
           {/*
-           * Tabs
+           * Navigation
            */}
-          <div
-            className="grid grid-cols-3 gap-1 p-1 my-2 mt-5 w-full md:w-fit bg-gray-200 rounded-lg"
-            role="group"
-          >
-            <button
-              onClick={() => setSort("today")}
-              type="button"
-              className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
-                sort === "today"
-                  ? "text-white bg-gray-900"
-                  : "text-gray-900 hover:bg-gray-100"
-              }`}
+          <div className="flex justify-between flex-col-reverse md:flex-row">
+            <div
+              className="grid grid-cols-3 gap-1 p-1 my-2 mt-5 w-full md:w-fit bg-gray-200 rounded-lg"
+              role="group"
             >
-              Today
-            </button>
-            <button
-              onClick={() => setSort("all")}
-              type="button"
-              className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
-                sort === "all"
-                  ? "text-white bg-gray-900"
-                  : "text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSort("future")}
-              type="button"
-              className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
-                sort === "future"
-                  ? "text-white bg-gray-900"
-                  : "text-gray-900 hover:bg-gray-100"
-              }`}
-            >
-              Future
-            </button>
+              <button
+                onClick={() => setSort("today")}
+                type="button"
+                className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
+                  sort === "today"
+                    ? "text-white bg-gray-900"
+                    : "text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setSort("all")}
+                type="button"
+                className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
+                  sort === "all"
+                    ? "text-white bg-gray-900"
+                    : "text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSort("future")}
+                type="button"
+                className={`px-5 py-1.5 text-sm font-medium rounded-lg ${
+                  sort === "future"
+                    ? "text-white bg-gray-900"
+                    : "text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Future
+              </button>
+            </div>
+            <div className="flex items-center justify-end mt-2">
+              <button
+                onClick={() => setIsOpen(true)}
+                className="flex px-3 py-1.5 rounded-lg bg-blue-600 text-white items-center"
+              >
+                <GoPlus className="" size={22} />
+                Create Order
+              </button>
+            </div>
           </div>
+
           {/*
            * Table
            */}
@@ -183,6 +579,9 @@ const Orders = () => {
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-3">
+                    <div className="flex items-center">Delivery Time</div>
+                  </th>
+                  <th scope="col" className="px-6 py-3">
                     <div className="flex items-center">Status</div>
                   </th>
                   <th scope="col" className="px-6 py-3">
@@ -199,12 +598,21 @@ const Orders = () => {
                         className="bg-white border-b border-gray-200"
                       >
                         <th scope="row" className="px-6 py-6 font-normal">
-                          #{order._id}
+                          #{order._id.slice(0, 8)}
                         </th>
                         <td className="px-6 py-6 font-medium">
                           {order.customer.name || order.customer.phone}
                         </td>
-                        <td className="px-6 py-6 font-medium">{order.note}</td>
+                        <td className="px-6 w-40 py-6 font-medium">
+                          {order.note?.split("/n").map((item, i) => (
+                            <span
+                              key={i}
+                              className="bg-gray-200 text-gray-800 text-sm font-medium inline-flex items-center px-2.5 py-0.5 rounded-md me-2"
+                            >
+                              {item}
+                            </span>
+                          ))}
+                        </td>
                         <td className="px-6 py-6">
                           {new Date(order.orderDate).toDateString()}
                         </td>
@@ -212,9 +620,12 @@ const Orders = () => {
                           {order.deliveryDate &&
                             new Date(order.deliveryDate).toDateString()}
                         </td>
+                        <td className="px-6 py-6 font-medium">
+                          {order.deliveryDate &&
+                            new Date(order.deliveryDate).toLocaleTimeString()}
+                        </td>
                         <td className="px-6 py-6 text-right">
                           <div className="flex items-center capitalize">
-                            {" "}
                             <div
                               className={`h-2.5 w-2.5 mr-2 rounded-full ${
                                 order.status === "delivered"
@@ -235,18 +646,46 @@ const Orders = () => {
                             disabled={order.status === "delivered"}
                             className={`border ${
                               order.status === "delivered"
-                                ? "bg-gray-300 text-white"
-                                : "hover:bg-green-400 text-blue-600 hover:text-black"
-                            } border-gray-200 px-3 py-1.5 rounded-md font-normal`}
+                                ? "bg-gray-300"
+                                : "bg-white hover:bg-gray-100 hover:text-blue-700"
+                            } py-1.5 px-5 me-2 text-sm font-medium text-gray-900 rounded-lg border border-gray-200 `}
                           >
                             Delivered
                           </button>
-                          <button className="ml-2">
-                            <GoKebabHorizontal
-                              className="rotate-90"
-                              size={18}
-                            />
-                          </button>
+
+                          <Menu
+                            align="start"
+                            position="anchor"
+                            direction="bottom"
+                            menuButton={
+                              <MenuButton className="flex items-center">
+                                <GoKebabHorizontal
+                                  className="rotate-90"
+                                  size={18}
+                                />
+                              </MenuButton>
+                            }
+                            transition
+                          >
+                            <MenuItem
+                              onClick={() =>
+                                handleOnClickDeleteOrder(order._id)
+                              }
+                              className="text-sm"
+                            >
+                              Delete
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() =>
+                                router.push(
+                                  `/customers/${order.customer.userID}?tab=invoices`
+                                )
+                              }
+                              className="text-sm"
+                            >
+                              View Customer Profile
+                            </MenuItem>
+                          </Menu>
                         </td>
                       </tr>
                     );

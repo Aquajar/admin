@@ -207,6 +207,7 @@ export interface Order {
     name: string;
     phone: string;
     address: string;
+    userID: number;
   };
   note?: string; // Optional field
   status: "pending" | "delivered"; // Enum for status
@@ -241,18 +242,4 @@ export interface Staff {
   type: "driver" | "labour" | "manager" | "salesman"; // Enum for type
   createdAt?: Date; // Automatically added by Mongoose with timestamps
   updatedAt?: Date; // Automatically added by Mongoose with timestamps
-}
-export interface Order {
-  _id: string;
-  orderDate: string;
-  customer: {
-    _id: string;
-    name: string;
-    phone: string;
-    address: string;
-  };
-  note: string;
-  status: "pending" | "completed" | "cancelled"; // Use union type for status
-  deliveryDate: string;
-  __v: number;
 }
