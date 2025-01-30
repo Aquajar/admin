@@ -9,7 +9,7 @@ const OrderCard: FC<{ order: Order }> = ({ order }) => {
         {order.note?.split("/n").map((item, index) => (
           <span
             key={index}
-            className="px-1 py-0.5 rounded-lg bg-blue-100 font-medium"
+            className="px-2 py-0.5 rounded-lg bg-blue-100 font-medium"
           >
             {item}
           </span>
@@ -31,7 +31,7 @@ const OrderCard: FC<{ order: Order }> = ({ order }) => {
       </span>
       <div className="absolute right-2.5 bottom-2.5">
         <div
-          className={`rounded-full w-2 h-2 ${
+          className={`rounded-full w-2.5 h-2.5 ${
             order.status === "pending"
               ? new Date() < new Date(order.deliveryDate!)
                 ? "bg-yellow-400"

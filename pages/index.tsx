@@ -53,7 +53,6 @@ export default function Home() {
   const [showMonthOptions, setShowMonthOptions] = useState(false);
   const [showYearOptions, setShowYearOptions] = useState(false);
 
-  const [orders, setOrders] = useState<Order[] | null>(null);
   const [superAdminToolsIsexpanded, setSuperAdminToolsIsexpanded] =
     useState(false);
 
@@ -548,7 +547,7 @@ export default function Home() {
           {/*
            * ORDERS
            */}
-          <OrdersDashBoard orders={orders} />
+          <OrdersDashBoard />
         </div>
       </div>
     </Wrapper>
