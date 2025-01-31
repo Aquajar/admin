@@ -1,6 +1,7 @@
 import { Accordion, AccordionItem } from "@/components/Accordion";
 import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
+import Statistics from "@/components/Customer/Statistics";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
@@ -70,6 +71,10 @@ const tabs: { label: string; tabID: string }[] = [
     label: "Activities",
     tabID: "activities",
   },
+  {
+    label: "Statistics",
+    tabID: "statistics",
+  },
 ];
 
 const CustomerInvoicesData = () => {
@@ -79,6 +84,13 @@ const CustomerInvoicesData = () => {
   const [monthwiseSummaries, setMonthwiseSummaries] = useState<
     MonthwiseSummaries[]
   >([]);
+  const [stats, setStats] = useState<{
+    assets: {
+      jars: string;
+      dispenser: string;
+      stand: string;
+    };
+  } | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
   const router = useRouter();
@@ -131,6 +143,7 @@ const CustomerInvoicesData = () => {
     setCustomer(data.customer);
     setActivities(data.activities);
     setMonthwiseSummaries(data.monthwiseSummary);
+    setStats(data.statistics);
   };
 
   useEffect(() => {
@@ -598,6 +611,12 @@ const CustomerInvoicesData = () => {
 
             {router.query.tab === "activities" ? (
               <Activities activities={activities} />
+            ) : (
+              " "
+            )}
+
+            {router.query.tab === "statistics" ? (
+              <Statistics assets={stats?.assets} />
             ) : (
               " "
             )}
