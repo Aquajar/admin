@@ -87,8 +87,8 @@ const CustomerInvoicesData = () => {
   const [stats, setStats] = useState<{
     assets: {
       jars: string;
-      dispenser: string;
-      stand: string;
+      dispensers: string;
+      stands: string;
     };
   } | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
