@@ -255,15 +255,15 @@ export default function Home() {
           {/*
            * MONTHLY INSIGHT
            */}
-          <Accordion
+          {user?.role === "super_admin" && <Accordion
             onStateChange={({ key, current }) => {
               if (current.isResolved) {
                 console.log(`${key as string} is expanded: ${current.isEnter}`);
                 setSuperAdminToolsIsexpanded(current.isEnter);
               }
             }}
-            // transition
-            // transitionTimeout={250}
+          // transition
+          // transitionTimeout={250}
           >
             <AccordionItem
               header={() => (
@@ -364,7 +364,7 @@ export default function Home() {
                 </div>
               )}
             </AccordionItem>
-          </Accordion>
+          </Accordion>}
           {/*
            * DAY SUMMARY SECTION
            */}
@@ -394,11 +394,10 @@ export default function Home() {
                     <IoIosTrendingDown className="text-red-500" size={22} />
                   )}
                   <span
-                    className={`${
-                      jarPercertageChange > 0
+                    className={`${jarPercertageChange > 0
                         ? "text-green-500"
                         : "text-red-500"
-                    } text-sm font-semibold`}
+                      } text-sm font-semibold`}
                   >
                     {jarPercertageChange.toFixed(0)}%
                   </span>
@@ -448,11 +447,10 @@ export default function Home() {
                     <IoIosTrendingDown className="text-red-500" size={22} />
                   )}
                   <span
-                    className={`${
-                      salePercertageChange > 0
+                    className={`${salePercertageChange > 0
                         ? "text-green-500"
                         : "text-red-500"
-                    } text-sm font-semibold`}
+                      } text-sm font-semibold`}
                   >
                     {salePercertageChange.toFixed(0)}%
                   </span>

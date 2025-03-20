@@ -114,4 +114,7 @@ export function beautifyDate(date: Date): string {
   return date.toLocaleString("en-IN", options);
 }
 
-export { randomString, getGreeting };
+const daysAgo = (date: Date): number =>
+  Math.floor((new Date().getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+
+export { randomString, getGreeting, daysAgo };

@@ -16,8 +16,60 @@ import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
 import CurrencyFormat from "react-currency-format";
+import {
+  Cloud,
+  CreditCard,
+  Github,
+  Keyboard,
+  LifeBuoy,
+  LogOut,
+  Mail,
+  MessageSquare,
+  Plus,
+  PlusCircle,
+  Settings,
+  User,
+  UserPlus,
+  Users,
+  EllipsisVertical,
+  MessageCirclePlus,
+  MessageSquareCode,
+  ReceiptText
+} from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+import { daysAgo } from "@/lib/helpers";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
-import Link from "next/link";
 
 const BreadCrumb = [
   {
@@ -29,9 +81,12 @@ const BreadCrumb = [
 const Customers = () => {
   const { customers, setCustomers } = useCustomersStore();
   const [limit, setLimit] = useState(20);
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false)
+  const [selectedPhoneForMessage, setSelectedPhoneForMessage] = useState("")
+  const [selectedLanguage, setSelectedLanguage] = useState<"eng" | "hindi" | "bng">("eng");
   const [page, setPage] = useState(1);
   const { data: session } = useSession();
-  const { invoices} = useInvoicesStore();
+  const { invoices } = useInvoicesStore();
   const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
@@ -58,8 +113,80 @@ const Customers = () => {
   const tableRef = useRef<HTMLTableElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
-  const daysAgo = (date: Date): number =>
-    Math.floor((new Date().getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+
+  function createWhatsAppWebURL(phone: string, message: string): string {
+    const encodedMessage = encodeURIComponent(message);
+    return `https://web.whatsapp.com/send?phone=91${phone}&text=${encodedMessage}`;
+  }
+
+  function generateUpiLink(
+    upiId: string, // Your UPI ID (e.g., "yourupi@upi")
+    name: string, // Payee name
+    amount?: number, // Amount (optional)
+    transactionId?: string, // Unique transaction ID (optional)
+    note?: string // Payment note (optional)
+  ): string {
+    const baseUrl = "upi://pay?";
+    const params = new URLSearchParams({
+      pa: upiId, // Payee UPI ID
+      pn: name, // Payee Name
+      tr: Math.floor(100000000000 + Math.random() * 900000000000).toString(), // Unique transaction ID
+      tn: note || "Payment", // Transaction note
+      cu: "INR", // Currency
+    });
+
+    if (amount) {
+      params.append("am", amount.toString()); // Add amount if provided
+    }
+
+    return `${baseUrl}${params.toString()}`;
+  }
+
+
+  const handleSendPaymentRequest = async () => {
+
+    const upiUrl = generateUpiLink("sid86harth-7@okaxis", "AQUAJAR", 0)
+
+    const response = await fetch("https://api.tinyurl.com/create", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_TINYURL_ACCESS_TOKEN}`, // Replace with your TinyURL API Key
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: upiUrl,
+      }),
+    });
+
+    const data = await response.json();
+
+    const paymentLink = data.data.tiny_url; // Returns the shortened link
+
+    let message;
+    switch (selectedLanguage) {
+      case "eng":
+        message = `Dear Customer, kindly clear your outstanding amount for *water bill* at your earliest convenience.\n\nClick below to pay securely:\n${paymentLink} \n\nThank you for choosing Aquajar!`;
+        break;
+      case "hindi":
+        message = `प्रिय ग्राहक, कृपया *पानी के बिल* की बकाया राशि को यथाशीघ्र भुगतान करें।\n\nसुरक्षित रूप से भुगतान करने के लिए नीचे क्लिक करें:\n${paymentLink}\n\nAquajar को चुनने के लिए धन्यवाद!`;
+        break;
+      case "bng":
+        message = `প্রিয় গ্রাহক, অনুগ্রহ করে *পানির বিলের* বকেয়া পরিমাণ যত দ্রুত সম্ভব পরিশোধ করুন।\n\nনিরাপদে টাকা দেওয়ার জন্য নিচে ক্লিক করুন:\n${paymentLink}\n\nAquajar বেছে নেওয়ার জন্য ধন্যবাদ!`;
+        break;
+      default:
+        message = `Dear Customer, kindly clear your pending amount at the earliest.\n\nClick below to pay securely:\n${paymentLink} \n\nThank you for choosing Aquajar!`;
+        break;
+    }
+
+    const link = createWhatsAppWebURL(selectedPhoneForMessage, message);
+
+    window.open(link, "_blank");
+
+    setIsLanguageModalOpen(false);
+    setSelectedLanguage("eng");
+  }
+
+  const router = useRouter()
 
   // Reset Customer State
   const resetCustomerState = () => {
@@ -137,27 +264,7 @@ const Customers = () => {
     }
   }, []);
 
-  // const checkIfUserPurchasedJar = (customerID: string) => {
-  //   if (!invoices) return false;
-  //   const customerInvoices = invoices.filter(
-  //     (invoice) => invoice.customerID === customerID
-  //   );
-
-  //   if (customerInvoices.length === 0) return false;
-
-  //   const purchasedJar = customerInvoices.some((invoice) =>
-  //     invoice.products.some(
-  //       (product) =>
-  //         product.id === "65d39d92e47ffdfd6db8c898" ||
-  //         product.id === "65d1c8a73a2e530a5997ca57"
-  //     )
-  //   );
-
-  //   return purchasedJar;
-  // };
-
   // Intersection Observer
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -380,6 +487,33 @@ const Customers = () => {
         setCustomers={setCustomersState}
       />
 
+      {/* Language Modal */}
+      <Dialog open={isLanguageModalOpen} onOpenChange={setIsLanguageModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Prefered Language</DialogTitle>
+            <DialogDescription>
+              Choose a language to send the message.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center pb-4 justify-between space-x-5">
+            <Select value={selectedLanguage} onValueChange={(value) => setSelectedLanguage(value as "eng" | "hindi" | "bng")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="eng">English</SelectItem>
+                <SelectItem value="hindi">Hindi</SelectItem>
+                <SelectItem value="bng">Bengali</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="px-3" onClick={handleSendPaymentRequest}>
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="relative overflow-x-auto mt-2 shadow-md sm:rounded-lg  border border-gray-200">
         {/*
          * Render Table
@@ -414,12 +548,12 @@ const Customers = () => {
                 Last Purchase
               </th>
 
-              <th scope="col" className="px-6 py-3">
+              {/* <th scope="col" className="px-6 py-3">
                 Total Due (Rs.)
-              </th>
-              <th scope="col" className="px-6 py-3">
+              </th> */}
+              {/* <th scope="col" className="px-6 py-3">
                 Plan
-              </th>
+              </th> */}
 
               {/* <th scope="col" className="px-6 py-3">
                 Jar Purchased
@@ -438,7 +572,7 @@ const Customers = () => {
               </th>
 
               <th scope="col" className="px-6 py-3">
-                Action
+                Actions
               </th>
             </tr>
           </thead>
@@ -478,15 +612,6 @@ const Customers = () => {
                 const lastPurchaseDate = customer?.lastPurchaseDate
                   ? daysAgo(new Date(customer?.lastPurchaseDate))
                   : 1;
-
-                const customerInvoices = invoices?.filter((v) =>
-                  customer.invoices.includes(v.invoiceID)
-                );
-
-                const totalDue = customerInvoices?.reduce(
-                  (total, invoice) => total + invoice.due,
-                  0
-                );
 
                 return (
                   <tr
@@ -557,13 +682,12 @@ const Customers = () => {
                     <td className="px-2 text-center py-4 text-gray-900">
                       {
                         <span
-                          className={`font-semibold ${
-                            customer?.isRegular
-                              ? lastPurchaseDate >= 5
-                                ? "text-red-500"
-                                : "text-green-600"
-                              : "text-gray-500"
-                          }`}
+                          className={`font-semibold ${customer?.isRegular
+                            ? lastPurchaseDate >= 5
+                              ? "text-red-500"
+                              : "text-green-600"
+                            : "text-gray-500"
+                            }`}
                         >
                           {
                             <span className="text-sm font-medium ml-1">
@@ -575,7 +699,7 @@ const Customers = () => {
                     </td>
 
                     {/* Total Due */}
-                    <td className="px-2  text-center py-4 text-gray-900 font-medium">
+                    {/* <td className="px-2  text-center py-4 text-gray-900 font-medium">
                       <CurrencyFormat
                         value={totalDue}
                         displayType={"text"}
@@ -584,12 +708,12 @@ const Customers = () => {
                         decimalScale={0}
                         fixedDecimalScale={true}
                       />
-                    </td>
+                    </td> */}
 
                     {/* Payment Plan */}
-                    <td className="px-2  text-center py-4 text-gray-900">
+                    {/* <td className="px-2  text-center py-4 text-gray-900">
                       {customer?.paymentPlan}
-                    </td>
+                    </td> */}
 
                     {/* Jar Purchased */}
                     {/* <td
@@ -626,10 +750,72 @@ const Customers = () => {
                     <td className="px-2 text-center py-4 text-gray-900">
                       {new Date(customer?.createdAt).toLocaleDateString()}
                     </td>
-
                     {/* Action Button */}
-                    <td className="flex items-center px-2 text-center py-4">
-                      <Link
+                    <td className="flex items-center justify-center px-2 text-center py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon">
+                            <EllipsisVertical />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-32">
+                          <DropdownMenuLabel>Menu</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem
+                              onClick={() => router.push("/customers/" + customer.userID + "?tab=profile")}
+                            >
+                              <User />
+                              <span>Profile</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <MessageSquareCode />
+                                <span>Message</span>
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuItem onClick={
+                                    () => {
+                                      setSelectedPhoneForMessage(customer.phone)
+                                      setIsLanguageModalOpen(true)
+                                    }
+                                  }>
+                                    <ReceiptText />
+                                    <span>Payment Request</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    const link = createWhatsAppWebURL(customer.phone, "Hi, greetings from Aquajar!")
+                                    window.open(link, '_blank')
+                                  }
+                                  }>
+                                    <MessageSquare />
+                                    <span>Message</span>
+                                  </DropdownMenuItem>
+                                  {/* <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <PlusCircle />
+                                    <span>More...</span>
+                                  </DropdownMenuItem> */}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                            <DropdownMenuItem
+                              onClick={() => router.push("/customers/" + customer.userID + "?tab=monthwise_summary")}
+                            >
+                              <CreditCard />
+                              <span>Billing</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem>
+                              <Settings />
+                              <span>Settings</span>
+                            </DropdownMenuItem>
+
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      {/* <Link
                         href={"/customers/" + customer.userID + "?tab=invoices"}
                         className="font-medium cursor-pointer text-green-600 hover:underline ms-3"
                       >
@@ -640,7 +826,7 @@ const Customers = () => {
                         className="font-medium text-red-600 hover:underline ms-3"
                       >
                         Remove
-                      </a>
+                      </a> */}
                     </td>
                   </tr>
                 );
