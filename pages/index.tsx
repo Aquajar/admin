@@ -24,15 +24,15 @@ import Greetings from "@/components/dashboard/Greetings";
 import SalesAreaChart from "@/components/dashboard/SalesAreaChart";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import DriverSalesBarGraph from "@/components/dashboard/Driver/BarGraph";
+import DriverSalesBarGraph from "@/components/Driver/Charts/BarGraph";
 import { monthAbbr, monthsInAnYear } from "@/lib/constants";
-import DriverSalesCollection from "@/components/dashboard/Driver/Collection";
+import DriverSalesCollection from "@/components/Driver/Collection";
 import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 import Suggestions from "@/components/dashboard/Suggestions";
 import MonthlySummary from "@/components/dashboard/MonthlySummary";
 import DateSelector from "@/components/dashboard/DateSelector";
 import OrdersDashBoard from "@/components/dashboard/Orders/Index";
-import { Order } from "@/types/types";
+
 
 const BreadCrumb = [
   {

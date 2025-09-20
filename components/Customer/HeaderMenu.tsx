@@ -1,41 +1,42 @@
-import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import { Area, Customer, Invoice } from "@/types/types";
-import { getCookie, setCookie } from "cookies-next";
-import { useSession } from "next-auth/react";
-import React, {
-  ChangeEvent,
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
-import toast from "react-hot-toast";
-import { FaSearch } from "react-icons/fa";
-import { LuFileSpreadsheet } from "react-icons/lu";
-import { MdOutlineRefresh } from "react-icons/md";
-import { utils, writeFileXLSX } from "xlsx";
+"use client"
+
+import useAxiosInstance from "@/lib/hooks/useAxiosInstance"
+import { Area, Customer, Invoice } from "@/types/types"
+import { getCookie, setCookie } from "cookies-next"
+import { useSession } from "next-auth/react"
+import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from "react"
+import toast from "react-hot-toast"
+import { FaSearch } from "react-icons/fa"
+import { LuFileSpreadsheet } from "react-icons/lu"
+import { MdOutlineRefresh } from "react-icons/md"
+import { utils, writeFileXLSX } from "xlsx"
+
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Search } from "lucide-react"
 
 interface HeaderMenuProps {
-  onSearch: (searchTerm: string, searchBy: "id" | "name") => void;
-  customers: Customer[] | null | undefined;
-  MasterCustomersState: Customer[] | null | undefined;
-  setCustomers: React.Dispatch<
-    React.SetStateAction<Customer[] | null | undefined>
-  >;
-  resetCustomers: () => void;
-  invoices: Invoice[] | null | undefined;
+  onSearch: (searchTerm: string, searchBy: "id" | "name") => void
+  customers: Customer[] | null | undefined
+  MasterCustomersState: Customer[] | null | undefined
+  setCustomers: React.Dispatch<React.SetStateAction<Customer[] | null | undefined>>
+  resetCustomers: () => void
+  invoices: Invoice[] | null | undefined
   purchasePatternData: {
-    customerID: string;
-    averageIntervalDays?: number;
-    purchasePattern: "daily" | "irregular";
-    isNeedToday?: boolean;
-  }[];
-  tableRef: React.RefObject<HTMLTableElement>;
-  sortByRegularity: "all" | "true" | "false";
-  setSortByRegularity: Dispatch<SetStateAction<"all" | "true" | "false">>;
-  setSortByArea: Dispatch<SetStateAction<"all" | Area["name"]>>;
-  sortByArea: Area["name"];
-  loading: boolean;
+    customerID: string
+    averageIntervalDays?: number
+    purchasePattern: "daily" | "irregular"
+    isNeedToday?: boolean
+  }[]
+  tableRef: React.RefObject<HTMLTableElement>
+  sortByRegularity: "all" | "true" | "false"
+  setSortByRegularity: Dispatch<SetStateAction<"all" | "true" | "false">>
+  setSortByArea: Dispatch<SetStateAction<"all" | Area["name"]>>
+  sortByArea: Area["name"]
+  loading: boolean
 }
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
@@ -44,7 +45,6 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   setCustomers,
   resetCustomers,
   MasterCustomersState,
-  purchasePatternData,
   tableRef,
   sortByRegularity,
   setSortByRegularity,
@@ -52,293 +52,178 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   sortByArea,
   loading,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState<"id" | "name">("name");
-  const [areas, setAreas] = useState<Area[] | null>(null);
+  const [searchTerm, setSearchTerm] = useState("")
+  const [searchBy, setSearchBy] = useState<"id" | "name">("name")
+  const [areas, setAreas] = useState<Area[] | null>(null)
 
-  const { data: session } = useSession();
-
-  // Create axios instance
-  const axiosInstance = useAxiosInstance(session);
+  const { data: session } = useSession()
+  const axiosInstance = useAxiosInstance(session)
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
+    setSearchTerm(event.target.value)
+  }
 
-  // Handle search bar
   const handleSearch = (e: ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onSearch(searchTerm, searchBy);
-  };
+    e.preventDefault()
+    onSearch(searchTerm, searchBy)
+  }
 
-  // Handle search label change
-  const handleSearchByChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setSearchBy(event.target.value as "id" | "name");
-  };
-
-  // Handle sort by regularity
   const handleSortByRegularity = (val: "all" | "true" | "false") => {
-    setSortByRegularity(val);
+    setSortByRegularity(val)
 
     if (val === "all") {
-      setCustomers(MasterCustomersState);
-      setSortByArea("all");
-      return;
+      setCustomers(MasterCustomersState)
+      setSortByArea("all")
+      return
     }
-    const isRegular = val === "true" ? true : false;
+    const isRegular = val === "true"
+    let n = customers?.filter((customer) => isRegular === customer.isRegular)
+    setCustomers(n)
+  }
 
-    let n = customers?.filter((customer) => isRegular === customer.isRegular);
-    setCustomers(n);
-  };
-
-  // Handle sort by area
   const handleSortByArea = (area: string) => {
-    setSortByArea(area);
+    setSortByArea(area)
     if (area === "all") {
-      setCustomers(MasterCustomersState);
-      setSortByRegularity("all");
-      return;
+      setCustomers(MasterCustomersState)
+      setSortByRegularity("all")
+      return
     }
-    let n = customers?.filter((customer) => area === customer.address?.text);
-    setCustomers(n);
-  };
+    let n = customers?.filter((customer) => area === customer.address?.text)
+    setCustomers(n)
+  }
 
-  // Handle sort by
-  const handleSortByPurchaseInterval = (val: "all" | "high" | "low") => {
-    if (val === "all") {
-      setCustomers(MasterCustomersState);
-      return;
-    }
-
-    let n = customers?.filter((customer) => {
-      let data = purchasePatternData.find((d) => d.customerID === customer._id);
-      if (val === "high") {
-        return (
-          data?.averageIntervalDays && Math.abs(data.averageIntervalDays) > 3
-        );
-      } else {
-        return (
-          data?.averageIntervalDays && Math.abs(data.averageIntervalDays) <= 3
-        );
-      }
-    });
-
-    n?.sort((a, b) => {
-      let dataA = purchasePatternData.find((d) => d.customerID === a._id);
-      let dataB = purchasePatternData.find((d) => d.customerID === b._id);
-      if (val === "high") {
-        return dataA?.averageIntervalDays! - dataB?.averageIntervalDays!;
-      } else {
-        return dataB?.averageIntervalDays! - dataA?.averageIntervalDays!;
-      }
-    });
-
-    setCustomers(n);
-
-    // setSortByInterval(val);
-  };
-
-  useEffect(() => {
-    if (customers) {
-      // sort by totaldue
-    }
-  }, [customers]);
-
-  // Fetch Areas
   useEffect(() => {
     if (!areas) {
-      // Fetch products from cookies
-      const cookieAreas = getCookie("areas");
+      const cookieAreas = getCookie("areas")
       if (cookieAreas) {
-        console.log("Fetching areas from cookies");
-        let areas: Area[] = JSON.parse(cookieAreas);
-        setAreas(areas);
-        setSortByArea("all");
+        let areas: Area[] = JSON.parse(cookieAreas)
+        setAreas(areas)
+        setSortByArea("all")
       } else {
-        // Fetch products
-        console.log("Fetching products from API");
-        const URL = process.env.NEXT_PUBLIC_API_URL + "/area/all";
-
+        const URL = process.env.NEXT_PUBLIC_API_URL + "/area/all"
         axiosInstance.get(URL).then((res) => {
-          const areas: Area[] = res.data;
-          setAreas(areas);
-          setSortByArea("all");
-          setCookie("areas", JSON.stringify(areas), {
-            maxAge: 60 * 60 * 24 * 7,
-          });
-        });
+          const areas: Area[] = res.data
+          setAreas(areas)
+          setSortByArea("all")
+          setCookie("areas", JSON.stringify(areas), { maxAge: 60 * 60 * 24 * 7 })
+        })
       }
     }
-  }, [areas]);
+  }, [areas])
 
   return (
     <>
-      <div className="flex flex-col md:flex-row justify-between items-end w-full">
-        {/*
-         * Search Bar
-         */}
-        <form
-          onSubmit={handleSearch}
-          className="relative  max-w-md w-full md:w-fit"
-        >
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <FaSearch className="w-5 h-5 text-gray-500" />
-          </div>
-          <input
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+        {/* Search */}
+        <form onSubmit={handleSearch} className="relative flex col-span-2">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <Search className="w-4 h-4" />
+          </span>
+
+          <Input
             type="text"
             disabled={loading}
-            className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 pr-36 p-2.5 `}
-            placeholder="Search..."
+            style={{
+              boxShadow: "none",
+              outline: "none",
+            }}
+            className="pl-9 text-lg pr-4 h-10 rounded-r-none" // same height as button
+            placeholder="Search customers..."
             value={searchTerm}
             onChange={handleInputChange}
           />
-          <button
+
+          <Button
             disabled={loading}
             type="submit"
-            className={`absolute inset-y-0 right-0 flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md shadow-sm text-white ${
-              loading ? "bg-gray-300 cursor-wait" : "bg-blue-600 hover:bg-indigo-700"
-            }  `}
+            size="sm"
+            className="h-10 rounded-l-none shadow-none" // same height as input
           >
-            Search
-          </button>
+            {loading ? "..." : "Go"}
+          </Button>
         </form>
-        {/*
-         * Search by
-         */}
-        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-          <label htmlFor="searchBy" className="text-xs text-gray-500">
-            Search By
-          </label>
-          <select
-            id="searchBy"
-            className="bg-gray-50 border mt-1.5 cursor-pointer border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-8"
-            value={searchBy}
-            onChange={handleSearchByChange}
-          >
-            <option value="name">Name</option>
-            <option value="id">ID</option>
-          </select>
-        </div>
-        {/*
-         * Sort by regularity
-         */}
-        <div className="flex  w-full md:w-fit mt-5 md:mt-0 flex-col">
-          <label htmlFor="searchBy" className="text-xs text-gray-500">
-            Regularity
-          </label>
-          <select
-            id="searchBy"
-            className="bg-gray-50 border cursor-pointer mt-1.5 border-gray-300 text-gray-900 text-sm rounded-lg block p-2.5 pr-4"
-            onChange={(e) =>
-              setSortByRegularity(e.target.value as "all" | "true" | "false")
-            }
-          >
-            <option value="all" selected={sortByRegularity === "all"}>
-              All
-            </option>
-            <option value="true" selected={sortByRegularity === "true"}>
-              Regular
-            </option>
-            <option value="false" selected={sortByRegularity === "false"}>
-              Unregular
-            </option>
-          </select>
-        </div>
-        {/*
-         * Sort by Area
-         */}
-        <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-          <label htmlFor="searchBy" className="text-xs text-gray-500">
-            Area
-          </label>
-          <select
-            onChange={(e) => setSortByArea(e.target.value)}
-            className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
-          >
-            <option selected={sortByArea === "all"} value="all">
-              All
-            </option>
-            {areas &&
-              areas.map((area: Area, index: number) => (
-                <option
-                  selected={sortByArea === area.name}
-                  value={area.name}
-                  key={index}
-                >
-                  {area.name}
-                </option>
-              ))}
-          </select>
-        </div>
-        {/*
-         * Sort by Purchase Interval
-         */}
-        {/* <div className="flex w-full md:w-fit mt-5 md:mt-0 flex-col">
-          <label htmlFor="searchBy" className="text-xs text-gray-500">
-            Purchase Interval
-          </label>
-          <select
-            onChange={(e) =>
-              handleSortByPurchaseInterval(e.target.value as any)
-            }
-            className="bg-gray-50 border border-gray-300 mt-1.5 text-gray-900 text-sm rounded-lg block p-2.5 pr-8 cursor-pointer"
-          >
-            <option value="all" selected={sortByInterval === "all"}>
-              All
-            </option>
-            <option value="high" selected={sortByInterval === "high"}>
-              High
-            </option>
-            <option value="less" selected={sortByInterval === "low"}>
-              Less
-            </option>
-          </select>
-        </div> */}
-        {/*
-         * Refresh Button
-         */}
-        <button
-          onClick={() => {
-            resetCustomers();
-            setSortByArea("all");
-            setSortByRegularity("all");
-            // setSortByInterval("all");
-          }}
-          className="p-2.5 bg-blue-700 rounded-md text-sm font-medium text-gray-900 w-full md:w-fit mt-6 md:mt-0 flex items-center justify-center"
-        >
-          <span className="mr-1 text-white">Refresh</span>
-          <MdOutlineRefresh className="w-5 h-5 text-white" />
-        </button>
-        {/*
-         * Export Button
-         */}
-        <button
-          className="bg-green-500 flex text-sm text-white p-2.5 font-medium w-full md:w-fit mt-6 md:mt-0 justify-center items-center rounded-md"
-          onClick={() => {
-            // generate workbook from table element
-            const wb = utils.table_to_book(tableRef.current);
-            // write to XLSX
-            writeFileXLSX(wb, `${+new Date()}.xlsx`);
-            toast.success("Exported to XLSX");
-          }}
-        >
-          <span className="mr-1 text-white"> Export</span>
 
-          <LuFileSpreadsheet className="ml-2 w-5 h-5" />
-        </button>
-      </div>
-      <div className="flex flex-col mt-6 md:flex-row justify-between items-end w-full">
-        <div className="">
-          <span className="text-gray-500 text-sm">Total Customers :</span>
-          <span className="text-sm font-medium text-gray-900 ml-2">
-            {customers?.length}
-          </span>
+
+        {/* Search By */}
+        <div>
+          <Label className="text-xs mb-1">Search By</Label>
+          <Select value={searchBy} onValueChange={(val: "id" | "name") => setSearchBy(val)}>
+            <SelectTrigger >
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="id">ID</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Regularity */}
+        <div>
+          <Label className="text-xs mb-1">Regularity</Label>
+          <Select value={sortByRegularity} onValueChange={handleSortByRegularity}>
+            <SelectTrigger >
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="true">Regular</SelectItem>
+              <SelectItem value="false">Unregular</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Area */}
+        <div>
+          <Label className="text-xs mb-1">Area</Label>
+          <Select value={sortByArea} onValueChange={handleSortByArea}>
+            <SelectTrigger >
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {areas?.map((area, idx) => (
+                <SelectItem key={idx} value={area.name}>
+                  {area.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Refresh */}
+        {/* <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            resetCustomers()
+            setSortByArea("all")
+            setSortByRegularity("all")
+          }}
+        >
+          <MdOutlineRefresh className="mr-2 h-4 w-4" />
+          Reset
+        </Button> */}
+
+        {/* Export */}
+        <Button
+          className="bg-green-600 hover:bg-green-700 w-full"
+          onClick={() => {
+            const wb = utils.table_to_book(tableRef.current)
+            writeFileXLSX(wb, `${+new Date()}.xlsx`)
+            toast.success("Exported to XLSX")
+          }}
+        >
+          <LuFileSpreadsheet className="mr-2 h-4 w-4" />
+          Export
+        </Button>
+      </div>
+      <div className="flex justify-between items-center mt-6 pt-3 text-sm">
+        <span className="text-muted-foreground">Total Customers</span>
+        <span className="font-medium">{customers?.length ?? 0}</span>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default HeaderMenu;
+export default HeaderMenu

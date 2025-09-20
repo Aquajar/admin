@@ -3,13 +3,34 @@ import React from "react";
 import CurrencyFormat from "react-currency-format";
 import { FaPerson } from "react-icons/fa6";
 import { GoKebabHorizontal } from "react-icons/go";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 const Collection = ({ data }: { data: DriverSummary[] }) => {
   return (
     <div className="w-full bg-white rounded-3xl border shadow-md p-4 pb-6">
       <div className="flex justify-between items-center pb-3 border-b">
         <span className="text-2xl font-medium">Driver Statistics</span>
-        <GoKebabHorizontal size={20} className="cursor-pointer" />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <GoKebabHorizontal size={20} className="cursor-pointer" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Details</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/drivers/stats">
+              View Stats
+              </Link>
+              </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Data */}

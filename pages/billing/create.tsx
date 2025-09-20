@@ -275,9 +275,9 @@ const Invoice = () => {
               ? parseInt(products[0].price.retail)
               : 0
             : products[0].price.delivery
-            ? parseInt(products[0].price.delivery)
-            : 0
-          : 25,
+              ? parseInt(products[0].price.delivery)
+              : 0
+          : 30,
         total: 0,
       },
     ]);
@@ -307,6 +307,9 @@ const Invoice = () => {
       return toast.error("Please select a payment method");
     } else if (!startDate) {
       return toast.error("Please select a sale date");
+    }
+    if (orderType === "delivery" && !driverID) {
+      return toast.error("Please select a driver");
     }
 
     let newProducts: ItemProps[] = [];
@@ -367,15 +370,15 @@ const Invoice = () => {
         paymentMethod === "due"
           ? "pending"
           : isPartialPayment
-          ? "pending"
-          : "paid",
+            ? "pending"
+            : "paid",
       paymentMethod: paymentMethod,
       due:
         paymentMethod === "due" && !isPartialPayment
           ? total
           : isPartialPayment
-          ? total - parseFloat(partialPayment)
-          : 0,
+            ? total - parseFloat(partialPayment)
+            : 0,
     };
 
     const URL = process.env.NEXT_PUBLIC_API_URL + "/invoice/generate";
@@ -562,8 +565,8 @@ const Invoice = () => {
                     searchByPhone
                       ? phoneNumber
                       : customerID === ""
-                      ? ""
-                      : customerID
+                        ? ""
+                        : customerID
                   }
                   maxLength={searchByPhone ? 10 : 4}
                   type="text"
@@ -576,19 +579,18 @@ const Invoice = () => {
                 <label className="text-md font-medium text-gray-700 flex w-full items-center justify-between">
                   <span className="w-1/3">Bill To</span>
                   <span
-                    className={`text-sm w-full text-right font-normal ${
-                      customer && customer?.name === undefined
+                    className={`text-sm w-full text-right font-normal ${customer && customer?.name === undefined
                         ? "text-yellow-500"
                         : customer === null
-                        ? "text-red-500"
-                        : ""
-                    }`}
+                          ? "text-red-500"
+                          : ""
+                      }`}
                   >
                     {customer && customer?.name === undefined
                       ? "Customer's name will be updated"
                       : customer === null
-                      ? "Customer not found"
-                      : ""}
+                        ? "Customer not found"
+                        : ""}
                   </span>
                 </label>
                 <DebounceInput
@@ -736,7 +738,7 @@ const Invoice = () => {
                                   parseInt(product?.price.retail as string) ||
                                   0;
                               } else if (orderType === "delivery") {
-                                newItems[index].price = 25;
+                                newItems[index].price = 30;
                               }
                               newItems[index].price =
                                 parseInt(product?.price.delivery as string) ||
@@ -833,9 +835,9 @@ const Invoice = () => {
                             ? parseInt(products[0].price.retail)
                             : 0
                           : products[0].price.delivery
-                          ? parseInt(products[0].price.delivery)
-                          : 0
-                        : 25,
+                            ? parseInt(products[0].price.delivery)
+                            : 0
+                        : 30,
                       total: 0,
                     },
                   ]);
