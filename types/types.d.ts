@@ -112,7 +112,7 @@ interface MonthlyData {
 }
 
 interface YearlyData {
-  year: string; // The year (e.g., 2024)
+  year: number; // The year (e.g., 2024)
   data: MonthlyData[]; // Array of monthly data for the year
 }
 
@@ -151,7 +151,7 @@ export type DashBoardData = {
         jars: number;
         due: number;
         collected: number;
-        driverSummary: DriverData;
+        driverSummary: { name: string; invoices: Invoice[] }[];
       }>;
     };
   };

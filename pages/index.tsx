@@ -31,7 +31,7 @@ import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
 import Suggestions from "@/components/dashboard/Suggestions";
 import MonthlySummary from "@/components/dashboard/MonthlySummary";
 import DateSelector from "@/components/dashboard/DateSelector";
-import OrdersDashBoard from "@/components/dashboard/Orders/Index";
+import RefillBarChart from "@/components/dashboard/RefillChart";
 
 
 const BreadCrumb = [
@@ -46,6 +46,8 @@ export default function Home() {
   const axiosInstance = useAxiosInstance(session);
   useRefreshTokenRotation(axiosInstance);
   const { setCustomers } = useCustomersStore();
+
+  const [salesStatsType, setSalesStatsType] = useState<"weekly" | "monthly" | "yearly">("weekly");
 
   const [jarPercertageChange, setJarPercertageChange] = useState(0);
   const [salePercertageChange, setSalePercertageChange] = useState(0);
@@ -134,7 +136,7 @@ export default function Home() {
     setCurrMonth(month);
 
     const yearlyData = data?.summary.monthly.find((data) => {
-      return parseInt(data.year) === currYear;
+      return data.year === currYear;
     });
 
     const newMonthlyData = yearlyData?.data.find(
@@ -151,7 +153,7 @@ export default function Home() {
     setShowMonthOptions(false);
 
     const yearlyData = data?.summary.monthly.find((data) => {
-      return parseInt(data.year) === year;
+      return data.year === year;
     });
 
     const newMonthlyData = yearlyData?.data.find(
@@ -172,17 +174,6 @@ export default function Home() {
     return result;
   }
 
-  // GET ORDERS
-  // const getOrders = () => {
-  //   let URL = process.env.NEXT_PUBLIC_API_URL + "/order/all";
-  //   axiosInstance.get(URL).then((response) => {
-  //     setOrders(response.data.orders);
-  //   });
-  // };
-
-  // useEffect(() => {
-  //   if (session && orders === null) getOrders();
-  // }, [orders, session]);
 
   useEffect(() => {
     let jarsToday = data?.summary?.last7Days?.refilling?.find(
@@ -225,6 +216,9 @@ export default function Home() {
     setSalePercertageChange(salePercentageChange);
   }, [currDay]);
 
+
+  console.log(data?.summary?.monthly.find((i) => i.year === new Date().getFullYear()))
+
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       {/* <Loader visible /> */}
@@ -251,7 +245,7 @@ export default function Home() {
        * CARDS
        */}
       <div className="flex w-full md:flex-row flex-col">
-        <div className="md:w-[70%] flex flex-col space-y-5 md:pr-5">
+        <div className="flex flex-col space-y-5 w-full">
           {/*
            * MONTHLY INSIGHT
            */}
@@ -365,46 +359,50 @@ export default function Home() {
               )}
             </AccordionItem>
           </Accordion>}
-          {/*
+          <div className="grid md:grid-cols-12 gap-3">
+            <div className="md:col-span-3">
+              {/*
            * DAY SUMMARY SECTION
            */}
-          <div className="w-full grid md:grid-cols-3 gap-5 rounded-3xl">
-            {/*
+              <div className="w-full grid md:grid-cols-1 gap-5 rounded-3xl">
+                {/*
              * JARS
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
-              <span className="text-sm text-gray-600">Jars Processed</span>
-              <span className="text-4xl font-bold">
-                {
-                  data?.summary?.last7Days?.refilling?.find(
-                    (data) => data?.date === currDay
-                  )?.jars
-                }
-              </span>
-              {/* Performance Stats */}
-              {jarPercertageChange === -100 ? (
-                <div>
-                  <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
-                </div>
-              ) : (
-                <div className="flex space-x-2">
-                  {jarPercertageChange > 0 ? (
-                    <IoIosTrendingUp className="text-green-500" size={22} />
-                  ) : (
-                    <IoIosTrendingDown className="text-red-500" size={22} />
-                  )}
-                  <span
-                    className={`${jarPercertageChange > 0
-                        ? "text-green-500"
-                        : "text-red-500"
-                      } text-sm font-semibold`}
-                  >
-                    {jarPercertageChange.toFixed(0)}%
+                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
+                  <span style={{
+                    fontSize: '15px',
+                  }} className="text-gray-700 font-medium">Jars Processed</span>
+                  <span className="text-4xl font-bold">
+                    {
+                      data?.summary?.last7Days?.refilling?.find(
+                        (data) => data?.date === currDay
+                      )?.jars
+                    }
                   </span>
-                  <span className="text-sm">from yesterday</span>
-                </div>
-              )}
-              {/* <span className="text-xl mt-2 text-white">
+                  {/* Performance Stats */}
+                  {jarPercertageChange === -100 ? (
+                    <div>
+                      <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                    </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      {jarPercertageChange > 0 ? (
+                        <IoIosTrendingUp className="text-green-500" size={22} />
+                      ) : (
+                        <IoIosTrendingDown className="text-red-500" size={22} />
+                      )}
+                      <span
+                        className={`${jarPercertageChange > 0
+                          ? "text-green-500"
+                          : "text-red-500"
+                          } text-sm font-semibold`}
+                      >
+                        {jarPercertageChange.toFixed(0)}%
+                      </span>
+                      <span className="text-sm">from yesterday</span>
+                    </div>
+                  )}
+                  {/* <span className="text-xl mt-2 text-white">
                       {(data?.summary.last7Days.refilling.filter(
                         (data) => data?.date === currDay
                       )[0]?.jars || 0) * 20}{" "}
@@ -413,75 +411,86 @@ export default function Home() {
                         water displaced
                       </span>
                     </span> */}
-            </div>
-            {/*
+                </div>
+                {/*
              * TOTAL SALES
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
-              <span className="text-sm text-gray-600">Total Sales</span>
-              <CurrencyFormat
-                value={
-                  data?.summary?.last7Days?.refilling?.find(
-                    (data) => data?.date === currDay
-                  )?.sales
-                }
-                displayType={"text"}
-                thousandSeparator={true}
-                prefix={"₹"}
-                renderText={(value) => (
-                  <span className="text-4xl font-bold">{value}</span>
-                )}
-                decimalScale={0}
-                fixedDecimalScale={true}
-              />
-              {/* Performance Stats */}
-              {salePercertageChange === -100 ? (
-                <div>
-                  <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
-                </div>
-              ) : (
-                <div className="flex space-x-2">
-                  {salePercertageChange > 0 ? (
-                    <IoIosTrendingUp className="text-green-500" size={22} />
+                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
+                  <span style={{
+                    fontSize: '15px',
+                  }} className="text-gray-700 font-medium">Total Sales</span>
+                  <CurrencyFormat
+                    value={
+                      data?.summary?.last7Days?.refilling?.find(
+                        (data) => data?.date === currDay
+                      )?.sales
+                    }
+                    displayType={"text"}
+                    thousandSeparator={true}
+                    prefix={"₹"}
+                    renderText={(value) => (
+                      <span className="text-4xl font-bold">{value}</span>
+                    )}
+                    decimalScale={0}
+                    fixedDecimalScale={true}
+                  />
+                  {/* Performance Stats */}
+                  {salePercertageChange === -100 ? (
+                    <div>
+                      <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+                    </div>
                   ) : (
-                    <IoIosTrendingDown className="text-red-500" size={22} />
+                    <div className="flex space-x-2">
+                      {salePercertageChange > 0 ? (
+                        <IoIosTrendingUp className="text-green-500" size={22} />
+                      ) : (
+                        <IoIosTrendingDown className="text-red-500" size={22} />
+                      )}
+                      <span
+                        className={`${salePercertageChange > 0
+                          ? "text-green-500"
+                          : "text-red-500"
+                          } text-sm font-semibold`}
+                      >
+                        {salePercertageChange.toFixed(0)}%
+                      </span>
+                      <span className="text-sm">from yesterday</span>
+                    </div>
                   )}
-                  <span
-                    className={`${salePercertageChange > 0
-                        ? "text-green-500"
-                        : "text-red-500"
-                      } text-sm font-semibold`}
-                  >
-                    {salePercertageChange.toFixed(0)}%
-                  </span>
-                  <span className="text-sm">from yesterday</span>
                 </div>
-              )}
-            </div>
-            {/*
+                {/*
              * TOTAL COLLECTION
              */}
-            <div className="flex flex-col space-y-5 p-4 bg-white  border  shadow-md rounded-3xl">
-              <span className="text-sm text-gray-600">Total Collection</span>
-              <CurrencyFormat
-                value={
-                  data?.summary?.last7Days?.refilling?.find(
-                    (data) => data?.date === currDay
-                  )?.collected
-                }
-                displayType={"text"}
-                thousandSeparator={true}
-                prefix={"₹"}
-                renderText={(value) => (
-                  <span className="text-4xl font-bold">{value}</span>
-                )}
-                decimalScale={0}
-                fixedDecimalScale={true}
-              />
-              <div className="flex space-x-1 items-center">
-                <span className="text-sm">See Statictics</span>
-                <FaChevronRight size={12} />
+                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
+                  <span style={{
+                    fontSize: '15px',
+                  }} className="text-gray-700 font-medium">Total Collection</span>
+                  <CurrencyFormat
+                    value={
+                      data?.summary?.last7Days?.refilling?.find(
+                        (data) => data?.date === currDay
+                      )?.collected
+                    }
+                    displayType={"text"}
+                    thousandSeparator={true}
+                    prefix={"₹"}
+                    renderText={(value) => (
+                      <span className="text-4xl font-bold">{value}</span>
+                    )}
+                    decimalScale={0}
+                    fixedDecimalScale={true}
+                  />
+                  <div className="flex space-x-1 items-center">
+                    <span className="text-sm">See Statictics</span>
+                    <FaChevronRight size={12} />
+                  </div>
+                </div>
               </div>
+            </div>
+            <div className="md:col-span-9 grid md:grid-cols-2 gap-3">
+              <RefillBarChart chartData={data?.summary?.last7Days?.refilling} />
+              {/* @ts-ignore */}
+              {data?.summary?.last7Days?.refilling && data?.summary?.monthly.find((i) => i.year === new Date().getFullYear())?.data && <SalesAreaChart setSalesStatsType={setSalesStatsType} salesStatsType={salesStatsType} chartData={salesStatsType === "weekly" ? data?.summary?.last7Days?.refilling : data?.summary?.monthly.find((i) => i.year === new Date().getFullYear())?.data.slice(-6).reverse()} />}
             </div>
           </div>
 
@@ -493,7 +502,7 @@ export default function Home() {
               {/*
                * SUGGESTION
                */}
-              <Suggestions data={data?.suggestion} />
+              {/* <Suggestions data={data?.suggestion} />
 
               <div className="w-full">
                 <CustomerInsight
@@ -502,7 +511,7 @@ export default function Home() {
                   regular={data?.customers.regular}
                   newCustomers={data?.customers?.new}
                 />
-              </div>
+              </div> */}
             </div>
 
             {/*
@@ -512,24 +521,24 @@ export default function Home() {
               {/*
                * DRIVER SALES STATS
                */}
-              <DriverSalesCollection
+              {/* <DriverSalesCollection
                 data={
                   data?.summary?.last7Days?.refilling?.filter(
                     (data) => data?.date === currDay
                   )[0]?.driverSummary
                 }
-              />
+              /> */}
 
               {/*
                * DRIVER SALES BAR GRAPH
                */}
-              <DriverSalesBarGraph
+              {/* <DriverSalesBarGraph
                 data={
                   data?.summary?.last7Days?.refilling?.filter(
                     (data) => data?.date === currDay
                   )[0]?.driverSummary
                 }
-              />
+              /> */}
             </div>
           </div>
           {/*
@@ -540,12 +549,6 @@ export default function Home() {
               <SalesAreaChart data={data?.summary.last7Days.refilling} />
             )}
           </div> */}
-        </div>
-        <div className="flex md:w-[30%]">
-          {/*
-           * ORDERS
-           */}
-          <OrdersDashBoard />
         </div>
       </div>
     </Wrapper>
