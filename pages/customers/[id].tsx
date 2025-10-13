@@ -2,12 +2,13 @@ import { Accordion, AccordionItem } from "@/components/Accordion";
 import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
 import Statistics from "@/components/Customer/Statistics";
+import { Button } from "@/components/ui/button";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Activity, Customer, Invoice, Product } from "@/types/types";
-import { table } from "console";
 import { getCookie, setCookie } from "cookies-next";
+import { SquarePen, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -15,6 +16,17 @@ import React, { FC, useEffect, useState } from "react";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import { AiOutlineLoading } from "react-icons/ai";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface MonthlyData {
   totalAmount: number;
@@ -238,9 +250,8 @@ const CustomerInvoicesData = () => {
       const URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
 
       const payload = {
-        message: `Payment of ₹${amount} added to ${
-          selectedCustomerID || dueInvoices[0].customerID
-        }`,
+        message: `Payment of ₹${amount} added to ${selectedCustomerID || dueInvoices[0].customerID
+          }`,
         tag: "payment",
       };
       await axiosInstance.post(URL, payload, {
@@ -250,6 +261,34 @@ const CustomerInvoicesData = () => {
       });
 
       toast.success("Invoice updated successfully!");
+    }
+  };
+
+  // Remove invoice
+  const deleteInvoice = async (invoice: Invoice) => {
+    try {
+      let URL;
+      URL = process.env.NEXT_PUBLIC_API_URL + `/invoice/delete/${invoice._id}`;
+      await axiosInstance.delete(URL);
+      setInvoices((invoices) => {
+        if (!invoices) return [];
+        return invoices.filter((inv) => inv.invoiceID !== invoice.invoiceID);
+      });
+
+      // Create new activity
+      URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
+
+      const payload = {
+        message: `Invoice ID ${invoice.invoiceID} deleted, customer ref no. ${invoice.customerID}`,
+        tag: "entry",
+      };
+      await axiosInstance.post(URL, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -267,11 +306,10 @@ const CustomerInvoicesData = () => {
                   href={
                     "/customers/" + selectedCustomerID + "?tab=" + tab.tabID
                   }
-                  className={`inline-flex cursor-pointer items-center justify-center p-4 ${
-                    tab.tabID === router.query.tab
-                      ? "text-blue-600  border-blue-600 active"
-                      : " border-transparent hover:text-gray-600 hover:border-gray-300"
-                  } border-b-2 rounded-t-lg group`}
+                  className={`inline-flex cursor-pointer items-center justify-center p-4 ${tab.tabID === router.query.tab
+                    ? "text-blue-600  border-blue-600 active"
+                    : " border-transparent hover:text-gray-600 hover:border-gray-300"
+                    } border-b-2 rounded-t-lg group`}
                 >
                   {tab.label}
                 </Link>
@@ -293,9 +331,8 @@ const CustomerInvoicesData = () => {
             {router.query.tab === "invoices" && (
               <>
                 <div
-                  className={`flex items-center flex-col  w-full h-[32rem] ${
-                    invoices.length > 3 ? "md:h-[22rem]" : "md:h-[15rem]"
-                  }  overflow-y-auto`}
+                  className={`flex items-center flex-col  w-full h-[32rem] ${invoices.length > 3 ? "md:h-[22rem]" : "md:h-[15rem]"
+                    }  overflow-y-auto`}
                 >
                   <div className="relative bg-white border border-gray-400 overflow-y-auto justify-end w-full">
                     <table className="w-full text-sm text-center">
@@ -333,9 +370,15 @@ const CustomerInvoicesData = () => {
                           </th>
                           <th
                             scope="col"
-                            className="px-2 md:px-4 py-3 border-l border-gray-400"
+                            className="px-2 md:px-4 py-3 border-x border-gray-400"
                           >
                             Payment Date
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-2 md:px-4 py-3 border-l border-gray-400"
+                          >
+                            Action
                           </th>
                         </tr>
                       </thead>
@@ -345,11 +388,10 @@ const CustomerInvoicesData = () => {
                             return (
                               <tr
                                 key={invoice._id}
-                                className={`${
-                                  invoice.status === "paid"
-                                    ? "bg-green-50"
-                                    : "odd:bg-white even:bg-gray-50"
-                                }`}
+                                className={`${invoice.status === "paid"
+                                  ? "bg-green-50"
+                                  : "odd:bg-white even:bg-gray-50"
+                                  }`}
                               >
                                 <td
                                   className="px-2 md:px-4 py-4 border-r border-gray-400"
@@ -428,6 +470,33 @@ const CustomerInvoicesData = () => {
                                     </span>
                                   )}
                                 </td>
+                                <td className="px-2 md:px-4 py-4 border-l border-gray-400">
+                                  <div className="flex flex-row justify-around">
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="icon" variant="outline" >
+                                          <Trash2 size={16} />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the invoice from the system.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => deleteInvoice(invoice)}>Continue</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    <Button size="icon" variant="outline" >
+                                      <SquarePen size={16} />
+                                    </Button>
+                                  </div>
+                                </td>
                               </tr>
                             );
                           })}
@@ -496,26 +565,26 @@ const CustomerInvoicesData = () => {
                     (acc, cur) => (cur.status === "paid" ? acc : acc + cur.due),
                     0
                   ) !== 0 && (
-                    <div className="flex justify-between md:justify-end items-end w-full mt-5">
-                      <div className="flex flex-col">
-                        <label className="font-bold underline">
-                          Enter the amount to pay :
-                        </label>
-                        <input
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          type="number"
-                          className="w-full py-2 px-3 mt-2 rounded-md border-2 font-medium text-lg"
-                        />
+                      <div className="flex justify-between md:justify-end items-end w-full mt-5">
+                        <div className="flex flex-col">
+                          <label className="font-bold underline">
+                            Enter the amount to pay :
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            type="number"
+                            className="w-full py-2 px-3 mt-2 rounded-md border-2 font-medium text-lg"
+                          />
+                        </div>
+                        <button
+                          onClick={handlePayNow}
+                          className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
+                        >
+                          Pay Now
+                        </button>
                       </div>
-                      <button
-                        onClick={handlePayNow}
-                        className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
-                      >
-                        Pay Now
-                      </button>
-                    </div>
-                  )}
+                    )}
                 </div>
               </>
             )}

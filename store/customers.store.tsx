@@ -7,6 +7,10 @@ type StoreData = {
   setCustomers: React.Dispatch<
     React.SetStateAction<Customer[] | null | undefined>
   >;
+  customersState: Customer[] | null | undefined;
+  setCustomersState: React.Dispatch<
+    React.SetStateAction<Customer[] | null | undefined>
+  >;
 };
 
 // Create a context for your store
@@ -30,10 +34,17 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
   const [customers, setCustomers] = useState<Customer[] | null | undefined>(
     undefined
   );
+  const [customersState, setCustomersState] = useState<Customer[] | null | undefined>(
+    undefined
+  );
+
+  console.log(customersState);
 
   const store: StoreData = {
     customers,
     setCustomers,
+    customersState,
+    setCustomersState,
   };
 
   return (

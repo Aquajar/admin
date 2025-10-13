@@ -79,7 +79,7 @@ const BreadCrumb = [
 ];
 
 const Customers = () => {
-  const { customers, setCustomers } = useCustomersStore();
+  const { customers, setCustomers, customersState, setCustomersState } = useCustomersStore();
   const [limit, setLimit] = useState(20);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false)
   const [selectedPhoneForMessage, setSelectedPhoneForMessage] = useState("")
@@ -87,7 +87,7 @@ const Customers = () => {
   const [page, setPage] = useState(1);
   const { data: session } = useSession();
   const { invoices } = useInvoicesStore();
-  const [customersState, setCustomersState] = useState(customers);
+  // const [customersState, setCustomersState] = useState(customers);
   const [areas, setAreas] = useState<Area[] | undefined>(undefined);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
   const [purchasePatternData, setPurchasePatternData] = useState<
@@ -257,7 +257,7 @@ const Customers = () => {
 
   // Initial data load
   useEffect(() => {
-    if (initialLoad.current) {
+    if (initialLoad.current && customers === undefined) {
       // Load customers on initial render
       getCustomers(1);
       initialLoad.current = false;
