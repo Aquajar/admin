@@ -4,8 +4,14 @@ import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import Modal from "react-modal";
-import { MdCancelPresentation } from "react-icons/md";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import { BiLoaderAlt } from "react-icons/bi";
 import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
@@ -34,7 +40,9 @@ import {
   EllipsisVertical,
   MessageCirclePlus,
   MessageSquareCode,
-  ReceiptText
+  ReceiptText,
+  FileUp,
+  ClipboardCopy
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -61,8 +69,10 @@ import {
 
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -70,6 +80,7 @@ import {
 import { daysAgo } from "@/lib/helpers";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 
 const BreadCrumb = [
   {
@@ -82,6 +93,7 @@ const Customers = () => {
   const { customers, setCustomers, customersState, setCustomersState } = useCustomersStore();
   const [limit, setLimit] = useState(20);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false)
+  const [isUploadCardModalOpen, setIsUploadCardModalOpen] = useState(false)
   const [selectedPhoneForMessage, setSelectedPhoneForMessage] = useState("")
   const [selectedLanguage, setSelectedLanguage] = useState<"eng" | "hindi" | "bng">("eng");
   const [page, setPage] = useState(1);
@@ -514,6 +526,24 @@ const Customers = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Upload Card Dialog */}
+      <Dialog open={isUploadCardModalOpen} onOpenChange={setIsUploadCardModalOpen}>
+        <form>
+          <DialogContent className="sm:max-w-[425px]">
+            <div>
+              <InputGroup>
+                <InputGroupInput placeholder="Type to search..." />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton variant="secondary">
+                    <ClipboardCopy />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
+          </DialogContent>
+        </form>
+      </Dialog>
+
       <div className="relative overflow-x-auto mt-2 shadow-md sm:rounded-lg  border border-gray-200">
         {/*
          * Render Table
@@ -752,13 +782,13 @@ const Customers = () => {
                     </td>
                     {/* Action Button */}
                     <td className="flex items-center justify-center px-2 text-center py-4">
-                      <DropdownMenu>
+                      <DropdownMenu >
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="icon">
                             <EllipsisVertical />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-32">
+                        <DropdownMenuContent className="w-36">
                           <DropdownMenuLabel>Menu</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuGroup>
@@ -767,6 +797,10 @@ const Customers = () => {
                             >
                               <User />
                               <span>Profile</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setIsUploadCardModalOpen(true)}>
+                              <FileUp />
+                              <span>Upload Card</span>
                             </DropdownMenuItem>
                             <DropdownMenuSub>
                               <DropdownMenuSubTrigger>
@@ -807,10 +841,6 @@ const Customers = () => {
                               <span>Billing</span>
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem>
-                              <Settings />
-                              <span>Settings</span>
-                            </DropdownMenuItem>
 
                           </DropdownMenuGroup>
                         </DropdownMenuContent>

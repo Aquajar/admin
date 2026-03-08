@@ -2,8 +2,12 @@ import { Area, Customer } from "@/types/types";
 import axios, { AxiosInstance } from "axios";
 import { getCookie } from "cookies-next";
 import React, { FC, useEffect, useState } from "react";
-import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface IProps {
   customer: Customer | null;
@@ -67,76 +71,70 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
     <div className="flex w-full">
       <form className="w-full md:w-10/12" onSubmit={(e) => e.preventDefault()}>
         <div className="grid md:grid-cols-2 gap-7">
-          <div className="">
-            <label
-              htmlFor="email"
-              className="block mb-2 text-sm font-medium text-gray-900 "
-            >
+
+
+          {/* Name */}
+          <div>
+            <Label htmlFor="name" className="mb-2 block text-sm font-medium">
               Name
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               id="name"
               name="name"
               value={customer?.name}
               onChange={handleChange}
-              className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 "
               placeholder=""
             />
           </div>
-          <div className="">
-            <label
-              htmlFor="phone"
-              className="block mb-2 text-sm font-medium text-gray-900 "
-            >
+
+
+          {/* Phone */}
+          <div>
+            <Label htmlFor="phone" className="mb-2 block text-sm font-medium">
               Phone
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               id="phone"
               name="phone"
               value={customer?.phone}
               onChange={handleChange}
-              className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-               "
             />
           </div>
-          <div className="">
-            <label
-              htmlFor="profileRate"
-              className="block mb-2 text-sm font-medium text-gray-900 "
-            >
+
+
+          {/* Profile Rate */}
+          <div>
+            <Label htmlFor="profileRate" className="mb-2 block text-sm font-medium">
               Profile Rate
-            </label>
-            <input
+            </Label>
+            <Input
               type="number"
               id="profileRate"
               name="profileRate"
               onChange={handleChange}
-              className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900  rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 "
               required
               value={customer?.profileRate || 25}
             />
           </div>
-          <div className="">
-            <label
-              htmlFor="profileRate"
-              className="block mb-2 text-sm font-medium text-gray-900 "
-            >
+
+
+          {/* Area */}
+          <div>
+            <Label htmlFor="area" className="mb-2 block text-sm font-medium">
               Area
-            </label>
-            <select
-              id="area"
-              name="area"
-              className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900  rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 "
-              required
+            </Label>
+
+
+            <Select
               value={customer?.address?.text || ""}
-              onChange={(e) => {
+              onValueChange={(value) => {
                 if (!customer) return;
                 setCustomer({
                   ...customer,
                   address: {
-                    text: e.target.value,
+                    text: value,
                     landmark: customer.address?.landmark || "",
                     pincode: customer.address?.pincode || "",
                     latitude: customer.address?.latitude || "",
@@ -145,23 +143,31 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
                 });
               }}
             >
-              {areas?.map((area) => (
-                <option key={area._id} value={area.name}>
-                  {area.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="area">
+                <SelectValue placeholder="Select area" />
+              </SelectTrigger>
+              <SelectContent>
+                {areas?.map((area) => (
+                  <SelectItem key={area._id} value={area.name}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
+
+        {/* Save Button */}
         <div className="flex flex-row-reverse">
-          <button
+          <Button
             type="submit"
             onClick={handleSave}
             disabled={loading}
-            className="text-white mt-8 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+            className="mt-8"
           >
             Save Changes
-          </button>
+          </Button>
         </div>
       </form>
     </div>

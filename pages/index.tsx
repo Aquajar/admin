@@ -217,7 +217,7 @@ export default function Home() {
   }, [currDay]);
 
 
-  console.log(data?.summary?.monthly.find((i) => i.year === new Date().getFullYear()))
+  console.log(data)
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>

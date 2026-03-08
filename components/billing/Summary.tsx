@@ -48,30 +48,29 @@ const Summary: FC<IProps> = ({
   }, [discount, subTotal, tax, setTotal]);
 
   return (
-    <div className="bg-white border border-gray-200 mt-4 md:mt-0 mb-20 md:mb-0 md:ml-3.5 p-5 pb-8 relative rounded-md shadow-sm flex flex-col w-full md:w-3/12">
-      <h1 className="text-xl font-bold text-gray-700">Summary</h1>
+    <div className="bg-white border border-gray-200 mt-4 md:mt-0 mb-20 md:mb-0 md:ml-3.5 p-6 relative rounded-xl shadow-sm flex flex-col w-full">
+
+      <h1 className="text-lg font-semibold text-gray-800">Order Summary</h1>
+
       <div className="flex flex-col">
-        {/* Sub Total */}
-        <div className="flex justify-between items-center mt-10">
+
+        {/* Items */}
+        <div className="mt-6 border rounded-lg divide-y bg-gray-50">
           <table className="w-full">
             <tbody>
               {items.map((item, index) => (
                 <tr key={index}>
-                  <td className="text-md font-normal text-gray-500">
-                    {item.name}{" x "}{item.quantity}
+                  <td className="px-3 py-2 text-sm text-gray-600">
+                    {item.name} <span className="text-gray-400">×</span> {item.quantity}
                   </td>
 
-                  <td className="text-md text-right font-normal text-gray-500">
+                  <td className="px-3 py-2 text-right text-sm font-medium text-gray-700">
                     <CurrencyFormat
                       value={item.total}
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={"₹"}
-                      renderText={(value: string) => (
-                        <span className="text-md font-normal text-gray-500">
-                          {value}
-                        </span>
-                      )}
+                      renderText={(value: string) => <span>{value}</span>}
                     />
                   </td>
                 </tr>
@@ -79,87 +78,77 @@ const Summary: FC<IProps> = ({
             </tbody>
           </table>
         </div>
-        {/* Tax
-        <div className="flex justify-between items-center mt-5">
-          <span className="text-md font-normal text-gray-500">Tax (12%)</span>
-          <CurrencyFormat
-            value={tax}
-            displayType={"text"}
-            thousandSeparator={true}
-            prefix={"₹"}
-            renderText={(value: string) => (
-              <span className="text-md font-medium text-gray-700">{value}</span>
-            )}
-          />
-        </div> */}
+
         {/* Discount */}
         <div className="flex justify-between items-center mt-6">
-          <span className="text-md font-normal text-gray-500">Discount</span>
+          <span className="text-sm text-gray-600 font-medium">Discount</span>
 
-          <div>
-            <span className="mx-1 text-lg">₹</span>
+          <div className="flex items-center border rounded-lg bg-white px-2">
+            <span className="text-gray-500 mr-1">₹</span>
             <input
               type="text"
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
-              className="border text-right font-semibold rounded-md px-1 w-16 py-2 mt-1.5 bg-gray-50"
+              className="w-16 text-right py-2 text-sm font-semibold outline-none"
             />
           </div>
         </div>
+
         {/* Total */}
-        <div className="flex justify-between border-t items-center mt-6 pt-4">
-          <span className="text-md font-normal text-gray-500">
+        <div className="flex justify-between border-t mt-6 pt-4 items-center">
+          <span className="text-sm font-medium text-gray-600">
             Total (incl. tax)
           </span>
+
           <CurrencyFormat
             value={total}
             displayType={"text"}
             thousandSeparator={true}
             prefix={"₹"}
             renderText={(value: string) => (
-              <span className="text-xl font-semibold text-gray-700">
-                {value}
-              </span>
+              <span className="text-xl font-semibold text-gray-900">{value}</span>
             )}
           />
         </div>
 
-        {/* Payment Method */}
-        <div className="flex flex-col mt-10">
-          <span className="text-md font-medium text-gray-700">
+        {/* Payment Plan */}
+        <div className="flex flex-col mt-8">
+          <label className="text-sm font-medium text-gray-700">
             Payment Plan
-          </span>
+          </label>
+
           <input
             type="text"
-            className={`border-2 rounded-md px-3 py-2 mt-1.5 bg-gray-50
-            ${
-              paymentPlan === "M" || !paymentPlan
-                ? "border-green-500"
-                : paymentPlan === "W"
-                ? "border-yellow-500"
-                : "border-red-500"
-            }
-            `}
             disabled
+            className={`mt-2 px-3 py-2 rounded-lg border text-sm font-medium bg-gray-50
+        ${paymentPlan === "M" || !paymentPlan
+                ? "border-green-500 text-green-700"
+                : paymentPlan === "W"
+                  ? "border-yellow-500 text-yellow-700"
+                  : "border-red-500 text-red-700"
+              }`}
             value={
               paymentPlan === "M" || !paymentPlan
                 ? "Monthly"
                 : paymentPlan === "W"
-                ? "Weekly"
-                : "Daily"
+                  ? "Weekly"
+                  : "Daily"
             }
           />
 
-          <label className="text-md font-medium text-gray-700 mt-6">
+          {/* Payment Method */}
+          <label className="text-sm font-medium text-gray-700 mt-6">
             Payment Method
           </label>
+
           <select
             onChange={(e) => setPaymentMethod(e.target.value)}
-            className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
+            className="mt-2 px-3 py-2 rounded-lg border bg-white text-sm outline-none"
           >
             <option value="card" disabled selected={paymentMethod === ""}>
               Select Payment Method
             </option>
+
             {paymentMethods.map((method) => (
               <option
                 key={method.value}
@@ -172,44 +161,47 @@ const Summary: FC<IProps> = ({
           </select>
         </div>
 
-        {/* Partial Pay Amount */}
-
-        <div className="my-4 flex items-center justify-end">
-          <label className="text-md font-medium text-gray-700">
+        {/* Partial Payment Toggle */}
+        <div className="flex items-center justify-between mt-6 border-t pt-4">
+          <label className="text-sm font-medium text-gray-700">
             Partial Payment
           </label>
+
           <input
             disabled={isLoading || !paymentMethod}
             type="checkbox"
-            id="partialPayment"
-            name="partialPayment"
-            className="mx-2 text-2xl"
             checked={isPartialPayment}
             onChange={(e) => setIsPartialPayment(e.target.checked)}
+            className="w-4 h-4 accent-gray-800"
           />
         </div>
 
         {isPartialPayment && (
           <>
-            <div className="flex my-5 items-center justify-between">
-              <label className="text-md font-medium text-gray-700">
+            {/* Partial Amount */}
+            <div className="flex items-center justify-between mt-5">
+              <label className="text-sm font-medium text-gray-700">
                 Partial Pay
               </label>
-              <div>
-                <span className="mx-1 text-lg">₹</span>
+
+              <div className="flex items-center border rounded-lg bg-white px-2">
+                <span className="text-gray-500 mr-1">₹</span>
                 <input
                   type="text"
                   value={partialPayment}
                   onChange={(e) => setPartialPayment(e.target.value)}
-                  className="border text-right font-semibold rounded-md px-1 w-16 py-2 mt-1.5 bg-gray-50"
+                  className="w-16 text-right py-2 text-sm font-semibold outline-none"
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <label className="text-md font-medium text-gray-700">
+
+            {/* Due Amount */}
+            <div className="flex items-center justify-between mt-4">
+              <label className="text-sm font-medium text-gray-700">
                 Due Amount
               </label>
-              <span className="text-xl font-medium text-gray-700">
+
+              <span className="text-lg font-semibold text-gray-900">
                 ₹ {total - parseFloat(partialPayment) || 0}
               </span>
             </div>
@@ -220,11 +212,12 @@ const Summary: FC<IProps> = ({
         <button
           disabled={isLoading}
           onClick={handleGenerateBill}
-          className="bg-primary text-white rounded-md px-3 py-3 mt-10 flex items-center justify-center disabled:opacity-75 disabled:bg-gray-400"
+          className="mt-8 w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg py-3 text-sm font-medium hover:bg-green-600 transition disabled:bg-gray-400"
         >
-          Complete
-          <MdOutlineLock className="w-5 h-5 ml-2" />
+          Complete Order
+          <MdOutlineLock className="w-4 h-4" />
         </button>
+
       </div>
     </div>
   );

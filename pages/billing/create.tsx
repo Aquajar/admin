@@ -6,7 +6,6 @@ import { MdOutlineDeleteForever } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Summary from "@/components/billing/Summary";
-import DeliveryDetails from "@/components/billing/DeliveryDetails";
 import axios from "axios";
 import { randomString } from "@/lib/helpers";
 import toast from "react-hot-toast";
@@ -519,373 +518,511 @@ const Invoice = () => {
   return (
     <Wrapper breadcrumb={BreadCrumb}>
       <div className="flex flex-col">
-        <div className="flex flex-col md:flex-row justify-between items-start ">
-          {/* Form */}
-          <div className="bg-white p-8 relative rounded-md shadow-sm flex flex-col w-full md:w-9/12 border border-gray-200">
+        <div className="flex flex-col xl:flex-row gap-1">
+
+          {/* LEFT PANEL */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col w-full xl:w-[70%] relative">
+
             {/* Invoice ID */}
-            <span className="text-xs text-slate-400 absolute left-8 top-3 text-right">
+            <span className="absolute right-6 top-4 text-xs text-gray-400">
               ID: {invoiceId}
             </span>
 
-            {/* Credentials */}
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 relative items-center md:items-start mt-5 justify-between">
+
+            {/* ---------------- CUSTOMER SECTION ---------------- */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 relative">
+
               {isLoading && (
-                <div className="rounded-md absolute top-[40%] right-[2%] z-50">
-                  <RiLoader5Line className="w-8 h-8 animate-spin" />
+                <div className="absolute right-4 top-4 z-50 bg-white shadow rounded-full p-2">
+                  <RiLoader5Line className="w-6 h-6 animate-spin text-gray-700" />
                 </div>
               )}
-              {/* Phone */}
-              <div className="flex flex-col">
-                <select
-                  onChange={(e) => {
-                    setSearchByPhone(e.target.value !== "ID");
-                    // resetCustomer();
-                  }}
-                  className="rounded-md  w-fit pr-8"
-                >
-                  <option selected={!searchByPhone} value="ID">
-                    Customer ID
-                  </option>
-                  <option selected={searchByPhone} value="phone">
-                    Phone
-                  </option>
-                </select>
-                <input
-                  disabled={isLoading}
-                  onChange={(e) => {
-                    searchByPhone
-                      ? setPhoneNumber(e.target.value)
-                      : setCustomerID(e.target.value);
-                    setCustomer(undefined);
-                    setBillTo("");
-                    setAddress(areas ? areas[0].name : "");
-                    setLandmark("");
-                  }}
-                  value={
-                    searchByPhone
-                      ? phoneNumber
-                      : customerID === ""
-                        ? ""
-                        : customerID
-                  }
-                  maxLength={searchByPhone ? 10 : 4}
-                  type="text"
-                  className="border disabled:bg-gray-200 rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
-                />
+
+              {/* Search Customer */}
+              <div className="flex flex-col gap-2">
+
+                <label className="text-[15px] font-medium text-gray-700">
+                  Search Customer
+                </label>
+
+                <div className="flex gap-2">
+
+                  <select
+                    onChange={(e) => {
+                      setSearchByPhone(e.target.value !== "ID")
+                    }}
+                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                  >
+                    <option selected={!searchByPhone} value="ID">
+                      Customer ID
+                    </option>
+
+                    <option selected={searchByPhone} value="phone">
+                      Phone
+                    </option>
+                  </select>
+
+                  <input
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      searchByPhone
+                        ? setPhoneNumber(e.target.value)
+                        : setCustomerID(e.target.value)
+
+                      setCustomer(undefined)
+                      setBillTo("")
+                      setAddress(areas ? areas[0].name : "")
+                      setLandmark("")
+                    }}
+                    value={
+                      searchByPhone
+                        ? phoneNumber
+                        : customerID === "" ? "" : customerID
+                    }
+                    maxLength={searchByPhone ? 10 : 4}
+                    placeholder={searchByPhone ? "Enter phone" : "Enter ID"}
+                    className="flex-1 bg-gray-50 border rounded-lg px-3 py-2 text-[15px] focus:ring-2 focus:ring-gray-200 outline-none"
+                  />
+
+                </div>
+
               </div>
 
+
               {/* Bill To */}
-              <div className="flex flex-col">
-                <label className="text-md font-medium text-gray-700 flex w-full items-center justify-between">
-                  <span className="w-1/3">Bill To</span>
+              <div className="flex flex-col gap-2 relative">
+
+                <label className="flex justify-between text-[15px] font-medium text-gray-700">
+
+                  <span>Bill To</span>
+
                   <span
-                    className={`text-sm w-full text-right font-normal ${customer && customer?.name === undefined
-                        ? "text-yellow-500"
-                        : customer === null
-                          ? "text-red-500"
-                          : ""
+                    className={`text-xs ${customer && customer?.name === undefined
+                      ? "text-yellow-500"
+                      : customer === null
+                        ? "text-red-500"
+                        : ""
                       }`}
                   >
                     {customer && customer?.name === undefined
-                      ? "Customer's name will be updated"
+                      ? "Customer name will be updated"
                       : customer === null
                         ? "Customer not found"
                         : ""}
                   </span>
+
                 </label>
+
                 <DebounceInput
                   minLength={2}
                   debounceTimeout={800}
                   disabled={isLoading}
                   onChange={(e) => {
-                    setBillTo(e.target.value);
-                    searchCustomer(e.target.value);
+                    setBillTo(e.target.value)
+                    searchCustomer(e.target.value)
                   }}
                   value={billTo}
-                  type="text"
-                  className="border disabled:bg-gray-200 rounded-md px-3 py-2 mt-1.5 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-gray-50"
+                  placeholder="Enter customer name"
+                  className="border rounded-lg px-3 py-2 text-[15px] bg-gray-50 focus:ring-2 focus:ring-gray-200 outline-none"
                 />
+
+                {/* Autocomplete */}
                 {customersResults.length > 0 && (
-                  <div className="absolute top-20 bg-white w-fit z-50 border rounded-md shadow-md">
-                    {customersResults.map(
-                      (customer: Customer, index: number) => {
-                        return (
-                          <div
-                            key={index}
-                            className="p-3 hover:bg-gray-100 cursor-pointer"
-                          >
-                            <p
-                              className="text-md font-medium text-gray-700"
-                              onClick={() => {
-                                setCustomerID(
-                                  customer?.userID?.toString() || ""
-                                );
-                                setCustomer(customer);
-                                setBillTo(customer.name as string);
-                                setPhoneNumber(customer.phone);
-                                setAddress(customer.address?.text || "");
-                                setLandmark(customer.address?.landmark || "");
-                                setCustomersResults([]);
-                              }}
-                            >
-                              {customer.name}
-                            </p>
-                          </div>
-                        );
-                      }
-                    )}
+                  <div className="absolute top-[72px] w-full bg-white border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+
+                    {customersResults.map((customer: Customer, index: number) => {
+
+                      return (
+                        <div
+                          key={index}
+                          className="px-3 py-2 text-[15px] hover:bg-gray-100 cursor-pointer"
+                          onClick={() => {
+                            setCustomerID(customer?.userID?.toString() || "")
+                            setCustomer(customer)
+                            setBillTo(customer.name as string)
+                            setPhoneNumber(customer.phone)
+                            setAddress(customer.address?.text || "")
+                            setLandmark(customer.address?.landmark || "")
+                            setCustomersResults([])
+                          }}
+                        >
+                          {customer.name}
+                        </div>
+                      )
+
+                    })}
+
                   </div>
                 )}
-                <span className="text-xs text-slate-400 mt-1 text-right w-full">
-                  Name on the invoice
+
+                <span className="text-xs text-gray-400">
+                  Name printed on invoice
                 </span>
+
               </div>
+
             </div>
-            {/* Order Detail */}
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 items-start my-3 justify-between">
+
+
+
+            {/* ---------------- ORDER DETAILS ---------------- */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+
               {/* Order Type */}
-              <div className="flex flex-col">
-                <label className="text-md font-medium text-gray-700">
+              <div className="flex flex-col gap-2">
+
+                <label className="text-[15px] font-medium text-gray-700">
                   Order Type
                 </label>
+
                 <select
                   onChange={handleOrderType}
-                  className="border rounded-md px-3 py-2 mt-1.5 bg-gray-50"
+                  className="border rounded-lg px-3 py-2 text-[15px] focus:ring-2 focus:ring-gray-200 outline-none"
                 >
                   <option selected={orderType === "retail"} value="retail">
                     Retail
                   </option>
+
                   <option selected={orderType === "delivery"} value="delivery">
                     Delivery
                   </option>
+
                 </select>
+
               </div>
-              {/* Sale Date */}
-              <div className="flex flex-col">
-                <label className="text-md font-medium text-gray-700">
+
+
+              {/* Date */}
+              <div className="flex flex-col gap-2">
+
+                <label className="text-[15px] font-medium text-gray-700">
                   Sale Date
                 </label>
+
                 <DatePicker
                   dateFormat={"dd/MM/yyyy"}
-                  className="border rounded-md cursor-pointer px-3 py-2 mt-1.5 bg-gray-50 w-full"
+                  className="border rounded-lg bg-gray-50 px-3 py-2 text-[15px] w-full focus:ring-2 focus:ring-gray-200 outline-none"
                   selected={startDate}
                   onChange={(date) => {
-                    if (!date) return;
-                    let currentTime = new Date();
-                    let originalDate = new Date(date);
-                    // Set the time of the original date to the current time
-                    originalDate.setHours(currentTime.getHours());
-                    originalDate.setMinutes(currentTime.getMinutes());
-                    originalDate.setSeconds(currentTime.getSeconds());
-                    originalDate.setMilliseconds(currentTime.getMilliseconds());
-                    console.log(originalDate);
-                    setStartDate(originalDate);
+
+                    if (!date) return
+
+                    let currentTime = new Date()
+                    let originalDate = new Date(date)
+
+                    originalDate.setHours(currentTime.getHours())
+                    originalDate.setMinutes(currentTime.getMinutes())
+                    originalDate.setSeconds(currentTime.getSeconds())
+                    originalDate.setMilliseconds(currentTime.getMilliseconds())
+
+                    setStartDate(originalDate)
+
                     setCookie("invoiceSalesDate", originalDate, {
-                      maxAge: 60 * 60 * 24 * 7,
-                    });
+                      maxAge: 60 * 60 * 24 * 7
+                    })
+
                   }}
                 />
+
               </div>
+
             </div>
-            {/* Items */}
-            <div className="relative mt-10 overflow-x-auto shadow-sm rounded-lg">
-              <table className="w-full text-justify">
-                <thead className="bg-slate-200">
-                  <tr className="">
-                    {/* Sl no. */}
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                      Sl No.
-                    </th>
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                      Item Name
-                    </th>
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                      Quantity
-                    </th>
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                      Price
-                    </th>
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                      Total
-                    </th>
-                    <th className="text-md font-medium py-1.5 px-4 text-gray-700"></th>
-                  </tr>
-                </thead>
-                <tbody className="bg-slate-100">
-                  {items.map((item, index) => {
-                    return (
-                      <tr key={index}>
-                        {/* Sl no. */}
-                        <td className="text-md font-medium text-gray-700 px-4 py-2">
-                          {index + 1}.
-                        </td>
-                        {/* Item Name */}
-                        <td className="text-md font-medium text-gray-700 px-4 py-2">
-                          <select
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              newItems[index].name = e.target.value;
 
-                              const product = products?.find(
-                                (product: Product) =>
-                                  product.name === e.target.value
-                              );
 
-                              if (product === undefined) return;
 
-                              if (orderType === "retail") {
+            {/* ---------------- ITEMS TABLE ---------------- */}
+
+            <div className="mt-10 border rounded-xl overflow-hidden">
+
+              <div className="overflow-x-auto">
+
+                <table className="w-full min-w-[700px] text-[15px]">
+
+                  <thead className="bg-gray-50 border-b">
+
+                    <tr>
+                      <th className="px-4 py-3 text-gray-600 font-medium">#</th>
+                      <th className="px-4 py-3 text-gray-600 font-medium">Item</th>
+                      <th className="px-4 py-3 text-gray-600 font-medium">Qty</th>
+                      <th className="px-4 py-3 text-gray-600 font-medium">Price</th>
+                      <th className="px-4 py-3 text-gray-600 font-medium">Total</th>
+                      <th></th>
+                    </tr>
+
+                  </thead>
+
+
+                  <tbody className="divide-y">
+
+                    {items.map((item, index) => {
+
+                      return (
+
+                        <tr key={index} className="hover:bg-gray-50">
+
+                          <td className="px-4 py-3">{index + 1}</td>
+
+                          <td className="px-4 py-3">
+
+                            <select
+                              onChange={(e) => {
+
+                                const newItems = [...items]
+
+                                newItems[index].name = e.target.value
+
+                                const product = products?.find(
+                                  (product: Product) => product.name === e.target.value
+                                )
+
+                                if (product === undefined) return
+
+                                if (orderType === "retail") {
+                                  newItems[index].price = parseInt(product?.price.retail as string) || 0
+                                }
+                                else if (orderType === "delivery") {
+                                  newItems[index].price = 30
+                                }
+
                                 newItems[index].price =
-                                  parseInt(product?.price.retail as string) ||
-                                  0;
-                              } else if (orderType === "delivery") {
-                                newItems[index].price = 30;
-                              }
-                              newItems[index].price =
-                                parseInt(product?.price.delivery as string) ||
-                                0;
-                              newItems[index].total =
-                                newItems[index].quantity *
-                                newItems[index].price;
-                              setItems(newItems);
-                            }}
-                            className="border text-md rounded-md capitalize px-2 w-24 md:pr-14 md:pl-4 py-2 mt-1 bg-white"
-                          >
-                            {products &&
-                              products?.map((product: Product) => {
-                                return (
-                                  <option
-                                    key={product._id}
-                                    value={product.name}
-                                  >
-                                    {product.name}
-                                  </option>
-                                );
-                              })}
-                          </select>
-                        </td>
-                        {/* Quantity */}
-                        <td className="text-md font-medium text-gray-700 px-4 py-2">
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const newItems = [...items];
-                              newItems[index].quantity = parseInt(
-                                e.target.value
-                              );
-                              newItems[index].total =
-                                parseInt(e.target.value) *
-                                (customer?.profileRate
-                                  ? customer?.profileRate
-                                  : newItems[index].price);
-                              setItems(newItems);
-                            }}
-                            className="border w-16 text-md rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white"
-                          />
-                        </td>
-                        {/* Price */}
-                        <td className="text-md font-normal text-gray-700 px-4 py-2">
-                          @
-                          {item.name === "Refill"
-                            ? customer?.profileRate
-                            : item.price}
-                        </td>
-                        {/* Total */}
-                        <td className="text-md font-medium text-gray-700 px-4 py-2">
-                          <CurrencyFormat
-                            value={isNaN(item.total) ? 0 : item.total}
-                            displayType={"text"}
-                            thousandSeparator={true}
-                            prefix={"₹"}
-                            renderText={(value: string) => <>{value}</>}
-                          />
-                        </td>
-                        {/* Delete Button */}
-                        <td className="text-md font-medium text-gray-700 px-4 py-2">
-                          <button
-                            onClick={() => {
-                              const newItems = [...items];
-                              newItems.splice(index, 1);
-                              setItems(newItems);
-                            }}
-                            className="text-[#ED5E68]"
-                          >
-                            <MdOutlineDeleteForever className="w-6 h-6" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                                  parseInt(product?.price.delivery as string) || 0
+
+                                newItems[index].total =
+                                  newItems[index].quantity * newItems[index].price
+
+                                setItems(newItems)
+
+                              }}
+                              className="border rounded-lg px-3 py-2 text-[15px] w-full"
+                            >
+
+                              {products?.map((product: Product) => (
+                                <option key={product._id} value={product.name}>
+                                  {product.name}
+                                </option>
+                              ))}
+
+                            </select>
+
+                          </td>
+
+
+                          <td className="px-4 py-3">
+
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+
+                                const newItems = [...items]
+
+                                newItems[index].quantity = parseInt(e.target.value)
+
+                                newItems[index].total =
+                                  parseInt(e.target.value) *
+                                  (customer?.profileRate
+                                    ? customer?.profileRate
+                                    : newItems[index].price)
+
+                                setItems(newItems)
+
+                              }}
+                              className="w-20 border rounded-lg px-3 py-2"
+                            />
+
+                          </td>
+
+
+                          <td className="px-4 py-3">
+
+                            @{item.name === "Refill"
+                              ? customer?.profileRate
+                              : item.price}
+
+                          </td>
+
+
+                          <td className="px-4 py-3 font-semibold">
+
+                            <CurrencyFormat
+                              value={isNaN(item.total) ? 0 : item.total}
+                              displayType={"text"}
+                              thousandSeparator
+                              prefix={"₹"}
+                              renderText={(value: string) => <>{value}</>}
+                            />
+
+                          </td>
+
+
+                          <td className="px-4 py-3">
+
+                            <button
+                              onClick={() => {
+
+                                const newItems = [...items]
+
+                                newItems.splice(index, 1)
+
+                                setItems(newItems)
+
+                              }}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-500"
+                            >
+                              <MdOutlineDeleteForever className="w-5 h-5" />
+                            </button>
+
+                          </td>
+
+                        </tr>
+
+                      )
+
+                    })}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
             </div>
+
+
 
             {/* Add Item */}
-            <div className="flex justify-end mt-4 mb-6">
-              <button
-                onClick={() => {
-                  setItems([
-                    ...items,
-                    {
-                      name: products ? products[0].name : "jar",
-                      quantity: 0,
-                      price: products
-                        ? orderType === "retail"
-                          ? products[0].price.retail
-                            ? parseInt(products[0].price.retail)
-                            : 0
-                          : products[0].price.delivery
-                            ? parseInt(products[0].price.delivery)
-                            : 0
-                        : 30,
-                      total: 0,
-                    },
-                  ]);
+            <button
+              onClick={() => {
+                setItems([
+                  ...items,
+                  {
+                    name: products ? products[0].name : "jar",
+                    quantity: 0,
+                    price: products
+                      ? orderType === "retail"
+                        ? products[0].price.retail
+                          ? parseInt(products[0].price.retail)
+                          : 0
+                        : products[0].price.delivery
+                          ? parseInt(products[0].price.delivery)
+                          : 0
+                      : 30,
+                    total: 0,
+                  },
+                ]);
+              }}
+              className="flex items-center gap-2 mt-4 text-[15px] font-medium text-blue-600 hover:text-blue-700"
+            >
+              <RiAddCircleLine className="w-5 h-5" />
+              Add Item
+            </button>
+
+            {/* Delivery Details */}
+            {orderType === "retail" ? null : customer === null ? (
+              <div className="flex flex-col mt-8 pt-6 border-t border-gray-200">
+
+                <h3 className="text-[15px] font-semibold text-gray-800 mb-4">
+                  Delivery Details
+                </h3>
+
+                {/* Address */}
+                <div className="flex flex-col gap-2">
+
+                  <label className="text-[15px] font-medium text-gray-700">
+                    Area
+                  </label>
+
+                  <select
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                  >
+                    {areas?.map((area) => (
+                      <option
+                        key={area._id}
+                        value={area.name}
+                        disabled={!area.serviceable}
+                        selected={address === area.name}
+                      >
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
+
+
+                {/* Landmark */}
+                <div className="flex flex-col gap-2 mt-5">
+
+                  <label className="text-[15px] font-medium text-gray-700">
+                    Landmark
+                  </label>
+
+                  <input
+                    onChange={(e) => setLandmark(e.target.value)}
+                    value={landmark}
+                    type="text"
+                    placeholder="Nearby landmark"
+                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                  />
+
+                </div>
+
+              </div>
+            ) : null}
+
+            {/* Driver */}
+            <div className="flex flex-col mt-8">
+              <label className="text-[15px] font-medium text-gray-700">
+                Driver
+              </label>
+
+              <select
+                value={driverID}
+                onChange={(e) => {
+                  setDriverID(e.target.value);
+                  setCookie("_selectedDriverID", e.target.value);
                 }}
-                className="py-2 flex items-center justify-start"
+                className="border rounded-lg px-3 py-2 mt-2 text-[15px]"
               >
-                <RiAddCircleLine className="w-6 h-6 mx-2" />
-                Add Item
-              </button>
+                {drivers?.map((driver) => (
+                  <option key={driver._id} value={driver._id}>
+                    {driver.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Deliver Details */}
-            {orderType === "retail" ? null : (
-              <DeliveryDetails
-                customer={customer}
-                drivers={drivers}
-                driverID={driverID}
-                setDriverID={setDriverID}
-                areas={areas}
-                setAddress={setAddress}
-                setVehicle={setVehicle}
-                vehicle={vehicle}
-                landmark={landmark}
-                address={address}
-                setLandmark={setLandmark}
-              />
-            )}
           </div>
 
-          {/* Summary */}
-          <Summary
-            items={items}
-            isPartialPayment={isPartialPayment}
-            setIsPartialPayment={setIsPartialPayment}
-            partialPayment={partialPayment}
-            setPartialPayment={setPartialPayment}
-            handleGenerateBill={handleGenerateBill}
-            total={total}
-            discount={discount}
-            setDiscount={setDiscount}
-            setTotal={setTotal}
-            isLoading={isLoading}
-            subTotal={subTotal}
-            tax={tax}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            paymentPlan={customer?.paymentPlan}
-          />
+
+          {/* SUMMARY PANEL */}
+
+          <div className="w-full xl:w-[30%]">
+
+            <Summary
+              items={items}
+              isPartialPayment={isPartialPayment}
+              setIsPartialPayment={setIsPartialPayment}
+              partialPayment={partialPayment}
+              setPartialPayment={setPartialPayment}
+              handleGenerateBill={handleGenerateBill}
+              total={total}
+              discount={discount}
+              setDiscount={setDiscount}
+              setTotal={setTotal}
+              isLoading={isLoading}
+              subTotal={subTotal}
+              tax={tax}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              paymentPlan={customer?.paymentPlan}
+            />
+
+          </div>
+
         </div>
       </div>
       {/*
