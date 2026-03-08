@@ -131,6 +131,7 @@ function InputGroupInput({
   ...props
 }: React.ComponentProps<"input">) {
   return (
+    // @ts-ignore
     <Input
       data-slot="input-group-control"
       className={cn(
@@ -147,6 +148,7 @@ function InputGroupTextarea({
   ...props
 }: React.ComponentProps<"textarea">) {
   return (
+    // @ts-ignore
     <Textarea
       data-slot="input-group-control"
       className={cn(

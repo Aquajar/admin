@@ -4,6 +4,7 @@ import { RiAddCircleLine, RiLoader5Line } from "react-icons/ri";
 import CurrencyFormat from "react-currency-format";
 import { MdOutlineDeleteForever } from "react-icons/md";
 import DatePicker from "react-datepicker";
+// @ts-ignore
 import "react-datepicker/dist/react-datepicker.css";
 import Summary from "@/components/billing/Summary";
 import axios from "axios";
