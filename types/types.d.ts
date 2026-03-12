@@ -21,6 +21,8 @@ export interface Customer {
   createdAt: string;
   userID: number;
   isRegular: boolean;
+  jarOwnedByCustomer?: number;
+  engagedJars?: number;
   isCardReceived: boolean;
   paymentPlan: string;
   profileRate: number | null;

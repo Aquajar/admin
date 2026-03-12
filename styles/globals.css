@@ -94,6 +94,6 @@ select {
   }
   body {
     @apply bg-background text-foreground;
-    background-color: #f8f9fd;
+    background-color: #ffffff;
   }
 }

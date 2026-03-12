@@ -5,9 +5,8 @@ import React, { FC, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 interface IProps {
   customer: Customer | null;
@@ -68,105 +67,195 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
   }, [areas]);
 
   return (
-    <div className="flex w-full">
-      <form className="w-full md:w-10/12" onSubmit={(e) => e.preventDefault()}>
-        <div className="grid md:grid-cols-2 gap-7">
+    <div className="w-full flex justify-center">
+      <form
+        className="w-full space-y-8 px-3"
+        onSubmit={(e) => e.preventDefault()}
+      >
 
+        {/* Basic Information */}
+        <div className="space-y-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Basic Information
+          </h3>
 
-          {/* Name */}
-          <div>
-            <Label htmlFor="name" className="mb-2 block text-sm font-medium">
-              Name
-            </Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={customer?.name}
-              onChange={handleChange}
-              placeholder=""
-            />
-          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Customer Name</Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                value={customer?.name}
+                onChange={handleChange}
+                placeholder="Enter customer name"
+              />
+            </div>
 
-
-          {/* Phone */}
-          <div>
-            <Label htmlFor="phone" className="mb-2 block text-sm font-medium">
-              Phone
-            </Label>
-            <Input
-              type="text"
-              id="phone"
-              name="phone"
-              value={customer?.phone}
-              onChange={handleChange}
-            />
-          </div>
-
-
-          {/* Profile Rate */}
-          <div>
-            <Label htmlFor="profileRate" className="mb-2 block text-sm font-medium">
-              Profile Rate
-            </Label>
-            <Input
-              type="number"
-              id="profileRate"
-              name="profileRate"
-              onChange={handleChange}
-              required
-              value={customer?.profileRate || 25}
-            />
-          </div>
-
-
-          {/* Area */}
-          <div>
-            <Label htmlFor="area" className="mb-2 block text-sm font-medium">
-              Area
-            </Label>
-
-
-            <Select
-              value={customer?.address?.text || ""}
-              onValueChange={(value) => {
-                if (!customer) return;
-                setCustomer({
-                  ...customer,
-                  address: {
-                    text: value,
-                    landmark: customer.address?.landmark || "",
-                    pincode: customer.address?.pincode || "",
-                    latitude: customer.address?.latitude || "",
-                    longitude: customer.address?.longitude || "",
-                  },
-                });
-              }}
-            >
-              <SelectTrigger id="area">
-                <SelectValue placeholder="Select area" />
-              </SelectTrigger>
-              <SelectContent>
-                {areas?.map((area) => (
-                  <SelectItem key={area._id} value={area.name}>
-                    {area.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                type="text"
+                id="phone"
+                name="phone"
+                value={customer?.phone}
+                onChange={handleChange}
+                placeholder="Enter phone number"
+              />
+            </div>
           </div>
         </div>
 
+        {/* Jar Configuration */}
+        <div className="space-y-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Jar Configuration
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Engaged Jars */}
+            <div className="space-y-2">
+              <Label htmlFor="engagedJars">Engaged Jars</Label>
+              <Select
+                value={
+                  customer?.engagedJars === 0 || customer?.engagedJars === undefined
+                    ? "null"
+                    : String(customer.engagedJars)
+                }
+                onValueChange={(value) => {
+                  if (!customer) return;
+
+                  setCustomer({
+                    ...customer,
+                    engagedJars: value === "null" ? 0 : Number(value),
+                  });
+                }}
+              >
+                <SelectTrigger id="engagedJars">
+                  <SelectValue placeholder="Select jars engaged" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="null">Null</SelectItem>
+
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <SelectItem key={num} value={String(num)}>
+                      {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Number of jars currently in circulation with the customer
+              </p>
+            </div>
+
+            {/* Jar Owned */}
+            <div className="space-y-2">
+              <Label htmlFor="jarOwnedByCustomer">Jars Owned by Customer</Label>
+              <Select
+                value={
+                  customer?.jarOwnedByCustomer === 0 || customer?.jarOwnedByCustomer === undefined
+                    ? "null"
+                    : String(customer.jarOwnedByCustomer)
+                }
+                onValueChange={(value) => {
+                  if (!customer) return;
+
+                  setCustomer({
+                    ...customer,
+                    jarOwnedByCustomer: value === "null" ? 0 : Number(value),
+                  });
+                }}
+              >
+                <SelectTrigger id="jarOwnedByCustomer">
+                  <SelectValue placeholder="Select owned jars" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="null">Null</SelectItem>
+
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <SelectItem key={num} value={String(num)}>
+                      {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Profile Rate */}
+            <div className="space-y-2">
+              <Label htmlFor="profileRate">Delivery Rate</Label>
+              <Input
+                type="number"
+                id="profileRate"
+                name="profileRate"
+                onChange={handleChange}
+                required
+                value={customer?.profileRate || 25}
+                placeholder="Rate per jar"
+              />
+              <p className="text-xs text-muted-foreground">
+                Delivery rate per jar
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="space-y-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Address
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Area */}
+            <div className="space-y-2">
+              <Label htmlFor="area">Area</Label>
+              <Select
+                value={customer?.address?.text || ""}
+                onValueChange={(value) => {
+                  if (!customer) return;
+                  setCustomer({
+                    ...customer,
+                    address: {
+                      text: value,
+                      landmark: customer.address?.landmark || "",
+                      pincode: customer.address?.pincode || "",
+                      latitude: customer.address?.latitude || "",
+                      longitude: customer.address?.longitude || "",
+                    },
+                  });
+                }}
+              >
+                <SelectTrigger id="area">
+                  <SelectValue placeholder="Select delivery area" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {areas?.map((area) => (
+                    <SelectItem key={area._id} value={area.name}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
 
         {/* Save Button */}
-        <div className="flex flex-row-reverse">
+        <div className="flex justify-end border-t pt-6">
           <Button
             type="submit"
             onClick={handleSave}
             disabled={loading}
-            className="mt-8"
+            className="px-6"
           >
-            Save Changes
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>
