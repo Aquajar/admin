@@ -62,6 +62,8 @@ const Invoice = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [searchByPhone, setSearchByPhone] = useState<boolean>(false);
   const [billTo, setBillTo] = useState<string>("");
+  const [jarsOwnedByCustomer, setJarsOwnedByCustomer] = useState<number>(0);
+  const [engagedJars, setEngagedJars] = useState<number>(0);
   const [customer, setCustomer] = useState<undefined | null | Customer>(
     undefined
   );
@@ -308,6 +310,9 @@ const Invoice = () => {
     } else if (!startDate) {
       return toast.error("Please select a sale date");
     }
+    else if (customer === null && engagedJars === 0) {
+      return toast.error("Engaged jars cannot be 0 for new customers")
+    }
     if (orderType === "delivery" && !driverID) {
       return toast.error("Please select a driver");
     }
@@ -333,7 +338,17 @@ const Invoice = () => {
     invoices.push(invoiceId as string);
 
     // create user object
-    let user = {
+    let user: {
+      name: string;
+      phone: string;
+      address: {
+        text: string | null;
+        landmark: string | null;
+      };
+      invoices: string[];
+      engagedJars?: number;
+      jarOwnedByCustomer?: number;
+    } = {
       name: billTo,
       phone: phoneNumber || Math.floor(Math.random() * 10000000000)?.toString(),
       address: {
@@ -342,6 +357,14 @@ const Invoice = () => {
       },
       invoices: invoices,
     };
+
+    if (customer === null) {
+      user = {
+        ...user,
+        engagedJars: engagedJars,
+        jarOwnedByCustomer: jarsOwnedByCustomer
+      }
+    }
 
     const asiaKolkataTimezone = "Asia/Kolkata";
 
@@ -666,6 +689,54 @@ const Invoice = () => {
             </div>
 
 
+            {/* ---------------- JAR DETAILS ---------------- */}
+
+            {customer === null && <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mt-8 mb-2 relative">
+              {/* jarOwnedByCustomer */}
+
+              <div className="flex flex-col gap-2">
+
+                <label className="text-[15px] font-medium text-gray-700">
+                  Jar Owned By Customer
+                </label>
+
+                <select
+                  onChange={(e) => {
+                    setJarsOwnedByCustomer(Number(e.target.value))
+                  }}
+                  className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                >
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+
+              {/* Engaged Jars */}
+              <div className="flex flex-col gap-2">
+
+                <label className="text-[15px] font-medium text-gray-700">
+                  Engaged Jars
+                </label>
+
+                <select
+                  onChange={(e) => {
+                    setEngagedJars(Number(e.target.value))
+                  }}
+                  className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                >
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+            </div>}
 
             {/* ---------------- ORDER DETAILS ---------------- */}
 
