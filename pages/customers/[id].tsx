@@ -12,7 +12,7 @@ import { SquarePen, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { FC, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import { AiOutlineLoading } from "react-icons/ai";
@@ -40,6 +40,15 @@ interface YearlyData {
 interface MonthwiseSummaries {
   [year: string]: YearlyData;
 }
+
+interface CustomerSummary {
+  clr: number;
+  totalDue: number;
+}
+
+const INVOICE_PAGE_SIZE = 20;
+const ACTIVITY_PAGE_SIZE = 20;
+
 const BreadCrumb = [
   {
     name: "Customers",
@@ -91,11 +100,11 @@ const tabs: { label: string; tabID: string }[] = [
 
 const CustomerInvoicesData = () => {
   const [amount, setAmount] = useState<string>("");
-  const [invoices, setInvoices] = useState<Invoice[] | null | undefined>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [monthwiseSummaries, setMonthwiseSummaries] = useState<
-    MonthwiseSummaries[]
-  >([]);
+  const [summary, setSummary] = useState<CustomerSummary | null>(null);
+  const [monthwiseSummaries, setMonthwiseSummaries] = useState<MonthwiseSummaries>(
+    {}
+  );
   const [stats, setStats] = useState<{
     assets: {
       jars: string;
@@ -103,25 +112,49 @@ const CustomerInvoicesData = () => {
       stands: string;
     };
   } | null>(null);
-  const [activities, setActivities] = useState<Activity[] | null>(null);
   const [products, setProducts] = useState<Product[] | undefined>(undefined);
+
+  // Invoices (paginated / infinite scroll)
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicePage, setInvoicePage] = useState(0);
+  const [invoiceHasMore, setInvoiceHasMore] = useState(true);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoicesInitialized, setInvoicesInitialized] = useState(false);
+
+  // Activities (separate api, lazy + paginated)
+  const [activities, setActivities] = useState<Activity[] | null>(null);
+  const [activityPage, setActivityPage] = useState(0);
+  const [activityHasMore, setActivityHasMore] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activitiesInitialized, setActivitiesInitialized] = useState(false);
+
   const router = useRouter();
 
   const [selectedCustomerID, setSelectedCustomerID] = useState<
     string | undefined | string[]
   >(undefined);
 
-  // Fetch products
+  const { data: session } = useSession();
+  const axiosInstance = useAxiosInstance(session);
+
+  // First load (profile + summary + products) is ready
+  const firstLoadReady = Boolean(customer && products && summary);
+
+  // Set Customer ID from the route
+  useEffect(() => {
+    if (selectedCustomerID === undefined && router.query.id) {
+      setSelectedCustomerID(router.query.id);
+    }
+  }, [router, selectedCustomerID]);
+
+  // Fetch products (cached in cookies)
   useEffect(() => {
     if (!products) {
-      // Fetch products from cookies
       const cookieProducts = getCookie("products");
       if (cookieProducts) {
         setProducts(JSON.parse(cookieProducts));
       } else {
-        // Fetch products
         const URL = process.env.NEXT_PUBLIC_API_URL + "/product/all";
-
         axiosInstance.get(URL).then((res) => {
           const products = res.data.products;
           setProducts(products);
@@ -133,44 +166,189 @@ const CustomerInvoicesData = () => {
     }
   }, [products]);
 
-  // Set Customer ID
-  useEffect(() => {
-    if (selectedCustomerID === undefined) {
-      setSelectedCustomerID(router.query.id);
-    }
-  }, [router, selectedCustomerID]);
-
-  const { data: session } = useSession();
-  const axiosInstance = useAxiosInstance(session);
-
-  // Get the invoice for the user
-  const handleFetchInvoice = async () => {
+  // ── First load: profile details + summary + monthwise + statistics ──────────
+  const fetchProfileDetails = useCallback(async () => {
+    if (!selectedCustomerID) return;
     const url =
       process.env.NEXT_PUBLIC_API_URL +
-      "/user/invoices?id=" +
+      "/user/profile-details?id=" +
       selectedCustomerID;
     const { data } = await axiosInstance.get(url);
-    console.log(data);
-    setInvoices(data.invoices);
     setCustomer(data.customer);
-    setActivities(data.activities);
-    setMonthwiseSummaries(data.monthwiseSummary);
+    setSummary(data.summary);
+    setMonthwiseSummaries(data.monthwiseSummary || {});
     setStats(data.statistics);
-  };
+  }, [axiosInstance, selectedCustomerID]);
 
   useEffect(() => {
     if (session && selectedCustomerID) {
-      handleFetchInvoice();
+      fetchProfileDetails();
     }
   }, [selectedCustomerID, session]);
 
-  // Handle the payment to due invoices
-  const handlePayNow = async () => {
-    if (!invoices || !products) return;
-    const totalDue = invoices.reduce(
-      (acc, cur) => (cur.status === "due" ? acc : acc + cur.due),
-      0
+  // ── Invoices: paginated fetch (append) ──────────────────────────────────────
+  const fetchInvoicesPage = useCallback(
+    async (page: number) => {
+      if (!selectedCustomerID) return;
+      setInvoiceLoading(true);
+      try {
+        const url =
+          process.env.NEXT_PUBLIC_API_URL +
+          `/user/invoices/list?id=${selectedCustomerID}&page=${page}&limit=${INVOICE_PAGE_SIZE}`;
+        const { data } = await axiosInstance.get(url);
+        setInvoices((prev) =>
+          page === 1 ? data.invoices : [...prev, ...data.invoices]
+        );
+        setInvoicePage(page);
+        setInvoiceHasMore(Boolean(data.hasMore));
+        setInvoicesInitialized(true);
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to load invoices");
+      } finally {
+        setInvoiceLoading(false);
+      }
+    },
+    [axiosInstance, selectedCustomerID]
+  );
+
+  // Load the first invoices page when the invoices tab is opened
+  useEffect(() => {
+    if (
+      session &&
+      selectedCustomerID &&
+      router.query.tab === "invoices" &&
+      !invoicesInitialized &&
+      !invoiceLoading
+    ) {
+      fetchInvoicesPage(1);
+    }
+  }, [
+    session,
+    selectedCustomerID,
+    router.query.tab,
+    invoicesInitialized,
+    invoiceLoading,
+    fetchInvoicesPage,
+  ]);
+
+  // Single scroll container + sentinel. We keep the "load more" logic in a ref
+  // so the IntersectionObserver always reads the latest state without having to
+  // be torn down and rebuilt on every render.
+  const invoiceScrollRef = useRef<HTMLDivElement>(null);
+  const invoiceSentinelRef = useRef<HTMLDivElement>(null);
+  const loadMoreInvoicesRef = useRef<() => void>(() => {});
+
+  loadMoreInvoicesRef.current = () => {
+    if (invoicesInitialized && invoiceHasMore && !invoiceLoading) {
+      fetchInvoicesPage(invoicePage + 1);
+    }
+  };
+
+  // Observe a sentinel at the bottom of the invoice list; load the next page as
+  // soon as it scrolls into view. Works regardless of scroll math / layout.
+  useEffect(() => {
+    if (router.query.tab !== "invoices") return;
+    const root = invoiceScrollRef.current;
+    const sentinel = invoiceSentinelRef.current;
+    if (!root || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreInvoicesRef.current();
+        }
+      },
+      { root, rootMargin: "150px", threshold: 0 }
     );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [router.query.tab, invoicesInitialized, firstLoadReady]);
+
+  // Fallback for environments without IntersectionObserver behaviour we expect:
+  // near-bottom scroll on the single scroll container also pulls the next page.
+  const handleInvoiceScroll = (
+    e: React.UIEvent<HTMLDivElement, UIEvent>
+  ) => {
+    const el = e.currentTarget;
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    if (nearBottom) {
+      loadMoreInvoicesRef.current();
+    }
+  };
+
+  const reloadInvoices = useCallback(() => {
+    setInvoices([]);
+    setInvoicePage(0);
+    setInvoiceHasMore(true);
+    setInvoicesInitialized(false);
+  }, []);
+
+  // ── Activities: separate, lazy + paginated ──────────────────────────────────
+  const fetchActivitiesPage = useCallback(
+    async (page: number) => {
+      if (!selectedCustomerID) return;
+      setActivityLoading(true);
+      try {
+        const url =
+          process.env.NEXT_PUBLIC_API_URL +
+          `/user/activities?id=${selectedCustomerID}&page=${page}&limit=${ACTIVITY_PAGE_SIZE}`;
+        const { data } = await axiosInstance.get(url);
+        setActivities((prev) =>
+          page === 1 || !prev
+            ? data.activities
+            : [...prev, ...data.activities]
+        );
+        setActivityPage(page);
+        setActivityHasMore(Boolean(data.hasMore));
+        setActivitiesInitialized(true);
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to load activities");
+      } finally {
+        setActivityLoading(false);
+      }
+    },
+    [axiosInstance, selectedCustomerID]
+  );
+
+  // Load activities when the activities tab is opened
+  useEffect(() => {
+    if (
+      session &&
+      selectedCustomerID &&
+      router.query.tab === "activities" &&
+      !activitiesInitialized &&
+      !activityLoading
+    ) {
+      fetchActivitiesPage(1);
+    }
+  }, [
+    session,
+    selectedCustomerID,
+    router.query.tab,
+    activitiesInitialized,
+    activityLoading,
+    fetchActivitiesPage,
+  ]);
+
+  const handleActivityScroll = (
+    e: React.UIEvent<HTMLDivElement, UIEvent>
+  ) => {
+    const el = e.currentTarget;
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (nearBottom && activityHasMore && !activityLoading) {
+      fetchActivitiesPage(activityPage + 1);
+    }
+  };
+
+  // ── Pay Now: allocate payment across outstanding dues (FIFO) ─────────────────
+  const handlePayNow = async () => {
+    if (!summary) return;
+
+    const totalDue = summary.totalDue;
 
     if (amount === "" || parseInt(amount) === 0) {
       toast.error("Amount has to be greater than 0");
@@ -178,89 +356,74 @@ const CustomerInvoicesData = () => {
     } else if (parseInt(amount) > totalDue) {
       toast.error("Amount cannot be greater than total due amount");
       return;
-    } else {
-      let dueInvoices = invoices.filter((invoice) => invoice.status !== "paid");
-      // sort invoices by newest at the end
-      dueInvoices.sort((a, b) => {
-        return (
-          new Date(b.paymentDate as string | number).getTime() -
-          new Date(a.paymentDate as string | number).getTime()
-        );
-      });
+    }
 
-      dueInvoices.reverse();
+    try {
+      // Fetch only the unpaid invoices (oldest first) for allocation
+      const dueURL =
+        process.env.NEXT_PUBLIC_API_URL +
+        "/user/invoices/due?id=" +
+        selectedCustomerID;
+      const { data: dueData } = await axiosInstance.get(dueURL);
+      const dueInvoices: Invoice[] = dueData.invoices || [];
 
-      let parsedAmount = parseInt(amount);
+      let dueAmount = parseInt(amount);
+      const updatedInvoices: Invoice[] = [];
 
-      let dueAmount = parsedAmount;
-      let changedInvoices: (string | undefined)[] = [];
-
-      // Adjusting the due amount for each invoice
+      // Adjust the due amount for each invoice, oldest first
       for (let i = 0; i < dueInvoices.length; i++) {
         if (dueAmount === 0) break;
         if (dueInvoices[i].due > dueAmount) {
           dueInvoices[i].due -= dueAmount;
           dueAmount = 0;
-          changedInvoices.push(dueInvoices[i]._id);
+          updatedInvoices.push(dueInvoices[i]);
         } else {
           dueInvoices[i].status = "paid";
           dueAmount -= dueInvoices[i].due;
           dueInvoices[i].paymentDate = +new Date();
           dueInvoices[i].due = 0;
-          changedInvoices.push(dueInvoices[i]._id);
+          updatedInvoices.push(dueInvoices[i]);
         }
       }
 
-      let updatedInvoices: Invoice[] = [];
-
-      // Sort invoices which are changed
-      dueInvoices.forEach(async (invoice) => {
-        if (changedInvoices.includes(invoice._id)) {
-          updatedInvoices.push(invoice);
-        }
-      });
-
-      // Request to update the invoices
-      updatedInvoices.forEach(async (invoice) => {
-        const URL =
-          process.env.NEXT_PUBLIC_API_URL + `/invoice/update/${invoice._id}`;
-
-        const { data } = await axiosInstance.put(URL, {
-          paymentDate: invoice.paymentDate,
-          status: invoice.status,
-          due: invoice.due,
-        });
-
-        // set the updated invoices to the state
-        setInvoices((prev) => {
-          if (!prev) return;
-          return prev.map((inv) => {
-            if (inv._id === invoice._id) {
-              return invoice;
-            } else {
-              return inv;
-            }
+      // Request to update the changed invoices
+      await Promise.all(
+        updatedInvoices.map((invoice) => {
+          const URL =
+            process.env.NEXT_PUBLIC_API_URL +
+            `/invoice/update/${invoice._id}`;
+          return axiosInstance.put(URL, {
+            paymentDate: invoice.paymentDate,
+            status: invoice.status,
+            due: invoice.due,
           });
-        });
-
-        setAmount("0");
-      });
+        })
+      );
 
       // Create new activity
-      const URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
-
+      const activityURL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
       const payload = {
-        message: `Payment of ₹${amount} added to ${selectedCustomerID || dueInvoices[0].customerID
+        message: `Payment of ₹${amount} added to ${selectedCustomerID || dueInvoices[0]?.customerID
           }`,
         tag: "payment",
       };
-      await axiosInstance.post(URL, payload, {
+      await axiosInstance.post(activityURL, payload, {
         headers: {
           "Content-Type": "application/json",
         },
       });
 
+      setAmount("0");
       toast.success("Invoice updated successfully!");
+
+      // Refresh summary (CLR / total due / monthwise) and invoice list
+      await fetchProfileDetails();
+      reloadInvoices();
+      setActivitiesInitialized(false);
+      setActivities(null);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to record payment");
     }
   };
 
@@ -270,10 +433,9 @@ const CustomerInvoicesData = () => {
       let URL;
       URL = process.env.NEXT_PUBLIC_API_URL + `/invoice/delete/${invoice._id}`;
       await axiosInstance.delete(URL);
-      setInvoices((invoices) => {
-        if (!invoices) return [];
-        return invoices.filter((inv) => inv.invoiceID !== invoice.invoiceID);
-      });
+      setInvoices((invoices) =>
+        invoices.filter((inv) => inv.invoiceID !== invoice.invoiceID)
+      );
 
       // Create new activity
       URL = process.env.NEXT_PUBLIC_API_URL + `/activity`;
@@ -287,6 +449,9 @@ const CustomerInvoicesData = () => {
           "Content-Type": "application/json",
         },
       });
+
+      // Keep CLR / total due / monthwise in sync after a deletion
+      fetchProfileDetails();
     } catch (error) {
       console.log(error);
     }
@@ -322,7 +487,7 @@ const CustomerInvoicesData = () => {
           </span>
         </div>
 
-        {!invoices || !products ? (
+        {!firstLoadReady ? (
           <div className="w-full flex items-center">
             <AiOutlineLoading className="text-4xl animate-spin" />
           </div>
@@ -331,10 +496,11 @@ const CustomerInvoicesData = () => {
             {router.query.tab === "invoices" && (
               <>
                 <div
-                  className={`flex items-center flex-col  w-full h-[32rem] ${invoices.length > 3 ? "md:h-[22rem]" : "md:h-[15rem]"
-                    }  overflow-y-auto`}
+                  ref={invoiceScrollRef}
+                  onScroll={handleInvoiceScroll}
+                  className="w-full h-[32rem] md:h-[26rem] overflow-y-auto"
                 >
-                  <div className="relative bg-white border border-gray-400 overflow-y-auto justify-end w-full">
+                  <div className="relative bg-white border border-gray-400 w-full">
                     <table className="w-full text-sm text-center">
                       <thead className="text-sm uppercase border-b border-gray-400 bg-gray-100 sticky top-0">
                         <tr className="">
@@ -427,7 +593,7 @@ const CustomerInvoicesData = () => {
                                       return (
                                         <span key={product._id}>
                                           {/* @ts-ignore */}
-                                          {item.name} x {product.quantity}
+                                          {item?.name} x {product.quantity}
                                           <br />
                                         </span>
                                       );
@@ -502,6 +668,31 @@ const CustomerInvoicesData = () => {
                           })}
                       </tbody>
                     </table>
+
+                    {invoiceLoading && (
+                      <div className="w-full flex items-center justify-center py-4">
+                        <AiOutlineLoading className="text-2xl animate-spin" />
+                      </div>
+                    )}
+
+                    {!invoiceLoading &&
+                      invoicesInitialized &&
+                      invoices.length === 0 && (
+                        <div className="w-full text-center py-6 text-gray-500">
+                          No invoices found.
+                        </div>
+                      )}
+
+                    {!invoiceLoading &&
+                      !invoiceHasMore &&
+                      invoices.length > 0 && (
+                        <div className="w-full text-center py-3 text-xs text-gray-400">
+                          End of invoices
+                        </div>
+                      )}
+
+                    {/* Infinite-scroll trigger */}
+                    <div ref={invoiceSentinelRef} className="h-px w-full" />
                   </div>
                 </div>
                 <div className="flex flex-col justify-end w-full my-12">
@@ -522,10 +713,7 @@ const CustomerInvoicesData = () => {
                         <tr className="bg-white">
                           <td className="px-6 py-4">
                             <CurrencyFormat
-                              value={invoices.reduce(
-                                (acc, cur) => acc + cur.total,
-                                0
-                              )}
+                              value={summary?.clr ?? 0}
                               displayType={"text"}
                               thousandSeparator={true}
                               prefix={"₹"}
@@ -538,11 +726,7 @@ const CustomerInvoicesData = () => {
                           </td>
                           <td className="px-6 py-4">
                             <CurrencyFormat
-                              value={invoices?.reduce(
-                                (acc, cur) =>
-                                  cur.status === "paid" ? acc : acc + cur.due,
-                                0
-                              )}
+                              value={summary?.totalDue ?? 0}
                               displayType={"text"}
                               thousandSeparator={true}
                               prefix={"₹"}
@@ -561,30 +745,27 @@ const CustomerInvoicesData = () => {
                   {/*
                    * Pay Now
                    */}
-                  {invoices.reduce(
-                    (acc, cur) => (cur.status === "paid" ? acc : acc + cur.due),
-                    0
-                  ) !== 0 && (
-                      <div className="flex justify-between md:justify-end items-end w-full mt-5">
-                        <div className="flex flex-col">
-                          <label className="font-bold underline">
-                            Enter the amount to pay :
-                          </label>
-                          <input
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            type="number"
-                            className="w-full py-2 px-3 mt-2 rounded-md border-2 font-medium text-lg"
-                          />
-                        </div>
-                        <button
-                          onClick={handlePayNow}
-                          className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
-                        >
-                          Pay Now
-                        </button>
+                  {(summary?.totalDue ?? 0) !== 0 && (
+                    <div className="flex justify-between md:justify-end items-end w-full mt-5">
+                      <div className="flex flex-col">
+                        <label className="font-bold underline">
+                          Enter the amount to pay :
+                        </label>
+                        <input
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          type="number"
+                          className="w-full py-2 px-3 mt-2 rounded-md border-2 font-medium text-lg"
+                        />
                       </div>
-                    )}
+                      <button
+                        onClick={handlePayNow}
+                        className="bg-green-500 text-white px-6 py-3 rounded-lg ml-2"
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -679,7 +860,25 @@ const CustomerInvoicesData = () => {
             )}
 
             {router.query.tab === "activities" ? (
-              <Activities activities={activities} />
+              <div
+                onScroll={handleActivityScroll}
+                className="w-full max-h-[34rem] overflow-y-auto"
+              >
+                {!activitiesInitialized && activityLoading ? (
+                  <div className="w-full flex items-center justify-center py-6">
+                    <AiOutlineLoading className="text-2xl animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <Activities activities={activities} />
+                    {activityLoading && activitiesInitialized && (
+                      <div className="w-full flex items-center justify-center py-4">
+                        <AiOutlineLoading className="text-2xl animate-spin" />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             ) : (
               " "
             )}
