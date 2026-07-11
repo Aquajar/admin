@@ -3,8 +3,8 @@ import { RxDashboard } from "react-icons/rx";
 import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
-import { FaShop, FaPeopleGroup } from "react-icons/fa6";
-import { FaFileInvoice, FaFileAlt } from "react-icons/fa";
+import { FaPeopleGroup } from "react-icons/fa6";
+import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
@@ -19,9 +19,9 @@ const SidebarItems: SideBarItem[] = [
   },
 
   {
-    name: "Orders",
-    icon: FaShop,
-    href: "/orders",
+    name: "Map",
+    icon: FaMapMarkedAlt,
+    href: "/map",
   },
   {
     name: "Billing",

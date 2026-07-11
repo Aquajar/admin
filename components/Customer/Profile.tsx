@@ -244,6 +244,54 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Coordinates */}
+            <div className="space-y-2">
+              <Label>Map Coordinates</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="number"
+                  step="any"
+                  id="latitude"
+                  name="latitude"
+                  value={customer?.coordinates?.lat ?? ""}
+                  onChange={(e) => {
+                    if (!customer) return;
+                    const raw = e.target.value;
+                    setCustomer({
+                      ...customer,
+                      coordinates: {
+                        lat: raw === "" ? null : Number(raw),
+                        lng: customer.coordinates?.lng ?? null,
+                      },
+                    });
+                  }}
+                  placeholder="Latitude"
+                />
+                <Input
+                  type="number"
+                  step="any"
+                  id="longitude"
+                  name="longitude"
+                  value={customer?.coordinates?.lng ?? ""}
+                  onChange={(e) => {
+                    if (!customer) return;
+                    const raw = e.target.value;
+                    setCustomer({
+                      ...customer,
+                      coordinates: {
+                        lat: customer.coordinates?.lat ?? null,
+                        lng: raw === "" ? null : Number(raw),
+                      },
+                    });
+                  }}
+                  placeholder="Longitude"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Optional. Used to plot the customer on the Map view.
+              </p>
+            </div>
           </div>
         </div>
 

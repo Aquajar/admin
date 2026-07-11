@@ -11,6 +11,7 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 import { GoKebabHorizontal, GoPlus } from "react-icons/go";
+import { FaShop } from "react-icons/fa6";
 import { MdOutlineDeleteForever } from "react-icons/md";
 import { RiAddCircleLine } from "react-icons/ri";
 import Modal from "react-modal";
@@ -25,7 +26,7 @@ const breadCrumbData: SideBarItem[] = [
   {
     name: "Orders",
     href: "/orders",
-    icon: SidebarItems.filter((item) => item.name === "Orders")[0].icon,
+    icon: FaShop,
   },
 ];
 

@@ -28,6 +28,39 @@ export interface Customer {
   profileRate: number | null;
   invoices: Invoice[];
   lastPurchaseDate?: Date;
+  coordinates?: {
+    lat: number | null;
+    lng: number | null;
+  };
+}
+
+export type MapMode = "sales" | "finance";
+export type MapStatus = "green" | "yellow" | "red" | "none";
+
+export interface MapCustomer {
+  _id: string;
+  userID: number;
+  name: string | null;
+  phone: string | null;
+  area: string | null;
+  landmark: string | null;
+  isRegular: boolean;
+  paymentPlan: string | null;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  sales: {
+    lastDeliveryDate: string | null;
+    daysSinceLastDelivery: number | null;
+    status: MapStatus;
+  };
+  finance: {
+    totalDue: number;
+    oldestDueDate: string | null;
+    daysSinceOldestDue: number | null;
+    status: MapStatus;
+  };
 }
 
 export type Product = {
