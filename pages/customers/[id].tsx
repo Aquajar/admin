@@ -1,6 +1,7 @@
 import { Accordion, AccordionItem } from "@/components/Accordion";
 import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
+import GenerateBillDialog from "@/components/Customer/GenerateBillDialog";
 import Statistics from "@/components/Customer/Statistics";
 import { Button } from "@/components/ui/button";
 import Wrapper from "@/components/Wrapper";
@@ -481,10 +482,16 @@ const CustomerInvoicesData = () => {
               </li>
             ))}
           </ul>
-          <span className="mr-5 font-medium text-gray-500">
-            Customer ID :{" "}
-            <span className="font-bold text-black">{selectedCustomerID}</span>
-          </span>
+          <div className="mr-5 flex items-center gap-4">
+            <GenerateBillDialog
+              customer={customer}
+              monthwiseSummaries={monthwiseSummaries}
+            />
+            <span className="font-medium text-gray-500">
+              Customer ID :{" "}
+              <span className="font-bold text-black">{selectedCustomerID}</span>
+            </span>
+          </div>
         </div>
 
         {!firstLoadReady ? (

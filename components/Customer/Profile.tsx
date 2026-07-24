@@ -1,4 +1,5 @@
 import { Area, Customer } from "@/types/types";
+import { MARKET_SEGMENTS, MarketSegment } from "@/lib/constants";
 import axios, { AxiosInstance } from "axios";
 import { getCookie } from "cookies-next";
 import React, { FC, useEffect, useState } from "react";
@@ -104,6 +105,38 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
                 onChange={handleChange}
                 placeholder="Enter phone number"
               />
+            </div>
+
+            {/* Market Segment */}
+            <div className="space-y-2">
+              <Label htmlFor="marketSegment">Market Segment</Label>
+              <Select
+                value={customer?.marketSegment || "b2c"}
+                onValueChange={(value) => {
+                  if (!customer) return;
+                  setCustomer({
+                    ...customer,
+                    marketSegment: value as MarketSegment,
+                  });
+                }}
+              >
+                <SelectTrigger id="marketSegment">
+                  <SelectValue placeholder="Select market segment" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {MARKET_SEGMENTS.map((segment) => (
+                    <SelectItem key={segment.id} value={segment.id}>
+                      {segment.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {MARKET_SEGMENTS.find(
+                  (s) => s.id === (customer?.marketSegment || "b2c")
+                )?.description}
+              </p>
             </div>
           </div>
         </div>

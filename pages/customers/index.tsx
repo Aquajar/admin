@@ -15,9 +15,11 @@ import {
 import { BiLoaderAlt } from "react-icons/bi";
 import toast from "react-hot-toast";
 import HeaderMenu from "@/components/Customer/HeaderMenu";
+import MarketSegmentBadge from "@/components/Customer/MarketSegmentBadge";
 import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
 import { Area, Customer, Invoice, Product } from "@/types/types";
+import { MarketSegment } from "@/lib/constants";
 import { getCookie, setCookie } from "cookies-next";
 import CustomerInvoicesData from "@/components/Customer/CustomerInvoicesData";
 import { calculatePurchasePattern } from "@/lib/calculateCustomerPurchasePattern";
@@ -119,9 +121,19 @@ const Customers = () => {
   const [sortByRegularity, setSortByRegularity] = useState<
     "all" | "true" | "false"
   >("all");
+  // Market segment filter is applied server-side so the table stays paginated.
+  const [sortBySegment, setSortBySegment] = useState<"all" | MarketSegment>(
+    "all"
+  );
 
   const initialLoad = useRef<boolean>(true); // Track initial render
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Synchronous in-flight lock. `loading` state is async, so two scroll
+  // triggers can both pass a `!loading` check and double-fetch (skipping a
+  // page). This ref flips synchronously and is the real guard.
+  const loadingRef = useRef<boolean>(false);
+  // Always holds the latest "load next page" closure so the IntersectionObserver
+  // (created once) never calls a stale version with an old page/filter.
+  const loadMoreRef = useRef<() => void>(() => {});
   const tableRef = useRef<HTMLTableElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
@@ -214,48 +226,41 @@ const Customers = () => {
   useRefreshTokenRotation(axiosInstance);
   useInvoice(axiosInstance, session);
 
-  // Fetch customers
+  // Fetch one page and append it to the master `customers` list. Only touches
+  // `customers`; the derive effect below is the single source that builds the
+  // rendered `customersState` (so rows never flash in without their computed
+  // fields, and we never set the list twice per page).
   const getCustomers = async (pageNumber: number) => {
-    console.log("Getting customers...");
-    if (!hasMore || loading) return; // Avoid duplicate calls while loading or if no more data
-    if (!autoLoad) return;
+    if (!hasMore || loadingRef.current || !autoLoad) return;
 
-    setLoading(true); // Set loading state
+    loadingRef.current = true;
+    setLoading(true);
 
     try {
-      const URL =
+      let URL =
         process.env.NEXT_PUBLIC_API_URL +
         `/user/all?limit=${limit}&page=${pageNumber}`;
 
+      // Keep the active segment filter applied as we page through.
+      if (sortBySegment !== "all") {
+        URL += `&marketSegment=${sortBySegment}`;
+      }
+
       const { data } = await axiosInstance.get(URL);
+      const newUsers: Customer[] = data?.users ?? [];
 
-      if (data?.users.length > 0) {
+      if (newUsers.length > 0) {
         setCustomers((prev) => {
-          if (!prev) return data.users;
-
-          // Filter out the customers that already exist in the previous state
-          const uniqueCustomers = [...prev, ...data.users].filter(
+          const merged = prev ? [...prev, ...newUsers] : newUsers;
+          // De-dupe by userID in case a page overlaps an existing one.
+          return merged.filter(
             (value, index, self) =>
-              index === self.findIndex((t) => t.userID === value.userID) // Assuming `userID` is the unique identifier
+              index === self.findIndex((t) => t.userID === value.userID)
           );
-
-          return uniqueCustomers;
         });
 
-        setCustomersState((prev) => {
-          if (!prev) return data.users;
-
-          // Filter out the customers that already exist in the previous state
-          const uniqueCustomers = [...prev, ...data.users].filter(
-            (value, index, self) =>
-              index === self.findIndex((t) => t.userID === value.userID) // Assuming `userID` is the unique identifier
-          );
-
-          return uniqueCustomers;
-        });
-
-        setPage(pageNumber + 1); // Increment page for the next request
-        setHasMore(data.hasMore); // Update `hasMore` based on API response
+        setPage(pageNumber + 1); // Next scroll trigger fetches the following page
+        setHasMore(Boolean(data.hasMore));
       } else {
         setHasMore(false); // No more data available
       }
@@ -263,51 +268,64 @@ const Customers = () => {
       console.error("Error fetching customers:", error);
       toast.error("Failed to fetch customers");
     } finally {
-      setLoading(false); // Reset loading state
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  };
+
+  // Keep the "load next page" closure fresh every render so the observer and
+  // the viewport-fill effect always act on the current page/hasMore/filter.
+  loadMoreRef.current = () => {
+    if (autoLoad && hasMore && !loadingRef.current) {
+      getCustomers(page);
     }
   };
 
   // Initial data load
   useEffect(() => {
-    if (initialLoad.current && customers === undefined) {
-      // Load customers on initial render
+    if (!initialLoad.current) return;
+    initialLoad.current = false;
+
+    if (customers && customers.length > 0) {
+      // Warm store (returning to the page): resume paging after the rows
+      // already loaded instead of refetching from page 1.
+      setPage(Math.floor(customers.length / limit) + 1);
+    } else {
+      // Cold start — load the first page.
       getCustomers(1);
-      initialLoad.current = false;
     }
   }, []);
 
-  // Intersection Observer
+  // Infinite scroll: observe the sentinel once. The sentinel stays mounted for
+  // the component's life (see render), so the observer never ends up watching a
+  // detached node after a search. The actual load goes through loadMoreRef so
+  // it's never stale.
   useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            debounceTimeout.current = setTimeout(() => {
-              getCustomers(page);
-              debounceTimeout.current = null;
-            }, 1000); // Debounce with 1200ms delay
-          }
-        });
+        if (entries[0].isIntersecting) loadMoreRef.current();
       },
-      {
-        root: null, // Viewport
-        threshold: 0.1, // Trigger when 10% is visible
-      }
+      { root: null, rootMargin: "300px", threshold: 0 }
     );
 
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-    return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-    };
-  }, [page, hasMore]);
+  // Viewport-fill continuation: if a freshly loaded page didn't push the
+  // sentinel below the fold (short list / tall screen), pull the next page too.
+  // The IntersectionObserver only fires on crossings, so this covers the case
+  // where the sentinel stays visible. Guarded by the same lock, so no loops.
+  useEffect(() => {
+    if (loadingRef.current || !hasMore || !autoLoad) return;
+    const el = loaderRef.current;
+    if (el && el.getBoundingClientRect().top <= window.innerHeight) {
+      loadMoreRef.current();
+    }
+  }, [customers, hasMore, loading, autoLoad]);
 
   // Fetch Areas
   useEffect(() => {
@@ -397,6 +415,52 @@ const Customers = () => {
     }
   };
 
+  // Apply the market-segment filter server-side. Clears the current list and
+  // pulls a fresh first page, so infinite scroll continues paging through only
+  // the matching customers instead of loading everything to filter client-side.
+  const applySegmentFilter = async (segment: "all" | MarketSegment) => {
+    setSortBySegment(segment);
+    // Regularity/Area operate on the already-loaded set; reset them so the
+    // visible table reflects the new server-side result cleanly.
+    setSortByArea("all");
+    setSortByRegularity("all");
+    setAutoLoad(true);
+    setHasMore(true);
+    setPage(1);
+    // Clear immediately so the table empties while the new page loads. The
+    // derive effect rebuilds customersState once `customers` is set below.
+    setCustomers(undefined);
+    setCustomersState(undefined);
+
+    // Take the lock so the observer / viewport-fill effect can't fire a
+    // competing getCustomers() while this reset fetch is in flight.
+    loadingRef.current = true;
+    setLoading(true);
+
+    try {
+      let URL =
+        process.env.NEXT_PUBLIC_API_URL + `/user/all?limit=${limit}&page=1`;
+      if (segment !== "all") {
+        URL += `&marketSegment=${segment}`;
+      }
+
+      const { data } = await axiosInstance.get(URL);
+      const users: Customer[] = data?.users ?? [];
+
+      setCustomers(users);
+      setPage(2); // next infinite-scroll fetch starts at page 2
+      setHasMore(users.length > 0 && Boolean(data.hasMore));
+    } catch (error) {
+      console.error("Error filtering customers:", error);
+      toast.error("Failed to filter customers");
+      setCustomers([]);
+      setHasMore(false);
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  };
+
   // handle update regularity
   const handleUpdateRegularity = (userID: number, isRegular: boolean) => {
     const URL = process.env.NEXT_PUBLIC_API_URL + "/user/update";
@@ -409,39 +473,18 @@ const Customers = () => {
     toast.promise(promise, {
       loading: "Updating Customer",
       success: (res) => {
-        // Update the customer in the store
-        // setCustomers((prev) => {
-        //   if (!prev) return;
-        //   const index = prev.findIndex(
-        //     (customer) => customer?.userID === userID
-        //   );
-        //   prev[index].isRegular = !isRegular;
-        //   return prev;
-        // });
-
-        const user = customersState && customersState[0];
-
-        // Update the customer in the store
-        setCustomersState((prev) => {
-          if (!prev) return;
-          const index = prev.findIndex(
-            (customer) => customer?.userID === userID
+        // Immutable toggle (new array + new object) so React re-renders the
+        // checkbox. Update both lists: `customers` (master) so the change
+        // survives the derive effect in browse mode, and `customersState` so it
+        // shows instantly and also covers search mode (where the derive effect
+        // is paused).
+        const toggle = (list: (Customer & { totalDue?: string })[] | null | undefined) =>
+          list?.map((c) =>
+            c?.userID === userID ? { ...c, isRegular: !isRegular } : c
           );
-          prev[index] = { ...prev[index], isRegular: !isRegular };
-          return prev;
-        });
 
-        if (user) {
-          user.isRegular = !isRegular;
-          setCustomersState((prev) => {
-            if (!prev) return;
-            const index = prev.findIndex(
-              (customer) => customer?.userID === userID
-            );
-            prev[index] = { ...prev[index], isRegular: !isRegular };
-            return prev;
-          });
-        }
+        setCustomers((prev) => (prev ? toggle(prev) : prev));
+        setCustomersState((prev) => (prev ? toggle(prev) : prev));
 
         return res.data.message;
       },
@@ -449,26 +492,30 @@ const Customers = () => {
     });
   };
 
+  // Single source of truth for the rendered rows: map the master `customers`
+  // list into `customersState`, attaching computed fields (totalDue). Paused in
+  // search mode (autoLoad === false), where customersState holds search results
+  // that must not be overwritten by the paginated master list.
   useEffect(() => {
-    if (customers) {
-      // add new property to customers
-      const c = customers.map((customer) => {
-        let totalDue = invoices
-          ?.filter(
-            (invoice) =>
-              invoice.customerID === customer?._id &&
-              invoice.status === "pending"
-          )
-          .reduce((acc, curr) => acc + curr.due, 0)
-          .toFixed(2)
-          .toString()
-          ?.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-          .split(".")[0];
-        return { ...customer, totalDue };
-      });
-      setCustomersState(c);
-    }
-  }, [customers]);
+    if (!autoLoad) return;
+    if (!customers) return;
+
+    const withDue = customers.map((customer) => {
+      const totalDue = invoices
+        ?.filter(
+          (invoice) =>
+            invoice.customerID === customer?._id &&
+            invoice.status === "pending"
+        )
+        .reduce((acc, curr) => acc + curr.due, 0)
+        .toFixed(2)
+        .toString()
+        ?.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        .split(".")[0];
+      return { ...customer, totalDue };
+    });
+    setCustomersState(withDue);
+  }, [customers, invoices, autoLoad]);
 
   // Calculate Purchase Pattern
   useEffect(() => {
@@ -489,6 +536,8 @@ const Customers = () => {
         setSortByArea={setSortByArea}
         sortByRegularity={sortByRegularity}
         setSortByRegularity={setSortByRegularity}
+        sortBySegment={sortBySegment}
+        onSegmentChange={applySegmentFilter}
         tableRef={tableRef}
         purchasePatternData={purchasePatternData}
         invoices={invoices}
@@ -565,6 +614,10 @@ const Customers = () => {
               </th>
               <th scope="col" className="px-6 py-3">
                 Phone
+              </th>
+
+              <th scope="col" className="px-6 py-3">
+                Segment
               </th>
 
               {/* <th scope="col" className="px-6 py-3">
@@ -679,6 +732,11 @@ const Customers = () => {
                       <a href={`tel:+91 ${customer?.phone}`}>
                         {customer?.phone}
                       </a>
+                    </td>
+
+                    {/* Market Segment */}
+                    <td className="px-2 text-center py-4">
+                      <MarketSegmentBadge segment={customer?.marketSegment} />
                     </td>
 
                     {/* Total Due */}
@@ -865,10 +923,21 @@ const Customers = () => {
         </table>
       </div>
       {/*
-       * Loader
+       * Infinite-scroll sentinel. Stays mounted (only visually hidden during
+       * search) so the IntersectionObserver keeps watching the same node.
        */}
-      <div ref={loaderRef} className={`mt-8 ${!autoLoad && "hidden"}`}>
-        <BiLoaderAlt className="text-4xl mx-auto animate-spin" />
+      <div
+        ref={loaderRef}
+        className={`mt-8 flex justify-center items-center min-h-[3rem] ${!autoLoad ? "hidden" : ""
+          }`}
+      >
+        {loading ? (
+          <BiLoaderAlt className="text-4xl animate-spin" />
+        ) : customersState && customersState.length === 0 ? (
+          <span className="text-sm text-gray-400">No customers found</span>
+        ) : !hasMore ? (
+          <span className="text-sm text-gray-400">End of list</span>
+        ) : null}
       </div>
     </Wrapper>
   );

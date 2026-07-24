@@ -1,9 +1,34 @@
 import Wrapper from "@/components/Wrapper";
-import React, { useEffect, useState } from "react";
-import { RiAddCircleLine, RiLoader5Line } from "react-icons/ri";
+import React, { FC, useEffect, useState } from "react";
+import { RiLoader5Line } from "react-icons/ri";
 import CurrencyFormat from "react-currency-format";
-import { MdOutlineDeleteForever } from "react-icons/md";
 import DatePicker from "react-datepicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  UserRound,
+  IdCard,
+  Phone,
+  Search,
+  Package,
+  ShoppingCart,
+  Truck,
+  CalendarDays,
+  MapPin,
+  Plus,
+  Trash2,
+  UserPlus,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 // @ts-ignore
 import "react-datepicker/dist/react-datepicker.css";
 import Summary from "@/components/billing/Summary";
@@ -20,6 +45,8 @@ import {
   Product,
 } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
+import { MARKET_SEGMENTS, MarketSegment } from "@/lib/constants";
+import MarketSegmentBadge from "@/components/Customer/MarketSegmentBadge";
 import Card from "@/components/Recents/Card";
 import { useSession } from "next-auth/react";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
@@ -47,6 +74,34 @@ interface ItemProps {
 
 import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
 
+// Consistent card wrapper used for every block on the billing form, giving the
+// page a clean, sectioned, professional layout.
+const Section: FC<{
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ icon, title, description, action, children }) => (
+  <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          {icon}
+        </span>
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+          {description && (
+            <p className="text-xs text-gray-500">{description}</p>
+          )}
+        </div>
+      </div>
+      {action}
+    </div>
+    <div className="p-5">{children}</div>
+  </section>
+);
+
 const Invoice = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [orderType, setOrderType] = useState("delivery");
@@ -64,6 +119,7 @@ const Invoice = () => {
   const [billTo, setBillTo] = useState<string>("");
   const [jarsOwnedByCustomer, setJarsOwnedByCustomer] = useState<number>(0);
   const [engagedJars, setEngagedJars] = useState<number>(0);
+  const [marketSegment, setMarketSegment] = useState<MarketSegment>("b2c");
   const [customer, setCustomer] = useState<undefined | null | Customer>(
     undefined
   );
@@ -232,8 +288,8 @@ const Invoice = () => {
   }, [phoneNumber, customer, customerID, searchByPhone]);
 
   // Handle order type change
-  const handleOrderType = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setOrderType(e.target.value);
+  const handleOrderType = (value: string) => {
+    setOrderType(value);
 
     // reset jar price
     const newItems = [...items];
@@ -244,11 +300,11 @@ const Invoice = () => {
 
       if (product === undefined) return;
 
-      if (e.target.value === "retail") {
+      if (value === "retail") {
         item.price = product?.price.retail
           ? parseInt(product?.price.retail)
           : 0;
-      } else if (e.target.value === "delivery") {
+      } else if (value === "delivery") {
         item.price = product?.price.delivery
           ? parseInt(product?.price.delivery)
           : 0;
@@ -284,6 +340,7 @@ const Invoice = () => {
       },
     ]);
     setCustomerID("");
+    setMarketSegment("b2c");
     setSearchByPhone(false);
     setOrderType("delivery");
     setStartDate(cookieSalesDate ? new Date(cookieSalesDate) : new Date());
@@ -348,6 +405,7 @@ const Invoice = () => {
       invoices: string[];
       engagedJars?: number;
       jarOwnedByCustomer?: number;
+      marketSegment?: MarketSegment;
     } = {
       name: billTo,
       phone: phoneNumber || Math.floor(Math.random() * 10000000000)?.toString(),
@@ -362,7 +420,8 @@ const Invoice = () => {
       user = {
         ...user,
         engagedJars: engagedJars,
-        jarOwnedByCustomer: jarsOwnedByCustomer
+        jarOwnedByCustomer: jarsOwnedByCustomer,
+        marketSegment: marketSegment
       }
     }
 
@@ -541,383 +600,401 @@ const Invoice = () => {
 
   return (
     <Wrapper breadcrumb={BreadCrumb}>
-      <div className="flex flex-col">
-        <div className="flex flex-col xl:flex-row gap-1">
+      <div className="mx-auto w-full pb-24">
+        {/* Page header */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Create Invoice</h1>
+            {/* <p className="text-sm text-gray-500">
+              Look up a customer, add items, and generate the bill.
+            </p> */}
+          </div>
+          <span className="inline-flex w-fit items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-500">
+            Invoice ID
+            <span className="font-mono font-semibold text-gray-900">{invoiceId}</span>
+          </span>
+        </div>
 
-          {/* LEFT PANEL */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col w-full xl:w-[70%] relative">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
 
-            {/* Invoice ID */}
-            <span className="absolute right-6 top-4 text-xs text-gray-400">
-              ID: {invoiceId}
-            </span>
-
-
-            {/* ---------------- CUSTOMER SECTION ---------------- */}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 relative">
-
-              {isLoading && (
-                <div className="absolute right-4 top-4 z-50 bg-white shadow rounded-full p-2">
-                  <RiLoader5Line className="w-6 h-6 animate-spin text-gray-700" />
-                </div>
-              )}
-
-              {/* Search Customer */}
-              <div className="flex flex-col gap-2">
-
-                <label className="text-[15px] font-medium text-gray-700">
-                  Search Customer
-                </label>
-
-                <div className="flex gap-2">
-
-                  <select
-                    onChange={(e) => {
-                      setSearchByPhone(e.target.value !== "ID")
-                    }}
-                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
-                  >
-                    <option selected={!searchByPhone} value="ID">
-                      Customer ID
-                    </option>
-
-                    <option selected={searchByPhone} value="phone">
-                      Phone
-                    </option>
-                  </select>
-
-                  <input
-                    disabled={isLoading}
-                    onChange={(e) => {
-                      searchByPhone
-                        ? setPhoneNumber(e.target.value)
-                        : setCustomerID(e.target.value)
-
-                      setCustomer(undefined)
-                      setBillTo("")
-                      setAddress(areas ? areas[0].name : "")
-                      setLandmark("")
-                    }}
-                    value={
-                      searchByPhone
-                        ? phoneNumber
-                        : customerID === "" ? "" : customerID
-                    }
-                    maxLength={searchByPhone ? 10 : 4}
-                    placeholder={searchByPhone ? "Enter phone" : "Enter ID"}
-                    className="flex-1 bg-gray-50 border rounded-lg px-3 py-2 text-[15px] focus:ring-2 focus:ring-gray-200 outline-none"
-                  />
-
-                </div>
-
-              </div>
+          {/* LEFT: form */}
+          <div className="space-y-6 xl:col-span-2">
 
 
-              {/* Bill To */}
-              <div className="flex flex-col gap-2 relative">
-
-                <label className="flex justify-between text-[15px] font-medium text-gray-700">
-
-                  <span>Bill To</span>
-
-                  <span
-                    className={`text-xs ${customer && customer?.name === undefined
-                      ? "text-yellow-500"
-                      : customer === null
-                        ? "text-red-500"
-                        : ""
-                      }`}
-                  >
-                    {customer && customer?.name === undefined
-                      ? "Customer name will be updated"
-                      : customer === null
-                        ? "Customer not found"
-                        : ""}
-                  </span>
-
-                </label>
-
-                <DebounceInput
-                  minLength={2}
-                  debounceTimeout={800}
-                  disabled={isLoading}
-                  onChange={(e) => {
-                    setBillTo(e.target.value)
-                    searchCustomer(e.target.value)
-                  }}
-                  value={billTo}
-                  placeholder="Enter customer name"
-                  className="border rounded-lg px-3 py-2 text-[15px] bg-gray-50 focus:ring-2 focus:ring-gray-200 outline-none"
-                />
-
-                {/* Autocomplete */}
-                {customersResults.length > 0 && (
-                  <div className="absolute top-[72px] w-full bg-white border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-
-                    {customersResults.map((customer: Customer, index: number) => {
-
-                      return (
-                        <div
-                          key={index}
-                          className="px-3 py-2 text-[15px] hover:bg-gray-100 cursor-pointer"
-                          onClick={() => {
-                            setCustomerID(customer?.userID?.toString() || "")
-                            setCustomer(customer)
-                            setBillTo(customer.name as string)
-                            setPhoneNumber(customer.phone)
-                            setAddress(customer.address?.text || "")
-                            setLandmark(customer.address?.landmark || "")
-                            setCustomersResults([])
-                          }}
-                        >
-                          {customer.name}
-                        </div>
-                      )
-
-                    })}
-
+            {/* CUSTOMER */}
+            <Section
+              icon={<UserRound className="h-5 w-5" />}
+              title="Customer"
+              description="Search an existing customer or bill a new one."
+            >
+              <div className="relative">
+                {isLoading && (
+                  <div className="absolute right-0 -top-1 z-50 rounded-full bg-white p-1.5 shadow">
+                    <RiLoader5Line className="h-5 w-5 animate-spin text-gray-700" />
                   </div>
                 )}
 
-                <span className="text-xs text-gray-400">
-                  Name printed on invoice
-                </span>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
+                  {/* Find existing customer */}
+                  <div className="space-y-2">
+                    <Label>Find customer</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={searchByPhone ? "phone" : "ID"}
+                        onValueChange={(v) => setSearchByPhone(v !== "ID")}
+                      >
+                        <SelectTrigger className="w-[132px] shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ID">Customer ID</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="relative flex-1">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                          {searchByPhone ? (
+                            <Phone className="h-4 w-4" />
+                          ) : (
+                            <IdCard className="h-4 w-4" />
+                          )}
+                        </span>
+                        <Input
+                          disabled={isLoading}
+                          onChange={(e) => {
+                            searchByPhone
+                              ? setPhoneNumber(e.target.value)
+                              : setCustomerID(e.target.value)
+
+                            setCustomer(undefined)
+                            setBillTo("")
+                            setAddress(areas ? areas[0].name : "")
+                            setLandmark("")
+                          }}
+                          value={
+                            searchByPhone
+                              ? phoneNumber
+                              : customerID === "" ? "" : customerID
+                          }
+                          maxLength={searchByPhone ? 10 : 4}
+                          placeholder={searchByPhone ? "Enter phone number" : "Enter 4-digit ID"}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bill To */}
+                  <div className="space-y-2 pb-5">
+                    <Label>Bill to (name)</Label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <Search className="h-4 w-4" />
+                      </span>
+                      <DebounceInput
+                        minLength={2}
+                        debounceTimeout={800}
+                        disabled={isLoading}
+                        onChange={(e) => {
+                          setBillTo(e.target.value)
+                          searchCustomer(e.target.value)
+                        }}
+                        value={billTo}
+                        placeholder="Search or enter customer name"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent py-1 pl-9 pr-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+
+                      {/* Autocomplete */}
+                      {customersResults.length > 0 && (
+                        <div className="absolute top-full mt-1 z-50 max-h-52 w-full overflow-y-auto rounded-md border bg-white shadow-lg">
+                          {customersResults.map((c: Customer, index: number) => (
+                            <button
+                              type="button"
+                              key={index}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                              onClick={() => {
+                                setCustomerID(c?.userID?.toString() || "")
+                                setCustomer(c)
+                                setBillTo(c.name as string)
+                                setPhoneNumber(c.phone)
+                                setAddress(c.address?.text || "")
+                                setLandmark(c.address?.landmark || "")
+                                setCustomersResults([])
+                              }}
+                            >
+                              <UserRound className="h-4 w-4 shrink-0 text-gray-400" />
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* <p className="text-xs text-gray-400">Name printed on the invoice.</p> */}
+                  </div>
+                </div>
+
+                {/* Customer status */}
+                {customer !== undefined && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {customer === null ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                        <UserPlus className="h-3.5 w-3.5" />
+                        New customer — a profile will be created
+                      </span>
+                    ) : (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Existing customer
+                        </span>
+                        <MarketSegmentBadge segment={customer.marketSegment} />
+                        {customer?.name === undefined && (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Name will be updated
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
+            </Section>
 
-            </div>
+
+            {/* NEW CUSTOMER DETAILS — only shown when creating a customer */}
+            {customer === null && (
+              <Section
+                icon={<UserPlus className="h-5 w-5" />}
+                title="New customer details"
+                description="Captured only when creating a new customer."
+              >
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Jars owned by customer</Label>
+                    <Select
+                      value={String(jarsOwnedByCustomer)}
+                      onValueChange={(v) => setJarsOwnedByCustomer(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4, 5].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Engaged jars</Label>
+                    <Select
+                      value={String(engagedJars)}
+                      onValueChange={(v) => setEngagedJars(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4, 5].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Market segment</Label>
+                    <Select
+                      value={marketSegment}
+                      onValueChange={(v) => setMarketSegment(v as MarketSegment)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MARKET_SEGMENTS.map((segment) => (
+                          <SelectItem key={segment.id} value={segment.id}>
+                            {segment.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </Section>
+            )}
+
+            {/* ORDER DETAILS */}
+            <Section
+              icon={<CalendarDays className="h-5 w-5" />}
+              title="Order details"
+            >
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="space-y-2 flex flex-col">
+                  <Label>Order type</Label>
+                  <Select value={orderType} onValueChange={handleOrderType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="retail">Retail</SelectItem>
+                      <SelectItem value="delivery">Delivery</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 flex flex-col">
+                  <Label>Sale date</Label>
+                  <DatePicker
+                    dateFormat={"dd/MM/yyyy"}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm outline-none transition-colors focus:ring-1 focus:ring-ring"
+                    selected={startDate}
+                    onChange={(date) => {
+
+                      if (!date) return
+
+                      let currentTime = new Date()
+                      let originalDate = new Date(date)
+
+                      originalDate.setHours(currentTime.getHours())
+                      originalDate.setMinutes(currentTime.getMinutes())
+                      originalDate.setSeconds(currentTime.getSeconds())
+                      originalDate.setMilliseconds(currentTime.getMilliseconds())
+
+                      setStartDate(originalDate)
+
+                      setCookie("invoiceSalesDate", originalDate, {
+                        maxAge: 60 * 60 * 24 * 7
+                      })
+
+                    }}
+                  />
+                </div>
+              </div>
+            </Section>
 
 
-            {/* ---------------- JAR DETAILS ---------------- */}
 
-            {customer === null && <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mt-8 mb-2 relative">
-              {/* jarOwnedByCustomer */}
-
-              <div className="flex flex-col gap-2">
-
-                <label className="text-[15px] font-medium text-gray-700">
-                  Jar Owned By Customer
-                </label>
-
-                <select
-                  onChange={(e) => {
-                    setJarsOwnedByCustomer(Number(e.target.value))
+            {/* ITEMS */}
+            <Section
+              icon={<Package className="h-5 w-5" />}
+              title="Items"
+              description="Products included on this invoice."
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setItems([
+                      ...items,
+                      {
+                        name: products ? products[0].name : "jar",
+                        quantity: 0,
+                        price: products
+                          ? orderType === "retail"
+                            ? products[0].price.retail
+                              ? parseInt(products[0].price.retail)
+                              : 0
+                            : products[0].price.delivery
+                              ? parseInt(products[0].price.delivery)
+                              : 0
+                          : 30,
+                        total: 0,
+                      },
+                    ]);
                   }}
-                  className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
                 >
-                  <option value="0">0</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
-
-              {/* Engaged Jars */}
-              <div className="flex flex-col gap-2">
-
-                <label className="text-[15px] font-medium text-gray-700">
-                  Engaged Jars
-                </label>
-
-                <select
-                  onChange={(e) => {
-                    setEngagedJars(Number(e.target.value))
-                  }}
-                  className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
-                >
-                  <option value="0">0</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
-            </div>}
-
-            {/* ---------------- ORDER DETAILS ---------------- */}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-
-              {/* Order Type */}
-              <div className="flex flex-col gap-2">
-
-                <label className="text-[15px] font-medium text-gray-700">
-                  Order Type
-                </label>
-
-                <select
-                  onChange={handleOrderType}
-                  className="border rounded-lg px-3 py-2 text-[15px] focus:ring-2 focus:ring-gray-200 outline-none"
-                >
-                  <option selected={orderType === "retail"} value="retail">
-                    Retail
-                  </option>
-
-                  <option selected={orderType === "delivery"} value="delivery">
-                    Delivery
-                  </option>
-
-                </select>
-
-              </div>
-
-
-              {/* Date */}
-              <div className="flex flex-col gap-2">
-
-                <label className="text-[15px] font-medium text-gray-700">
-                  Sale Date
-                </label>
-
-                <DatePicker
-                  dateFormat={"dd/MM/yyyy"}
-                  className="border rounded-lg bg-gray-50 px-3 py-2 text-[15px] w-full focus:ring-2 focus:ring-gray-200 outline-none"
-                  selected={startDate}
-                  onChange={(date) => {
-
-                    if (!date) return
-
-                    let currentTime = new Date()
-                    let originalDate = new Date(date)
-
-                    originalDate.setHours(currentTime.getHours())
-                    originalDate.setMinutes(currentTime.getMinutes())
-                    originalDate.setSeconds(currentTime.getSeconds())
-                    originalDate.setMilliseconds(currentTime.getMilliseconds())
-
-                    setStartDate(originalDate)
-
-                    setCookie("invoiceSalesDate", originalDate, {
-                      maxAge: 60 * 60 * 24 * 7
-                    })
-
-                  }}
-                />
-
-              </div>
-
-            </div>
-
-
-
-            {/* ---------------- ITEMS TABLE ---------------- */}
-
-            <div className="mt-10 border rounded-xl overflow-hidden">
-
-              <div className="overflow-x-auto">
-
-                <table className="w-full min-w-[700px] text-[15px]">
-
-                  <thead className="bg-gray-50 border-b">
-
-                    <tr>
-                      <th className="px-4 py-3 text-gray-600 font-medium">#</th>
-                      <th className="px-4 py-3 text-gray-600 font-medium">Item</th>
-                      <th className="px-4 py-3 text-gray-600 font-medium">Qty</th>
-                      <th className="px-4 py-3 text-gray-600 font-medium">Price</th>
-                      <th className="px-4 py-3 text-gray-600 font-medium">Total</th>
-                      <th></th>
-                    </tr>
-
-                  </thead>
-
-
-                  <tbody className="divide-y">
-
-                    {items.map((item, index) => {
-
-                      return (
-
-                        <tr key={index} className="hover:bg-gray-50">
-
-                          <td className="px-4 py-3">{index + 1}</td>
-
-                          <td className="px-4 py-3">
-
-                            <select
-                              onChange={(e) => {
-
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add item
+                </Button>
+              }
+            >
+              {items.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
+                  No items yet. Click “Add item” to get started.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[620px] text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                        <th className="w-10 px-3 py-2 font-medium">#</th>
+                        <th className="px-3 py-2 font-medium">Item</th>
+                        <th className="w-28 px-3 py-2 font-medium">Qty</th>
+                        <th className="w-24 px-3 py-2 font-medium">Price</th>
+                        <th className="w-28 px-3 py-2 text-right font-medium">Total</th>
+                        <th className="w-12 px-3 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {items.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50/60">
+                          <td className="px-3 py-2 text-gray-400">{index + 1}</td>
+                          <td className="px-3 py-2">
+                            <Select
+                              value={item.name}
+                              onValueChange={(value) => {
                                 const newItems = [...items]
-
-                                newItems[index].name = e.target.value
-
+                                newItems[index].name = value
                                 const product = products?.find(
-                                  (product: Product) => product.name === e.target.value
+                                  (product: Product) => product.name === value
                                 )
-
                                 if (product === undefined) return
-
                                 if (orderType === "retail") {
                                   newItems[index].price = parseInt(product?.price.retail as string) || 0
                                 }
                                 else if (orderType === "delivery") {
                                   newItems[index].price = 30
                                 }
-
                                 newItems[index].price =
                                   parseInt(product?.price.delivery as string) || 0
-
                                 newItems[index].total =
                                   newItems[index].quantity * newItems[index].price
-
                                 setItems(newItems)
-
                               }}
-                              className="border rounded-lg px-3 py-2 text-[15px] w-full"
                             >
-
-                              {products?.map((product: Product) => (
-                                <option key={product._id} value={product.name}>
-                                  {product.name}
-                                </option>
-                              ))}
-
-                            </select>
-
+                              <SelectTrigger className="min-w-[150px]">
+                                <SelectValue placeholder="Select item" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products?.map((product: Product) => (
+                                  <SelectItem key={product._id} value={product.name}>
+                                    {product.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </td>
-
-
-                          <td className="px-4 py-3">
-
-                            <input
+                          <td className="px-3 py-2">
+                            <Input
                               type="number"
                               value={item.quantity}
                               onChange={(e) => {
-
                                 const newItems = [...items]
-
                                 newItems[index].quantity = parseInt(e.target.value)
-
                                 newItems[index].total =
                                   parseInt(e.target.value) *
                                   (customer?.profileRate
                                     ? customer?.profileRate
                                     : newItems[index].price)
-
                                 setItems(newItems)
-
                               }}
-                              className="w-20 border rounded-lg px-3 py-2"
+                              className="w-24"
                             />
-
                           </td>
-
-
-                          <td className="px-4 py-3">
-
-                            @{item.name === "Refill"
-                              ? customer?.profileRate
-                              : item.price}
-
+                          <td className="px-3 py-2 text-gray-600">
+                            ₹{item.name === "Refill" ? customer?.profileRate : item.price}
                           </td>
-
-
-                          <td className="px-4 py-3 font-semibold">
-
+                          <td className="px-3 py-2 text-right font-semibold text-gray-900">
                             <CurrencyFormat
                               value={isNaN(item.total) ? 0 : item.total}
                               displayType={"text"}
@@ -925,174 +1002,122 @@ const Invoice = () => {
                               prefix={"₹"}
                               renderText={(value: string) => <>{value}</>}
                             />
-
                           </td>
-
-
-                          <td className="px-4 py-3">
-
-                            <button
+                          <td className="px-3 py-2 text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-gray-400 hover:text-red-600"
                               onClick={() => {
-
                                 const newItems = [...items]
-
                                 newItems.splice(index, 1)
-
                                 setItems(newItems)
-
                               }}
-                              className="p-2 rounded-lg hover:bg-red-50 text-red-500"
                             >
-                              <MdOutlineDeleteForever className="w-5 h-5" />
-                            </button>
-
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </td>
-
                         </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Section>
 
-                      )
-
-                    })}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-
-            </div>
-
-
-
-            {/* Add Item */}
-            <button
-              onClick={() => {
-                setItems([
-                  ...items,
-                  {
-                    name: products ? products[0].name : "jar",
-                    quantity: 0,
-                    price: products
-                      ? orderType === "retail"
-                        ? products[0].price.retail
-                          ? parseInt(products[0].price.retail)
-                          : 0
-                        : products[0].price.delivery
-                          ? parseInt(products[0].price.delivery)
-                          : 0
-                      : 30,
-                    total: 0,
-                  },
-                ]);
-              }}
-              className="flex items-center gap-2 mt-4 text-[15px] font-medium text-blue-600 hover:text-blue-700"
+            {/* DELIVERY & DRIVER */}
+            <Section
+              icon={<Truck className="h-5 w-5" />}
+              title="Delivery & driver"
             >
-              <RiAddCircleLine className="w-5 h-5" />
-              Add Item
-            </button>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                {orderType !== "retail" && customer === null && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Area</Label>
+                      <Select value={address} onValueChange={(v) => setAddress(v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {areas?.map((area) => (
+                            <SelectItem
+                              key={area._id}
+                              value={area.name}
+                              disabled={!area.serviceable}
+                            >
+                              {area.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            {/* Delivery Details */}
-            {orderType === "retail" ? null : customer === null ? (
-              <div className="flex flex-col mt-8 pt-6 border-t border-gray-200">
+                    <div className="space-y-2">
+                      <Label>Landmark</Label>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                          <MapPin className="h-4 w-4" />
+                        </span>
+                        <Input
+                          value={landmark}
+                          onChange={(e) => setLandmark(e.target.value)}
+                          placeholder="Nearby landmark"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                <h3 className="text-[15px] font-semibold text-gray-800 mb-4">
-                  Delivery Details
-                </h3>
-
-                {/* Address */}
-                <div className="flex flex-col gap-2">
-
-                  <label className="text-[15px] font-medium text-gray-700">
-                    Area
-                  </label>
-
-                  <select
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
+                <div className="space-y-2">
+                  <Label>Driver</Label>
+                  <Select
+                    value={driverID}
+                    onValueChange={(v) => {
+                      setDriverID(v);
+                      setCookie("_selectedDriverID", v);
+                    }}
                   >
-                    {areas?.map((area) => (
-                      <option
-                        key={area._id}
-                        value={area.name}
-                        disabled={!area.serviceable}
-                        selected={address === area.name}
-                      >
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select driver" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers?.map((driver) => (
+                        <SelectItem key={driver._id} value={driver._id}>
+                          {driver.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-
-                {/* Landmark */}
-                <div className="flex flex-col gap-2 mt-5">
-
-                  <label className="text-[15px] font-medium text-gray-700">
-                    Landmark
-                  </label>
-
-                  <input
-                    onChange={(e) => setLandmark(e.target.value)}
-                    value={landmark}
-                    type="text"
-                    placeholder="Nearby landmark"
-                    className="border rounded-lg px-3 py-2 text-[15px] bg-white focus:ring-2 focus:ring-gray-200 outline-none"
-                  />
-
-                </div>
-
               </div>
-            ) : null}
-
-            {/* Driver */}
-            <div className="flex flex-col mt-8">
-              <label className="text-[15px] font-medium text-gray-700">
-                Driver
-              </label>
-
-              <select
-                value={driverID}
-                onChange={(e) => {
-                  setDriverID(e.target.value);
-                  setCookie("_selectedDriverID", e.target.value);
-                }}
-                className="border rounded-lg px-3 py-2 mt-2 text-[15px]"
-              >
-                {drivers?.map((driver) => (
-                  <option key={driver._id} value={driver._id}>
-                    {driver.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+            </Section>
           </div>
 
-
-          {/* SUMMARY PANEL */}
-
-          <div className="w-full xl:w-[30%]">
-
-            <Summary
-              items={items}
-              isPartialPayment={isPartialPayment}
-              setIsPartialPayment={setIsPartialPayment}
-              partialPayment={partialPayment}
-              setPartialPayment={setPartialPayment}
-              handleGenerateBill={handleGenerateBill}
-              total={total}
-              discount={discount}
-              setDiscount={setDiscount}
-              setTotal={setTotal}
-              isLoading={isLoading}
-              subTotal={subTotal}
-              tax={tax}
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-              paymentPlan={customer?.paymentPlan}
-            />
-
+          {/* RIGHT: order summary */}
+          <div className="xl:col-span-1">
+            <div className="xl:sticky xl:top-6">
+              <Summary
+                items={items}
+                isPartialPayment={isPartialPayment}
+                setIsPartialPayment={setIsPartialPayment}
+                partialPayment={partialPayment}
+                setPartialPayment={setPartialPayment}
+                handleGenerateBill={handleGenerateBill}
+                total={total}
+                discount={discount}
+                setDiscount={setDiscount}
+                setTotal={setTotal}
+                isLoading={isLoading}
+                subTotal={subTotal}
+                tax={tax}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                paymentPlan={customer?.paymentPlan}
+              />
+            </div>
           </div>
 
         </div>

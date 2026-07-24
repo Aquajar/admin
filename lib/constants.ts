@@ -186,6 +186,17 @@ const monthsInAnYear = [
   "December",
 ];
 
+export const MARKET_SEGMENTS = [
+  { id: "b2c", label: "Individual (B2C)", description: "Households and individuals buying for personal use" },
+  { id: "b2b", label: "Business (B2B)", description: "Companies buying for operations or resale" },
+  { id: "b2g", label: "Government (B2G)", description: "Departments, municipalities, PSUs — tender based" },
+  { id: "b2b2c", label: "Reseller (B2B2C)", description: "Distributors and retailers selling onward to consumers" },
+  { id: "inst", label: "Institutional", description: "Schools, hospitals, hotels, offices — contract based" },
+  { id: "ngo", label: "Non-profit", description: "Trusts, societies, NGOs" },
+] as const;
+
+export type MarketSegment = (typeof MARKET_SEGMENTS)[number]["id"];
+
 export const customModalStyles = {
   overlay: {
     backgroundColor: "rgba(0, 0, 0, 0.5)",

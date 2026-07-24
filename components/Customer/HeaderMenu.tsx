@@ -2,6 +2,7 @@
 
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance"
 import { Area, Customer, Invoice } from "@/types/types"
+import { MARKET_SEGMENTS, MarketSegment } from "@/lib/constants"
 import { getCookie, setCookie } from "cookies-next"
 import { useSession } from "next-auth/react"
 import React, { ChangeEvent, Dispatch, SetStateAction, useEffect, useState } from "react"
@@ -36,6 +37,8 @@ interface HeaderMenuProps {
   setSortByRegularity: Dispatch<SetStateAction<"all" | "true" | "false">>
   setSortByArea: Dispatch<SetStateAction<"all" | Area["name"]>>
   sortByArea: Area["name"]
+  sortBySegment: "all" | MarketSegment
+  onSegmentChange: (segment: "all" | MarketSegment) => void
   loading: boolean
 }
 
@@ -50,6 +53,8 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   setSortByRegularity,
   setSortByArea,
   sortByArea,
+  sortBySegment,
+  onSegmentChange,
   loading,
 }) => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -113,7 +118,7 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
         {/* Search */}
         <form onSubmit={handleSearch} className="relative flex col-span-2">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -185,6 +190,27 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
               {areas?.map((area, idx) => (
                 <SelectItem key={idx} value={area.name}>
                   {area.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Market Segment (server-side filter, keeps pagination) */}
+        <div>
+          <Label className="text-xs mb-1">Segment</Label>
+          <Select
+            value={sortBySegment}
+            onValueChange={(val: "all" | MarketSegment) => onSegmentChange(val)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {MARKET_SEGMENTS.map((segment) => (
+                <SelectItem key={segment.id} value={segment.id}>
+                  {segment.label}
                 </SelectItem>
               ))}
             </SelectContent>

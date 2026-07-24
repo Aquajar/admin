@@ -1,3 +1,5 @@
+import type { MarketSegment } from "@/lib/constants";
+
 export type SideBarItem = {
   name: string;
   icon: IconType;
@@ -23,6 +25,7 @@ export interface Customer {
   isRegular: boolean;
   jarOwnedByCustomer?: number;
   engagedJars?: number;
+  marketSegment?: MarketSegment;
   isCardReceived: boolean;
   paymentPlan: string;
   profileRate: number | null;
