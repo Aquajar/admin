@@ -3,6 +3,9 @@ import Link from "next/link";
 import React, { FC } from "react";
 
 const BreadCrumb: FC<BreadCrumbProps> = ({ items }) => {
+  // No items → render nothing (and take no vertical space).
+  if (!items || items.length === 0) return null;
+
   return (
     <nav
       className="flex px-5 py-0.5 text-gray-700 border border-gray-200 rounded-lg bg-gray-50 w-fit mb-3"

@@ -141,6 +141,48 @@ export interface BreadCrumbProps {
   }[];
 }
 
+export interface VehicleLog {
+  _id?: string;
+  date: string; // ISO date
+  departureTime: string; // "HH:mm"
+  arrivalTime: string; // "HH:mm"
+  out: number;
+  returned: number; // "Return"
+  engaged: number; // returned - out (derived)
+  filled: number;
+  empty: number; // returned - filled (derived)
+  recorded: number;
+  cash: number;
+  staff: string[];
+  location: string[];
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VehicleLogAnalytics {
+  range: { start: string; end: string };
+  totals: {
+    trips: number;
+    out: number;
+    returned: number;
+    filled: number;
+    empty: number;
+    engaged: number;
+    recorded: number;
+    cash: number;
+  };
+  byDay: {
+    date: string;
+    trips: number;
+    out: number;
+    filled: number;
+    cash: number;
+  }[];
+  topLocations: { name: string; trips: number }[];
+  topStaff: { name: string; trips: number }[];
+}
+
 interface MonthlyData {
   month: string; // The name of the month (e.g., "February")
   sales: number; // Total sales for the month

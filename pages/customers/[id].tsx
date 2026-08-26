@@ -2,6 +2,7 @@ import { Accordion, AccordionItem } from "@/components/Accordion";
 import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
 import GenerateBillDialog from "@/components/Customer/GenerateBillDialog";
+import WaterCardDialog from "@/components/Customer/WaterCardDialog";
 import Statistics from "@/components/Customer/Statistics";
 import { Button } from "@/components/ui/button";
 import Wrapper from "@/components/Wrapper";
@@ -483,6 +484,11 @@ const CustomerInvoicesData = () => {
             ))}
           </ul>
           <div className="mr-5 flex items-center gap-4">
+            <WaterCardDialog
+              customer={customer}
+              customerID={selectedCustomerID}
+              axiosInstance={axiosInstance}
+            />
             <GenerateBillDialog
               customer={customer}
               monthwiseSummaries={monthwiseSummaries}
