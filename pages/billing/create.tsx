@@ -154,7 +154,6 @@ const Invoice = () => {
     const { data } = await axiosInstance.get(
       process.env.NEXT_PUBLIC_API_URL! + "/staff?status=active&type=driver"
     );
-    setCookie("_driversD", data);
     setDrivers(data);
   };
 
@@ -199,20 +198,13 @@ const Invoice = () => {
   //   }
   // }, [recentInvoices]);
 
-  // Fetch driver information from cookies
+  // Always fetch a fresh active-driver list so a stale cache can't surface
+  // drivers who have since been deactivated.
   useEffect(() => {
     if (drivers === undefined && session) {
-      let rawData = getCookie("_driversD");
-      let selectedDriverID = getCookie("_selectedDriverID");
-
+      const selectedDriverID = getCookie("_selectedDriverID");
       setDriverID(selectedDriverID);
-
-      if (rawData === undefined) {
-        getDrivers();
-      } else {
-        let parsedData = rawData ? JSON.parse(rawData) : [];
-        setDrivers(parsedData);
-      }
+      getDrivers();
     }
   }, [drivers, session]);
 
@@ -1084,11 +1076,13 @@ const Invoice = () => {
                       <SelectValue placeholder="Select driver" />
                     </SelectTrigger>
                     <SelectContent>
-                      {drivers?.map((driver) => (
-                        <SelectItem key={driver._id} value={driver._id}>
-                          {driver.name}
-                        </SelectItem>
-                      ))}
+                      {drivers
+                        ?.filter((driver) => driver.status === "active")
+                        .map((driver) => (
+                          <SelectItem key={driver._id} value={driver._id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

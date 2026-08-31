@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Car,
 } from "lucide-react";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
@@ -52,24 +53,6 @@ const monthLabel = (key: string) => {
 };
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
-
-// Column-group header colours, matching the source spreadsheet.
-const HEAD_BG: Record<string, string> = {
-  "#": "bg-[#ffff00]",
-  Date: "bg-[#ffff00]",
-  "Dep.": "bg-[#ffff00]",
-  "Arr.": "bg-[#ffff00]",
-  Out: "bg-[#f6b26b]",
-  Return: "bg-[#f6b26b]",
-  Engaged: "bg-[#f6b26b]",
-  Filled: "bg-[#93c47d]",
-  Empty: "bg-[#93c47d]",
-  Recorded: "bg-[#93c47d]",
-  Cash: "bg-[#fff2cc]",
-  Staff: "bg-[#f3f3f3]",
-  Location: "bg-[#f3f3f3]",
-  "": "bg-[#f3f3f3]",
-};
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso);
@@ -212,11 +195,13 @@ const VehicleLogPage = () => {
         {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Vehicle Log</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#0A0A0A]">
+              Vehicle Log
+            </h1>
+            <p className="text-[15px] text-[#6B7280]">
               {monthLabel(month)}
               {isCurrentMonth && (
-                <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                <span className="ml-2 rounded-full bg-green-100 px-2.5 py-0.5 text-[13px] font-medium text-green-800">
                   Current month
                 </span>
               )}
@@ -228,7 +213,7 @@ const VehicleLogPage = () => {
             <select
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-44 shrink-0 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700"
+              className="h-11 w-44 shrink-0 rounded-xl border border-[#EAEAEA] bg-white px-3 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
             >
               {monthOptions.map((m) => (
                 <option key={m} value={m}>
@@ -239,9 +224,9 @@ const VehicleLogPage = () => {
 
             <Button
               variant="outline"
-              size="icon"
               onClick={refreshAll}
               title="Refresh"
+              className="h-11 w-11 rounded-xl border-[#EAEAEA] p-0 text-[#6B7280] shadow-none hover:bg-[#FAFAFA]"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -250,6 +235,7 @@ const VehicleLogPage = () => {
               variant="outline"
               onClick={() => handleExport("xlsx")}
               disabled={exporting !== null}
+              className="h-11 rounded-xl border-[#EAEAEA] px-5 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
             >
               {exporting === "xlsx" ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -262,6 +248,7 @@ const VehicleLogPage = () => {
               variant="outline"
               onClick={() => handleExport("pdf")}
               disabled={exporting !== null}
+              className="h-11 rounded-xl border-[#EAEAEA] px-5 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
             >
               {exporting === "pdf" ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -276,7 +263,7 @@ const VehicleLogPage = () => {
                 setEditing(null);
                 setDialogOpen(true);
               }}
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className="h-11 rounded-xl bg-[#2563EB] px-5 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8]"
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Log
@@ -286,7 +273,7 @@ const VehicleLogPage = () => {
 
         {/* Analysis */}
         <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <h2 className="mb-3 text-base font-semibold text-[#0A0A0A]">
             Analysis
           </h2>
           <AnalysisPanel analytics={analytics} loading={loading} />
@@ -295,17 +282,17 @@ const VehicleLogPage = () => {
         {/* Logs table */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Trips ({logs.length})
+            <h2 className="text-base font-semibold text-[#0A0A0A]">
+              Trips <span className="font-normal text-[#9CA3AF]">({logs.length})</span>
             </h2>
           </div>
 
           <div
             ref={tableScrollRef}
-            className="w-full max-h-[32rem] overflow-auto rounded-lg border border-slate-300 shadow-sm"
+            className="w-full max-h-[32rem] overflow-auto rounded-2xl border border-[#EAEAEA] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
           >
-            <table className="w-full min-w-[1050px] border-collapse text-[15px] [&_td]:border [&_td]:border-slate-200 [&_th]:border [&_th]:border-slate-300">
-              <thead className="sticky top-0 z-10 text-xs font-bold uppercase tracking-wide text-slate-800">
+            <table className="w-full min-w-[1050px] text-[15px]">
+              <thead className="sticky top-0 z-10 text-[15px] font-medium text-[#0A0A0A]">
                 <tr>
                   {[
                     "#", "Date", "Dep.", "Arr.", "Out", "Return",
@@ -314,9 +301,7 @@ const VehicleLogPage = () => {
                   ].map((h, i) => (
                     <th
                       key={i}
-                      className={`whitespace-nowrap px-4 py-3 ${
-                        HEAD_BG[h] ?? "bg-[#f3f3f3]"
-                      } ${
+                      className={`whitespace-nowrap border-b border-[#EAEAEA] bg-[#FAFAFA] px-4 py-4 font-medium ${
                         ["Out", "Return", "Engaged", "Filled", "Empty", "Recorded", "Cash"].includes(h)
                           ? "text-right"
                           : "text-left"
@@ -330,83 +315,87 @@ const VehicleLogPage = () => {
               <tbody>
                 {logs.map((log, idx) => {
                   return (
-                    <tr key={log._id} className="transition hover:brightness-95">
-                      <td className="bg-white px-4 py-3 text-slate-400">
-                        {idx + 1}
-                      </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-3 font-semibold text-slate-800">
+                    <tr
+                      key={log._id}
+                      className="border-b border-[#EAEAEA] transition-colors hover:bg-[#FAFAFA]"
+                    >
+                      <td className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</td>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium text-[#0A0A0A]">
                         {fmtDate(log.date)}
                       </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-3 text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
                         {log.departureTime || "—"}
                       </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-3 text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
                         {log.arrivalTime || "—"}
                       </td>
-                      <td className="bg-[#fce5cd] px-4 py-3 text-right font-medium text-slate-800">
-                        {log.out}
-                      </td>
-                      <td className="bg-[#fce5cd] px-4 py-3 text-right text-slate-800">
+                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.out}</td>
+                      <td className="px-4 py-3 text-right text-[#0A0A0A]">
                         {log.returned}
                       </td>
                       <td
-                        className={`bg-[#fce5cd] px-4 py-3 text-right font-medium ${
-                          log.engaged < 0 ? "text-red-700" : "text-slate-700"
+                        className={`px-4 py-3 text-right ${
+                          log.engaged < 0 ? "text-[#DC2626]" : "text-[#0A0A0A]"
                         }`}
                       >
                         {log.engaged}
                       </td>
-                      <td className="bg-[#d9ead3] px-4 py-3 text-right font-medium text-slate-800">
-                        {log.filled}
-                      </td>
-                      <td className="bg-[#d9ead3] px-4 py-3 text-right text-slate-800">
-                        {log.empty}
-                      </td>
-                      <td className="bg-[#d9ead3] px-4 py-3 text-right text-slate-800">
+                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.filled}</td>
+                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.empty}</td>
+                      <td className="px-4 py-3 text-right text-[#0A0A0A]">
                         {log.recorded}
                       </td>
-                      <td className="bg-[#fff2cc] px-4 py-3 text-right font-semibold text-slate-800">
-                        {log.cash ? inr(log.cash) : <span className="text-slate-400">—</span>}
+                      <td className="px-4 py-3 text-right font-medium text-[#0A0A0A]">
+                        {log.cash ? inr(log.cash) : <span className="text-[#9CA3AF]">—</span>}
                       </td>
-                      <td className="bg-white px-4 py-3">
+                      <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {(log.staff || []).map((s) => (
-                            <span
-                              key={s}
-                              className="rounded bg-slate-100 px-2 py-0.5 text-[13px] text-slate-700"
-                            >
-                              {s}
-                            </span>
-                          ))}
+                          {(log.staff || []).map((s) => {
+                            const isDriver = log.driver === s;
+                            return (
+                              <span
+                                key={s}
+                                title={isDriver ? "Driver" : undefined}
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] ${
+                                  isDriver
+                                    ? "bg-blue-100 font-medium text-blue-800"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {isDriver && <Car className="h-3 w-3" />}
+                                {s}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
-                      <td className="bg-white px-4 py-3">
+                      <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(log.location || []).map((l) => (
                             <span
                               key={l}
-                              className="rounded bg-slate-100 px-2 py-0.5 text-[13px] text-slate-700"
+                              className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] text-slate-600"
                             >
                               {l}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="whitespace-nowrap bg-white px-4 py-3">
+                      <td className="whitespace-nowrap px-4 py-3">
                         <div className="flex gap-1">
                           <button
                             onClick={() => {
                               setEditing(log);
                               setDialogOpen(true);
                             }}
-                            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
+                            className="rounded-lg p-1.5 text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
                             title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => setDeleteTarget(log)}
-                            className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                            className="rounded-lg p-1.5 text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -419,9 +408,9 @@ const VehicleLogPage = () => {
               </tbody>
               {logs.length > 0 && totals && (
                 <tfoot className="sticky bottom-0 z-10">
-                  <tr className="border-t-2 border-slate-400 font-bold text-slate-800 [&>td]:bg-[#c9daf8]">
+                  <tr className="border-t border-[#EAEAEA] font-semibold text-[#0A0A0A] [&>td]:bg-[#FAFAFA]">
                     <td className="px-4 py-3" colSpan={4}>
-                      TOTAL
+                      Total
                     </td>
                     <td className="px-4 py-3 text-right">{totals.out}</td>
                     <td className="px-4 py-3 text-right">{totals.returned}</td>
@@ -451,7 +440,7 @@ const VehicleLogPage = () => {
                     setEditing(null);
                     setDialogOpen(true);
                   }}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  className="h-11 rounded-xl bg-[#2563EB] px-5 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8]"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add the first log

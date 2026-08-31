@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useMemo, useState } from "react";
 import type { AxiosInstance } from "axios";
 import toast from "react-hot-toast";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Car } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +64,7 @@ const AddLogDialog: FC<Props> = ({
   const [recorded, setRecorded] = useState("");
   const [cash, setCash] = useState("");
   const [staff, setStaff] = useState<string[]>([]);
+  const [driver, setDriver] = useState("");
   const [location, setLocation] = useState<string[]>([]);
   const [note, setNote] = useState("");
 
@@ -86,6 +87,7 @@ const AddLogDialog: FC<Props> = ({
       setRecorded(String(editing.recorded ?? ""));
       setCash(String(editing.cash ?? ""));
       setStaff(editing.staff || []);
+      setDriver(editing.driver || "");
       setLocation(editing.location || []);
       setNote(editing.note || "");
     } else {
@@ -109,10 +111,18 @@ const AddLogDialog: FC<Props> = ({
       setRecorded("");
       setCash("");
       setStaff([]);
+      setDriver("");
       setLocation([]);
       setNote("");
     }
   }, [open, editing, defaultDate]);
+
+  // Keep the driver valid: clear it if removed from staff; auto-pick the sole
+  // staff member as the driver.
+  useEffect(() => {
+    if (driver && !staff.includes(driver)) setDriver("");
+    else if (!driver && staff.length === 1) setDriver(staff[0]);
+  }, [staff, driver]);
 
   const derivedEngaged = useMemo(() => num(returned) - num(out), [returned, out]);
   const derivedEmpty = useMemo(
@@ -138,6 +148,10 @@ const AddLogDialog: FC<Props> = ({
       toast.error("Date is required");
       return;
     }
+    if (staff.length > 0 && !driver) {
+      toast.error("Mark the driver for this trip");
+      return;
+    }
     setSaving(true);
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
@@ -153,6 +167,7 @@ const AddLogDialog: FC<Props> = ({
         recorded: num(recorded),
         cash: num(cash),
         staff,
+        driver,
         location,
         note,
       };
@@ -278,7 +293,7 @@ const AddLogDialog: FC<Props> = ({
             {numField("Cash (₹)", cash, setCash)}
           </div>
 
-          {/* Staff + location */}
+          {/* Staff + driver + location */}
           <div>
             <Label className="text-xs text-gray-600">Staff</Label>
             <div className="mt-1">
@@ -289,6 +304,41 @@ const AddLogDialog: FC<Props> = ({
                 placeholder="Add staff…"
               />
             </div>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-600">
+              Driver <span className="text-red-500">*</span>
+            </Label>
+            {staff.length === 0 ? (
+              <p className="mt-1 text-[13px] text-gray-400">
+                Add staff first, then mark who drove.
+              </p>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {staff.map((s) => {
+                  const active = driver === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setDriver(s)}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[13px] font-medium transition ${
+                        active
+                          ? "bg-blue-600 text-white"
+                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Car className="h-3.5 w-3.5" />
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <p className="mt-1 text-[11px] text-gray-400">
+              Only the driver is paid the driver rate — everyone else on the trip
+              is paid as labour.
+            </p>
           </div>
           <div>
             <Label className="text-xs text-gray-600">Location</Label>

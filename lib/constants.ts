@@ -4,11 +4,10 @@ import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
 import { FaPeopleGroup } from "react-icons/fa6";
-import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck } from "react-icons/fa";
+import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck, FaRegCalendarCheck } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
-import { LuFuel } from "react-icons/lu";
 import { FiActivity } from "react-icons/fi";
 
 const SidebarItems: SideBarItem[] = [
@@ -49,9 +48,9 @@ const SidebarItems: SideBarItem[] = [
     href: "/hr-manager",
   },
   {
-    name: "Fueling",
-    icon: LuFuel,
-    href: "/fueling",
+    name: "Attendance",
+    icon: FaRegCalendarCheck,
+    href: "/attendance",
   },
   {
     name: "Vehicle Log",

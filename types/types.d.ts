@@ -141,6 +141,61 @@ export interface BreadCrumbProps {
   }[];
 }
 
+export type AttendanceStatus = "P" | "A" | "HD" | "H";
+
+export interface AttendanceRow {
+  employeeID: number;
+  name: string;
+  type?: string;
+  status?: string;
+  days: Record<string, AttendanceStatus>;
+  present: number;
+  absent: number;
+}
+
+export interface AttendanceResponse {
+  year: number;
+  month: number;
+  daysInMonth: number;
+  rows: AttendanceRow[];
+}
+
+export interface TripRates {
+  driver: { airport: number; local: number };
+  labour: { airport: number; local: number };
+}
+
+export interface TripRateConfig {
+  rates: TripRates;
+  airportKeyword: string;
+}
+
+export interface StaffEarning {
+  name: string;
+  role: "driver" | "labour";
+  employeeID?: number | null;
+  matched: boolean;
+  daysWorked: number;
+  trips: number;
+  jars: number;
+  earned: number;
+  perDay: number;
+}
+
+export interface EarningsResponse {
+  range: { start: string; end: string };
+  rates: TripRates;
+  airportKeyword: string;
+  rows: StaffEarning[];
+  totals: {
+    people: number;
+    trips: number;
+    jarsDelivered: number;
+    totalEarned: number;
+    wageCostPerJar: number;
+  };
+}
+
 export interface VehicleLog {
   _id?: string;
   date: string; // ISO date
@@ -155,6 +210,7 @@ export interface VehicleLog {
   cash: number;
   staff: string[];
   location: string[];
+  driver?: string;
   note?: string;
   createdAt?: string;
   updatedAt?: string;

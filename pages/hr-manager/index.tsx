@@ -15,6 +15,7 @@ import {
 import { Staff } from "@/types/types";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import EarningsTab from "@/components/HR/EarningsTab";
 
 
 interface MonthData {
@@ -56,6 +57,7 @@ const HRManager = () => {
   const [selectedID, setSelectedID] = useState<number | null>(null);
   const [staffAttendance, setStaffAttendance] = useState<EmployeeData[] | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [tab, setTab] = useState<"employees" | "earnings">("employees");
 
   const getStaffData = async () => {
     const URL = process.env.NEXT_PUBLIC_API_URL;
@@ -215,13 +217,41 @@ const HRManager = () => {
           </SheetHeader>
         </SheetContent>
       </Sheet>
-      <div className="p-3 border rounded-xl bg-white">
-        <div className="rounded-lg md:p-4">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
-            <h2 className="text-lg font-semibold mb-2 md:mb-0">All Employees</h2>
-            <div className="flex w-full md:w-fit flex-col md:flex-row gap-4">
+
+      {/* Tabs */}
+      <div className="mb-6 flex items-center gap-6 border-b border-[#EAEAEA]">
+        {(
+          [
+            { id: "employees", label: "Employees" },
+            { id: "earnings", label: "Earnings" },
+          ] as { id: "employees" | "earnings"; label: string }[]
+        ).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`-mb-px border-b-2 px-1 py-3 text-[15px] font-medium transition-colors ${
+              tab === t.id
+                ? "border-[#2563EB] text-[#2563EB]"
+                : "border-transparent text-[#6B7280] hover:text-[#0A0A0A]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "earnings" && (
+        <EarningsTab session={session} axiosInstance={axiosInstance} />
+      )}
+
+      {tab === "employees" && (
+      <div className="rounded-2xl border border-[#EAEAEA] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+            <h2 className="text-xl font-semibold text-[#0A0A0A] mb-3 md:mb-0">All Employees</h2>
+            <div className="flex w-full md:w-fit flex-col md:flex-row gap-3">
               <Select defaultValue="all-status">
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="h-11 w-[180px] rounded-xl border-[#EAEAEA] text-[15px] text-[#0A0A0A]">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent className="">
@@ -232,7 +262,7 @@ const HRManager = () => {
               </Select>
 
               <Select defaultValue="all-role">
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="h-11 w-[180px] rounded-xl border-[#EAEAEA] text-[15px] text-[#0A0A0A]">
                   <SelectValue placeholder="All Role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -244,7 +274,7 @@ const HRManager = () => {
 
               <Button
                 variant="outline"
-                className="flex items-center"
+                className="flex h-11 items-center rounded-xl border-[#EAEAEA] px-5 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
               >
                 <PiExport size={18} className="mr-2" />
                 Export
@@ -252,9 +282,9 @@ const HRManager = () => {
             </div>
           </div>
 
-          <div className="relative overflow-x-auto sm:rounded-lg">
-            <table className="w-full text-left">
-              <thead className="uppercase bg-gray-200">
+          <div className="relative overflow-x-auto rounded-xl border border-[#EAEAEA]">
+            <table className="w-full text-left text-[15px]">
+              <thead className="border-b border-[#EAEAEA] bg-[#FAFAFA]">
                 <tr>
                   {/* <th scope="col" className="p-4">
                     <div className="flex items-center">
@@ -268,29 +298,29 @@ const HRManager = () => {
                       </label>
                     </div>
                   </th> */}
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Employee ID
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Name
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Contact
                   </th>
 
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Address
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Joining Date
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Role
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Status
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs">
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Action
                   </th>
                 </tr>
@@ -301,7 +331,7 @@ const HRManager = () => {
                     return (
                       <tr
                         key={staff._id}
-                        className="bg-white border-b  hover:bg-gray-50 "
+                        className="border-b border-[#EAEAEA] transition-colors hover:bg-[#FAFAFA]"
                       >
                         {/* <td className="w-4 p-4">
                           <div className="flex items-center">
@@ -323,51 +353,57 @@ const HRManager = () => {
                           className="flex items-center px-6 py-4 whitespace-nowrap"
                         >
                           <div className="ps-3">
-                            <div className="font-medium text-sm">
+                            <div className="font-medium text-[15px] text-[#0A0A0A]">
                               {staff.employeeID}
                             </div>
                           </div>
                         </th>
-                        <td className="px-6 py-4 text-sm text-black capitalize">
-                          <div className="">
-                            <div className="font-semibold text-sm underline">
-                              {staff.name}
-                            </div>
+                        <td className="px-6 py-4 text-[15px] text-[#0A0A0A]">
+                          <div className="font-medium text-[15px] text-[#0A0A0A] capitalize">
+                            {staff.name}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-black capitalize">
+                        <td className="px-6 py-4 text-[15px] text-[#0A0A0A]">
                           {staff.phone}
                         </td>
-                        <td className="px-6 py-4 text-sm text-black capitalize">
+                        <td className="px-6 py-4 text-[15px] text-[#0A0A0A]">
                           {staff.address}
                         </td>
-                        <td className="px-6 py-4 text-sm text-black capitalize">
+                        <td className="px-6 py-4 text-[15px] text-[#0A0A0A]">
                           {new Date(staff.joiningDate).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-sm text-black">
-                          <button className="border border-gray-300 rounded-md px-3 font-medium py-0.5 capitalize bg-gray-100">
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-block rounded-full px-3 py-1 text-[13px] font-medium capitalize ${
+                              staff.type === "driver"
+                                ? "bg-blue-100 text-blue-900"
+                                : staff.type === "manager"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
                             {staff.type}
-                          </button>
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex items-center capitalize">
-                            <div
-                              className={`h-2.5 w-2.5 rounded-full ${staff.status === "active"
-                                ? "bg-green-500"
-                                : "bg-yellow-500"
-                                } me-2`}
-                            ></div>{" "}
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-block rounded-full px-3 py-1 text-[13px] font-medium capitalize ${
+                              staff.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
                             {staff.status}
-                          </div>
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-6 py-4">
                           <Button
                             variant="outline"
                             onClick={() => {
                               setSelectedID(staff.employeeID);
                               setIsSheetOpen(!isSheetOpen)
                             }}
-                            className="font-medium hover:underline"
+                            className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
                           >
                             View
                           </Button>
@@ -380,6 +416,7 @@ const HRManager = () => {
           </div>
         </div>
       </div>
+      )}
     </Wrapper>
   );
 };
