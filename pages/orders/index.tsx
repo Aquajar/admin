@@ -1,7 +1,7 @@
 import Wrapper from "@/components/Wrapper";
-import { customModalStyles, SidebarItems } from "@/lib/constants";
+import { customModalStyles } from "@/lib/constants";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import { Customer, Item, Order, Product, SideBarItem } from "@/types/types";
+import { Customer, Item, Order, Product } from "@/types/types";
 import axios from "axios";
 import { getCookie } from "cookies-next";
 import { toZonedTime, format } from "date-fns-tz";
@@ -11,7 +11,6 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import toast from "react-hot-toast";
 import { GoKebabHorizontal, GoPlus } from "react-icons/go";
-import { FaShop } from "react-icons/fa6";
 import { MdOutlineDeleteForever } from "react-icons/md";
 import { RiAddCircleLine } from "react-icons/ri";
 import Modal from "react-modal";
@@ -21,14 +20,6 @@ import "@szhsin/react-menu/dist/transitions/slide.css";
 import { useRouter } from "next/router";
 
 Modal.setAppElement("#__next");
-
-const breadCrumbData: SideBarItem[] = [
-  {
-    name: "Orders",
-    href: "/orders",
-    icon: FaShop,
-  },
-];
 
 const Orders = () => {
   const [sort, setSort] = useState<"today" | "all" | "future">("today");
@@ -254,7 +245,7 @@ const Orders = () => {
   const router = useRouter();
 
   return (
-    <Wrapper breadcrumb={breadCrumbData}>
+    <Wrapper>
       {/*
        * Create order model
        */}

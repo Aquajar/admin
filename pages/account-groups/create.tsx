@@ -9,17 +9,6 @@ import axios from "axios";
 import { Customer } from "@/types/types";
 import toast from "react-hot-toast";
 
-const BreadCrumb = [
-  {
-    name: "Account Groups",
-    href: "/account-groups",
-  },
-  {
-    name: "Create Account Group",
-    href: "/account-groups/create",
-  },
-];
-
 const Create = () => {
   const [accountGroup, setAccountGroup] = useState({
     accountGroupName: "",
@@ -114,7 +103,7 @@ const Create = () => {
   };
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="w-full h-full mb-20 flex items-center justify-center">
         {/* Form */}
         <div className="flex flex-col bg-white rounded-xl p-8 mt-4 md:w-1/2">

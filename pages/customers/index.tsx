@@ -84,13 +84,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 
-const BreadCrumb = [
-  {
-    name: "Customers",
-    href: "/customers",
-  },
-];
-
 const Customers = () => {
   const { customers, setCustomers, customersState, setCustomersState } = useCustomersStore();
   const [limit, setLimit] = useState(20);
@@ -526,7 +519,7 @@ const Customers = () => {
   }, [customers, invoices]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       {/*
        * Render Search Bar
        */}

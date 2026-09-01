@@ -33,9 +33,6 @@ import {
   exportVehicleLogPDF,
 } from "@/components/VehicleLog/vehicleLogExport";
 
-// No breadcrumb — the page has its own "Vehicle Log" heading.
-const BreadCrumb: { name: string; href: string }[] = [];
-
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -190,7 +187,7 @@ const VehicleLogPage = () => {
   const isCurrentMonth = month === currentMonthKey();
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="flex w-full flex-col gap-3">
         {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

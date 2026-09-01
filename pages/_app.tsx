@@ -1,4 +1,6 @@
-import Sidebar from "@/components/Sidebar";
+import AppSidebar from "@/components/Sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useRouter } from "next/router";
 import { StoreProvider as CustomerStoreProvider } from "@/store/customers.store";
 import { StoreProvider as InvoiceStoreProvider } from "@/store/invoices.store";
 import { StoreProvider as AuthUserStoreProvider } from "@/store/authUser.store";
@@ -18,6 +20,21 @@ export default function App({
   pageProps: { session, ...pageProps },
 }: AppProps) {
   const queryClient = new QueryClient();
+  const router = useRouter();
+  const isAuthPage = router.pathname.includes("/auth/login");
+
+  const content = (
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      <Component {...pageProps} />
+      <ProgressBar
+        height="4px"
+        color="#2463EB"
+        options={{ showSpinner: false }}
+        shallowRouting
+      />
+    </>
+  );
 
   return (
     <SessionProvider session={session}>
@@ -31,17 +48,16 @@ export default function App({
             <ActivityStoreProvider>
               <InvoiceStoreProvider>
                 <QueryClientProvider client={queryClient}>
-                  <div className="bg-[#FFFFFF]">
-                    <Toaster position="top-center" reverseOrder={false} />
-                    <Sidebar />
-                    <Component {...pageProps} />
-                    <ProgressBar
-                      height="4px"
-                      color="#2463EB"
-                      options={{ showSpinner: false }}
-                      shallowRouting
-                    />
-                  </div>
+                  {isAuthPage ? (
+                    <div className="bg-[#FFFFFF]">{content}</div>
+                  ) : (
+                    <SidebarProvider>
+                      <AppSidebar />
+                      <SidebarInset className="bg-[#FFFFFF]">
+                        {content}
+                      </SidebarInset>
+                    </SidebarProvider>
+                  )}
                   {process.env.NODE_ENV === "development" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                   )}

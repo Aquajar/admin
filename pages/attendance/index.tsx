@@ -11,8 +11,6 @@ import {
   AttendanceStatus,
 } from "@/types/types";
 
-const BreadCrumb: { name: string; href: string }[] = [];
-
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -165,7 +163,7 @@ const AttendancePage = () => {
   const totalAbsent = rows.reduce((s, r) => s + r.absent, 0);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="flex w-full flex-col gap-4">
         {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

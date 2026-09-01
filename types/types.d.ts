@@ -134,13 +134,6 @@ export interface Invoice {
   driver: string | null | undefined;
 }
 
-export interface BreadCrumbProps {
-  items: {
-    name: string;
-    href: string;
-  }[];
-}
-
 export type AttendanceStatus = "P" | "A" | "HD" | "H";
 
 export interface AttendanceRow {

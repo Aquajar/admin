@@ -8,13 +8,6 @@ import { Activity } from "@/types/types";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 
-const BreadCrumb = [
-  {
-    href: "/activity",
-    name: "Activity",
-  },
-];
-
 const ActivityMain = () => {
   const { activities, setActivities } = useActivityStore();
   const { data: session } = useSession();
@@ -55,7 +48,7 @@ const ActivityMain = () => {
   }, [activities, session]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="w-full flex flex-col md:flow-row mt-5">
         <div className="md:w-[75%] flex flex-col">
           {/* Navigation */}

@@ -17,13 +17,6 @@ import toast from "react-hot-toast";
 import { reportTypes } from "@/lib/constants";
 import CurrencyFormat from "react-currency-format";
 
-const BreadCrumb = [
-  {
-    name: "Reports",
-    href: "/reports",
-  },
-];
-
 const Reports = () => {
   const [startDate, setStartDate] = useState(new Date(new Date()));
   const [endDate, setEndDate] = useState(new Date());
@@ -117,7 +110,7 @@ const Reports = () => {
   }, [areas]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="mb-28">
         {/*
          * Menu

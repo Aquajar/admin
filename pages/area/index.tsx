@@ -6,13 +6,6 @@ import toast from "react-hot-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL + "/area";
 
-const BreadCrumb = [
-  {
-    name: "Service Areas",
-    href: "/area",
-  },
-];
-
 const Areas = () => {
   const [name, setName] = useState("");
   const [serviceable, setserviceable] = useState(true);
@@ -69,7 +62,7 @@ const Areas = () => {
   }, [areas]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="w-full flex flex-col md:flex-row md:space-x-8 justify-between h-full">
         {/*
          * Add Area Form

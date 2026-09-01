@@ -7,13 +7,6 @@ import React, { useEffect } from "react";
 import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 
-const BreadCrumb = [
-  {
-    href: "/products",
-    name: "Products",
-  },
-];
-
 const Products = () => {
   const [products, setProducts] = React.useState<Product[] | null>(null);
   const [newProduct, setNewProduct] = React.useState({
@@ -54,7 +47,7 @@ const Products = () => {
   }, [products]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="relative overflow-x-auto">
         <table className="w-full text-sm text-left rtl:text-right text-gray-900 ">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">

@@ -34,13 +34,6 @@ import DateSelector from "@/components/dashboard/DateSelector";
 import RefillBarChart from "@/components/dashboard/RefillChart";
 
 
-const BreadCrumb = [
-  {
-    href: "/",
-    name: "Home",
-  },
-];
-
 export default function Home() {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
@@ -220,7 +213,7 @@ export default function Home() {
   console.log(data)
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       {/* <Loader visible /> */}
       <Greetings name={user?.name} />
       {/*

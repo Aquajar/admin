@@ -1,11 +1,10 @@
 import Wrapper from "@/components/Wrapper";
 import { STATUS_COLORS } from "@/components/Map/CustomerMap";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
-import { MapCustomer, MapMode, MapStatus, SideBarItem } from "@/types/types";
+import { MapCustomer, MapMode, MapStatus } from "@/types/types";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import React, { useEffect, useMemo, useState } from "react";
-import { FaMapMarkedAlt } from "react-icons/fa";
 import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
 
 // Leaflet touches the DOM directly, so render the map on the client only.
@@ -17,14 +16,6 @@ const CustomerMap = dynamic(() => import("@/components/Map/CustomerMap"), {
     </div>
   ),
 });
-
-const breadCrumbData: SideBarItem[] = [
-  {
-    name: "Map",
-    href: "/map",
-    icon: FaMapMarkedAlt,
-  },
-];
 
 // Legend copy per mode — mirrors the buckets computed on the backend.
 const LEGENDS: Record<MapMode, { status: MapStatus; label: string }[]> = {
@@ -136,7 +127,7 @@ const MapPage = () => {
   );
 
   return (
-    <Wrapper breadcrumb={breadCrumbData}>
+    <Wrapper>
       <div className="flex flex-col w-full">
         {/* Header + mode toggle */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-4">

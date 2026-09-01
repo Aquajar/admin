@@ -51,17 +51,6 @@ interface CustomerSummary {
 const INVOICE_PAGE_SIZE = 20;
 const ACTIVITY_PAGE_SIZE = 20;
 
-const BreadCrumb = [
-  {
-    name: "Customers",
-    href: "/customers",
-  },
-  {
-    name: "Profile",
-    href: "/customers",
-  },
-];
-
 const monthsInAnYear = [
   "January",
   "February",
@@ -460,7 +449,7 @@ const CustomerInvoicesData = () => {
   };
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="flex flex-col w-full">
         {/*
          * Tabs

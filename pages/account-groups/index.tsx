@@ -11,13 +11,6 @@ import { FaUsersBetweenLines } from "react-icons/fa6";
 import { useRouter } from "next/router";
 import { encryptData } from "@/lib/helpers";
 
-const BreadCrumb = [
-  {
-    name: "Account Groups",
-    href: "/account-groups",
-  },
-];
-
 const AccountGroup = () => {
   const [accountGroups, setAccountGroups] = useState<AccoutGroup[] | null>(
     null
@@ -52,7 +45,7 @@ const AccountGroup = () => {
   }, [accountGroups, session]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="md:absolute right-20 md:right-10 flex justify-between space-x-4">
         <Link href={"/account-groups/create"}>
           <button className=" bg-green-400 px-3 shadow-sm py-2 rounded-md flex items-center justify-center">

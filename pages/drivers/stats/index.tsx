@@ -6,13 +6,6 @@ import { Staff } from "@/types/types";
 import PerformanceChart from "@/components/Driver/Charts/PerformanceChart";
 
 
-const BreadCrumb = [
-    {
-        href: "/drivers/stats",
-        name: "Drivers Stats",
-    },
-];
-
 const DriverStats = () => {
     const { data: session } = useSession();
 
@@ -33,7 +26,7 @@ const DriverStats = () => {
     }, [session, data]);
 
     return (
-        <Wrapper breadcrumb={BreadCrumb}>
+        <Wrapper>
             <div className="p-3 border rounded-xl bg-white">
                 <PerformanceChart />
             </div>

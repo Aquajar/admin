@@ -1,27 +1,13 @@
 import Wrapper from "@/components/Wrapper";
-import { SidebarItems } from "@/lib/constants";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useCustomers from "@/lib/hooks/useCustomers";
 import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useCustomersStore } from "@/store/customers.store";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Invoice, SideBarItem } from "@/types/types";
+import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
-
-const breadCrumbData: SideBarItem[] = [
-  {
-    name: "Invoices",
-    href: "/invoices",
-    icon: SidebarItems.filter((item) => item.name === "Invoices")[0].icon,
-  },
-  {
-    name: "Bulk Orders",
-    href: "/invoices/bulk",
-    icon: SidebarItems.filter((item) => item.name === "Invoices")[0].icon,
-  },
-];
 
 const Bulk = () => {
   const { data: session } = useSession();
@@ -53,7 +39,7 @@ const Bulk = () => {
   };
 
   return (
-    <Wrapper breadcrumb={breadCrumbData}>
+    <Wrapper>
       {/*
        * TABLE
        */}

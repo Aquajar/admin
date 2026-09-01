@@ -6,17 +6,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 
-const BreadCrumb = [
-  {
-    name: "Account Groups",
-    href: "/account-groups",
-  },
-  {
-    name: "Profile",
-    href: "/account-groups/profile",
-  },
-];
-
 const Detail = () => {
   const [accountData, setAccountData] = useState<string | null>(null);
   const router = useRouter();
@@ -50,7 +39,7 @@ const Detail = () => {
   }, [router]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="flex w-full">
         <div className="w-full mt-10">
           <div className="overflow-x-auto">

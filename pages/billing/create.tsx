@@ -55,17 +55,6 @@ import useInvoice from "@/lib/hooks/useInvoice";
 import { useInvoicesStore } from "@/store/invoices.store";
 import useAuthUser from "@/lib/hooks/useAuthUser";
 
-const BreadCrumb = [
-  {
-    href: "/billing",
-    name: "Billing",
-  },
-  {
-    href: "/billing/create",
-    name: "Invoice",
-  },
-];
-
 interface ItemProps {
   id: string;
   _id: string;
@@ -591,7 +580,7 @@ const Invoice = () => {
   }, [vehicle]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <div className="mx-auto w-full pb-24">
         {/* Page header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

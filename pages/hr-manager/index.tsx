@@ -41,13 +41,6 @@ interface RawDataRow {
   [key: string]: string | number | undefined;
 }
 
-const BreadCrumb = [
-  {
-    href: "/hr-manager",
-    name: "Human Resouce",
-  },
-];
-
 const HRManager = () => {
   const { data: session } = useSession();
 
@@ -191,7 +184,7 @@ const HRManager = () => {
   }, [staffAttendance, staffs]);
 
   return (
-    <Wrapper breadcrumb={BreadCrumb}>
+    <Wrapper>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-[700px]">
           <SheetHeader className="w-full">

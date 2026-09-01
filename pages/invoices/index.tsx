@@ -3,7 +3,7 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useInvoice from "@/lib/hooks/useInvoice";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useInvoicesStore } from "@/store/invoices.store";
-import { Invoice, SideBarItem } from "@/types/types";
+import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { FiRefreshCcw } from "react-icons/fi";
@@ -11,18 +11,10 @@ import CurrencyFormat from "react-currency-format";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import Link from "next/link";
-import { customModalStyles, SidebarItems } from "@/lib/constants";
+import { customModalStyles } from "@/lib/constants";
 import { beautifyDate } from "@/lib/helpers";
 
 Modal.setAppElement("#__next");
-
-const breadCrumbData: SideBarItem[] = [
-  {
-    name: "Invoices",
-    href: "/invoices",
-    icon: SidebarItems.filter((item) => item.name === "Invoices")[0].icon,
-  },
-];
 
 const Invoices = () => {
   const { data: session } = useSession();
@@ -167,7 +159,7 @@ const Invoices = () => {
   }
 
   return (
-    <Wrapper breadcrumb={breadCrumbData}>
+    <Wrapper>
       {/*
        * EDIT MODAL
        */}
