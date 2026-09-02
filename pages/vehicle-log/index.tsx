@@ -10,6 +10,7 @@ import {
   Trash2,
   Loader2,
   Car,
+  Truck,
 } from "lucide-react";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
@@ -26,6 +27,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import {
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import AnalysisPanel from "@/components/VehicleLog/AnalysisPanel";
 import AddLogDialog from "@/components/VehicleLog/AddLogDialog";
 import {
@@ -195,29 +219,35 @@ const VehicleLogPage = () => {
             <h1 className="text-2xl font-semibold tracking-tight text-[#0A0A0A]">
               Vehicle Log
             </h1>
-            <p className="text-[15px] text-[#6B7280]">
+            <div className="flex items-center text-[15px] text-[#6B7280]">
               {monthLabel(month)}
               {isCurrentMonth && (
-                <span className="ml-2 rounded-full bg-green-100 px-2.5 py-0.5 text-[13px] font-medium text-green-800">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 border-transparent bg-green-100 text-[13px] text-green-800 hover:bg-green-100"
+                >
                   Current month
-                </span>
+                </Badge>
               )}
-            </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Month browse */}
-            <select
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="h-11 w-44 shrink-0 rounded-xl border border-[#EAEAEA] bg-white px-3 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
-            >
-              {monthOptions.map((m) => (
-                <option key={m} value={m}>
-                  {monthLabel(m)}
-                </option>
-              ))}
-            </select>
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="h-11 w-44 shrink-0 rounded-xl border-[#EAEAEA] bg-white text-[15px] font-medium text-[#0A0A0A] shadow-none hover:border-[#D4D4D4] focus:ring-[3px] focus:ring-[#2563EB]/15">
+                {/* Render the label from state — Radix's SelectValue leaves the
+                    trigger blank on first paint until the list mounts. */}
+                <span>{monthLabel(month)}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {monthLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Button
               variant="outline"
@@ -288,137 +318,142 @@ const VehicleLogPage = () => {
             ref={tableScrollRef}
             className="w-full max-h-[32rem] overflow-auto rounded-2xl border border-[#EAEAEA] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
           >
-            <table className="w-full min-w-[1050px] text-[15px]">
-              <thead className="sticky top-0 z-10 text-[15px] font-medium text-[#0A0A0A]">
-                <tr>
+            <table className="w-full min-w-[1050px] caption-bottom text-[15px]">
+              <TableHeader className="sticky top-0 z-10">
+                <TableRow className="hover:bg-transparent">
                   {[
                     "#", "Date", "Dep.", "Arr.", "Out", "Return",
                     "Engaged", "Filled", "Empty", "Recorded", "Cash",
                     "Staff", "Location", "",
                   ].map((h, i) => (
-                    <th
+                    <TableHead
                       key={i}
-                      className={`whitespace-nowrap border-b border-[#EAEAEA] bg-[#FAFAFA] px-4 py-4 font-medium ${
+                      className={`whitespace-nowrap border-b border-[#EAEAEA] bg-[#FAFAFA] px-4 py-4 font-medium text-[#0A0A0A] ${
                         ["Out", "Return", "Engaged", "Filled", "Empty", "Recorded", "Cash"].includes(h)
                           ? "text-right"
                           : "text-left"
-                      }`}
+                      } ${h === "Staff" ? "min-w-[200px]" : ""}`}
                     >
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log, idx) => {
-                  return (
-                    <tr
-                      key={log._id}
-                      className="border-b border-[#EAEAEA] transition-colors hover:bg-[#FAFAFA]"
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log, idx) => (
+                  <TableRow
+                    key={log._id}
+                    className="border-b border-[#EAEAEA] hover:bg-[#FAFAFA]"
+                  >
+                    <TableCell className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-[#0A0A0A]">
+                      {fmtDate(log.date)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
+                      {log.departureTime || "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
+                      {log.arrivalTime || "—"}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.out}</TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">
+                      {log.returned}
+                    </TableCell>
+                    <TableCell
+                      className={`px-4 py-3 text-right ${
+                        log.engaged < 0 ? "text-[#DC2626]" : "text-[#0A0A0A]"
+                      }`}
                     >
-                      <td className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</td>
-                      <td className="whitespace-nowrap px-4 py-3 font-medium text-[#0A0A0A]">
-                        {fmtDate(log.date)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
-                        {log.departureTime || "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
-                        {log.arrivalTime || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.out}</td>
-                      <td className="px-4 py-3 text-right text-[#0A0A0A]">
-                        {log.returned}
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-right ${
-                          log.engaged < 0 ? "text-[#DC2626]" : "text-[#0A0A0A]"
-                        }`}
-                      >
-                        {log.engaged}
-                      </td>
-                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.filled}</td>
-                      <td className="px-4 py-3 text-right text-[#0A0A0A]">{log.empty}</td>
-                      <td className="px-4 py-3 text-right text-[#0A0A0A]">
-                        {log.recorded}
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-[#0A0A0A]">
-                        {log.cash ? inr(log.cash) : <span className="text-[#9CA3AF]">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {(log.staff || []).map((s) => {
-                            const isDriver = log.driver === s;
-                            return (
-                              <span
-                                key={s}
-                                title={isDriver ? "Driver" : undefined}
-                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] ${
-                                  isDriver
-                                    ? "bg-blue-100 font-medium text-blue-800"
-                                    : "bg-slate-100 text-slate-600"
-                                }`}
-                              >
-                                {isDriver && <Car className="h-3 w-3" />}
-                                {s}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {(log.location || []).map((l) => (
-                            <span
-                              key={l}
-                              className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] text-slate-600"
+                      {log.engaged}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.filled}</TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.empty}</TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">
+                      {log.recorded}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right font-medium text-[#0A0A0A]">
+                      {log.cash ? inr(log.cash) : <span className="text-[#9CA3AF]">—</span>}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 min-w-[200px]">
+                      <div className="flex flex-wrap gap-1">
+                        {(log.staff || []).map((s) => {
+                          const isDriver = log.driver === s;
+                          const firstName = s.trim().split(/\s+/)[0] || s;
+                          return (
+                            <Badge
+                              key={s}
+                              variant="secondary"
+                              title={isDriver ? `${s} (Driver)` : s}
+                              className={`text-[13px] ${
+                                isDriver
+                                  ? "border-transparent bg-blue-100 font-medium text-blue-800 hover:bg-blue-100"
+                                  : "border-transparent bg-slate-100 text-slate-600 hover:bg-slate-100"
+                              }`}
                             >
-                              {l}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => {
-                              setEditing(log);
-                              setDialogOpen(true);
-                            }}
-                            className="rounded-lg p-1.5 text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
-                            title="Edit"
+                              {isDriver && <Car className="h-3 w-3" />}
+                              {firstName}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {(log.location || []).map((l) => (
+                          <Badge
+                            key={l}
+                            variant="secondary"
+                            className="border-transparent bg-slate-100 text-[13px] text-slate-600 hover:bg-slate-100"
                           >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(log)}
-                            className="rounded-lg p-1.5 text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
+                            {l}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4 py-3">
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditing(log);
+                            setDialogOpen(true);
+                          }}
+                          title="Edit"
+                          className="size-8 rounded-lg text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(log)}
+                          title="Delete"
+                          className="size-8 rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
               {logs.length > 0 && totals && (
-                <tfoot className="sticky bottom-0 z-10">
-                  <tr className="border-t border-[#EAEAEA] font-semibold text-[#0A0A0A] [&>td]:bg-[#FAFAFA]">
-                    <td className="px-4 py-3" colSpan={4}>
+                <TableFooter className="sticky bottom-0 z-10 border-t border-[#EAEAEA] bg-transparent">
+                  <TableRow className="font-semibold text-[#0A0A0A] hover:bg-transparent [&>td]:bg-[#FAFAFA]">
+                    <TableCell className="px-4 py-3" colSpan={4}>
                       Total
-                    </td>
-                    <td className="px-4 py-3 text-right">{totals.out}</td>
-                    <td className="px-4 py-3 text-right">{totals.returned}</td>
-                    <td className="px-4 py-3 text-right">{totals.engaged}</td>
-                    <td className="px-4 py-3 text-right">{totals.filled}</td>
-                    <td className="px-4 py-3 text-right">{totals.empty}</td>
-                    <td className="px-4 py-3 text-right">{totals.recorded}</td>
-                    <td className="px-4 py-3 text-right">{inr(totals.cash)}</td>
-                    <td colSpan={3} />
-                  </tr>
-                </tfoot>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.out}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.returned}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.engaged}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.filled}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.empty}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{totals.recorded}</TableCell>
+                    <TableCell className="px-4 py-3 text-right">{inr(totals.cash)}</TableCell>
+                    <TableCell colSpan={3} />
+                  </TableRow>
+                </TableFooter>
               )}
             </table>
 
@@ -430,19 +465,29 @@ const VehicleLogPage = () => {
             )}
 
             {!loading && logs.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-gray-500">
-                <p>No logs for {monthLabel(month)}.</p>
-                <Button
-                  onClick={() => {
-                    setEditing(null);
-                    setDialogOpen(true);
-                  }}
-                  className="h-11 rounded-xl bg-[#2563EB] px-5 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8]"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add the first log
-                </Button>
-              </div>
+              <Empty className="border-0 py-12">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Truck />
+                  </EmptyMedia>
+                  <EmptyTitle>No trips logged</EmptyTitle>
+                  <EmptyDescription>
+                    No logs for {monthLabel(month)}.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    onClick={() => {
+                      setEditing(null);
+                      setDialogOpen(true);
+                    }}
+                    className="h-11 rounded-xl bg-[#2563EB] px-5 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8]"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add the first log
+                  </Button>
+                </EmptyContent>
+              </Empty>
             )}
           </div>
         </div>

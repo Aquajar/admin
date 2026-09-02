@@ -7,7 +7,7 @@ interface IProps {
 
 const Card: FC<IProps> = ({ children, title }) => {
   return (
-    <div className="flex w-full justify-between space-y-1 py-3 px-4 bg-white  border  shadow rounded-3xl">
+    <div className="flex w-full justify-between space-y-1 py-4 px-5 bg-white border border-black/5 shadow-sm rounded-2xl">
       {children}
     </div>
   );
