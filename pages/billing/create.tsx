@@ -39,7 +39,6 @@ import toast from "react-hot-toast";
 import {
   Area,
   Customer,
-  Driver,
   Invoice as InvoiceType,
   Item,
   Product,
@@ -123,8 +122,6 @@ const Invoice = () => {
   const [partialPayment, setPartialPayment] = useState<string>("0");
   const [isPartialPayment, setIsPartialPayment] = useState<boolean>(false);
   const [customersResults, setCustomersResults] = useState<Customer[] | []>([]);
-  const [drivers, setDrivers] = useState<Driver[] | undefined>(undefined);
-  const [driverID, setDriverID] = useState<string | undefined>(undefined);
 
   const { data: session } = useSession();
 
@@ -137,14 +134,6 @@ const Invoice = () => {
       Authorization: `Bearer ${session?.user.accessToken}`,
     },
   });
-
-  // Fetch drivers
-  const getDrivers = async () => {
-    const { data } = await axiosInstance.get(
-      process.env.NEXT_PUBLIC_API_URL! + "/staff?status=active&type=driver"
-    );
-    setDrivers(data);
-  };
 
   useRefreshTokenRotation(axiosInstance);
 
@@ -186,16 +175,6 @@ const Invoice = () => {
   //     setRecentInvoices(parsedDate);
   //   }
   // }, [recentInvoices]);
-
-  // Always fetch a fresh active-driver list so a stale cache can't surface
-  // drivers who have since been deactivated.
-  useEffect(() => {
-    if (drivers === undefined && session) {
-      const selectedDriverID = getCookie("_selectedDriverID");
-      setDriverID(selectedDriverID);
-      getDrivers();
-    }
-  }, [drivers, session]);
 
   // Fetch products from cookies
   useEffect(() => {
@@ -351,9 +330,6 @@ const Invoice = () => {
     else if (customer === null && engagedJars === 0) {
       return toast.error("Engaged jars cannot be 0 for new customers")
     }
-    if (orderType === "delivery" && !driverID) {
-      return toast.error("Please select a driver");
-    }
 
     let newProducts: ItemProps[] = [];
     let invoices: string[] = [];
@@ -424,7 +400,6 @@ const Invoice = () => {
       customerID: customer?._id,
       customerName: customer?.name,
       vehicleID: orderType === "delivery" ? vehicle : null,
-      driver: orderType === "delivery" ? driverID : null,
       total: total,
       products: newProducts,
       // address: orderType === "delivery" ? address : null,
@@ -1007,76 +982,47 @@ const Invoice = () => {
               )}
             </Section>
 
-            {/* DELIVERY & DRIVER */}
-            <Section
-              icon={<Truck className="h-5 w-5" />}
-              title="Delivery & driver"
-            >
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                {orderType !== "retail" && customer === null && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Area</Label>
-                      <Select value={address} onValueChange={(v) => setAddress(v)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select area" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {areas?.map((area) => (
-                            <SelectItem
-                              key={area._id}
-                              value={area.name}
-                              disabled={!area.serviceable}
-                            >
-                              {area.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Landmark</Label>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                          <MapPin className="h-4 w-4" />
-                        </span>
-                        <Input
-                          value={landmark}
-                          onChange={(e) => setLandmark(e.target.value)}
-                          placeholder="Nearby landmark"
-                          className="pl-9"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <Label>Driver</Label>
-                  <Select
-                    value={driverID}
-                    onValueChange={(v) => {
-                      setDriverID(v);
-                      setCookie("_selectedDriverID", v);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select driver" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers
-                        ?.filter((driver) => driver.status === "active")
-                        .map((driver) => (
-                          <SelectItem key={driver._id} value={driver._id}>
-                            {driver.name}
+            {/* DELIVERY */}
+            {orderType !== "retail" && customer === null && (
+              <Section icon={<Truck className="h-5 w-5" />} title="Delivery">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Area</Label>
+                    <Select value={address} onValueChange={(v) => setAddress(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select area" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {areas?.map((area) => (
+                          <SelectItem
+                            key={area._id}
+                            value={area.name}
+                            disabled={!area.serviceable}
+                          >
+                            {area.name}
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Landmark</Label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <MapPin className="h-4 w-4" />
+                      </span>
+                      <Input
+                        value={landmark}
+                        onChange={(e) => setLandmark(e.target.value)}
+                        placeholder="Nearby landmark"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Section>
+              </Section>
+            )}
           </div>
 
           {/* RIGHT: order summary */}

@@ -131,7 +131,6 @@ export interface Invoice {
   due: number;
   paymentDate?: number | null;
   isBulkOrder?: boolean | undefined;
-  driver: string | null | undefined;
 }
 
 export type AttendanceStatus = "P" | "A" | "HD" | "H";
