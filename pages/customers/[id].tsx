@@ -10,7 +10,7 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Activity, Customer, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
-import { SquarePen, Trash2 } from "lucide-react";
+import { ArrowLeft, SquarePen, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -451,6 +451,16 @@ const CustomerInvoicesData = () => {
   return (
     <Wrapper>
       <div className="flex flex-col w-full">
+        {/* Back to the customers list (preserves any active search) */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-4 w-fit gap-2 px-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+
         {/*
          * Tabs
          */}

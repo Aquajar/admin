@@ -11,6 +11,15 @@ type StoreData = {
   setCustomersState: React.Dispatch<
     React.SetStateAction<Customer[] | null | undefined>
   >;
+  // Search/browse state kept here (not local to the page) so it survives
+  // navigating into /customers/{id} and back: the searched results, the search
+  // mode flag, and the query stay put instead of being refetched/overwritten.
+  autoLoad: boolean;
+  setAutoLoad: React.Dispatch<React.SetStateAction<boolean>>;
+  searchTerm: string;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  searchBy: "id" | "name";
+  setSearchBy: React.Dispatch<React.SetStateAction<"id" | "name">>;
 };
 
 // Create a context for your store
@@ -37,14 +46,21 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children }) => {
   const [customersState, setCustomersState] = useState<Customer[] | null | undefined>(
     undefined
   );
-
-  console.log(customersState);
+  const [autoLoad, setAutoLoad] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchBy, setSearchBy] = useState<"id" | "name">("name");
 
   const store: StoreData = {
     customers,
     setCustomers,
     customersState,
     setCustomersState,
+    autoLoad,
+    setAutoLoad,
+    searchTerm,
+    setSearchTerm,
+    searchBy,
+    setSearchBy,
   };
 
   return (

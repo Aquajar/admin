@@ -21,6 +21,10 @@ import { Search } from "lucide-react"
 
 interface HeaderMenuProps {
   onSearch: (searchTerm: string, searchBy: "id" | "name") => void
+  // Restored when returning from a customer detail page so the search box keeps
+  // showing the previous query instead of resetting to empty.
+  initialSearchTerm?: string
+  initialSearchBy?: "id" | "name"
   customers: Customer[] | null | undefined
   MasterCustomersState: Customer[] | null | undefined
   setCustomers: React.Dispatch<React.SetStateAction<Customer[] | null | undefined>>
@@ -44,6 +48,8 @@ interface HeaderMenuProps {
 
 const HeaderMenu: React.FC<HeaderMenuProps> = ({
   onSearch,
+  initialSearchTerm = "",
+  initialSearchBy = "name",
   customers,
   setCustomers,
   resetCustomers,
@@ -57,8 +63,8 @@ const HeaderMenu: React.FC<HeaderMenuProps> = ({
   onSegmentChange,
   loading,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchBy, setSearchBy] = useState<"id" | "name">("name")
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
+  const [searchBy, setSearchBy] = useState<"id" | "name">(initialSearchBy)
   const [areas, setAreas] = useState<Area[] | null>(null)
 
   const { data: session } = useSession()

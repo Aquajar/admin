@@ -85,7 +85,20 @@ import { useRouter } from "next/router";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 
 const Customers = () => {
-  const { customers, setCustomers, customersState, setCustomersState } = useCustomersStore();
+  const {
+    customers,
+    setCustomers,
+    customersState,
+    setCustomersState,
+    // Search/browse state lives in the store so it survives navigating into a
+    // customer's detail page and pressing back (results stay, no refetch).
+    autoLoad,
+    setAutoLoad,
+    searchTerm,
+    setSearchTerm,
+    searchBy,
+    setSearchBy,
+  } = useCustomersStore();
   const [limit, setLimit] = useState(20);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false)
   const [isUploadCardModalOpen, setIsUploadCardModalOpen] = useState(false)
@@ -107,7 +120,6 @@ const Customers = () => {
   >([]);
   const [hasMore, setHasMore] = useState(true); // Check if more data is available
   const [loading, setLoading] = useState(false); // Manage loading state
-  const [autoLoad, setAutoLoad] = useState(true);
 
   // Filter key states
   const [sortByArea, setSortByArea] = useState<"all" | Area["name"]>("all");
@@ -208,6 +220,7 @@ const Customers = () => {
   // Reset Customer State
   const resetCustomerState = () => {
     setAutoLoad(true);
+    setSearchTerm("");
     setCustomersState(customers);
     toast.success("Data updated successfully");
   };
@@ -373,6 +386,9 @@ const Customers = () => {
     searchBy: "id" | "name"
   ) => {
     setAutoLoad(false);
+    // Remember the query so it's restored when returning from a detail page.
+    setSearchTerm(searchTerm);
+    setSearchBy(searchBy);
     setLoading(true);
     try {
       if (!customers) return;
@@ -418,6 +434,7 @@ const Customers = () => {
     setSortByArea("all");
     setSortByRegularity("all");
     setAutoLoad(true);
+    setSearchTerm("");
     setHasMore(true);
     setPage(1);
     // Clear immediately so the table empties while the new page loads. The
@@ -536,6 +553,8 @@ const Customers = () => {
         invoices={invoices}
         resetCustomers={resetCustomerState}
         onSearch={handleOnsearch}
+        initialSearchTerm={searchTerm}
+        initialSearchBy={searchBy}
         customers={customersState}
         MasterCustomersState={customers}
         setCustomers={setCustomersState}
