@@ -276,6 +276,8 @@ export type DashBoardData = {
       refilling: Array<{
         date: string;
         sales: number;
+        d2cSales?: number;
+        b2bSales?: number;
         jars: number;
         due: number;
         collected: number;

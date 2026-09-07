@@ -427,29 +427,54 @@ export default function Home() {
                     decimalScale={0}
                     fixedDecimalScale={true}
                   />
-                  {/* Performance Stats */}
-                  {salePercertageChange === -100 ? (
-                    <div>
-                      <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
-                    </div>
-                  ) : (
-                    <div className="flex space-x-2">
-                      {salePercertageChange > 0 ? (
-                        <IoIosTrendingUp className="text-green-500" size={22} />
-                      ) : (
-                        <IoIosTrendingDown className="text-red-500" size={22} />
-                      )}
-                      <span
-                        className={`${salePercertageChange > 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                          } text-sm font-semibold`}
-                      >
-                        {salePercertageChange.toFixed(0)}%
+                  {/* D2C / B2B split of the day's sales */}
+                  <div className="flex items-center gap-4 pt-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        D2C
                       </span>
-                      <span className="text-sm">from yesterday</span>
+                      <CurrencyFormat
+                        value={
+                          data?.summary?.last7Days?.refilling?.find(
+                            (d) => d?.date === currDay
+                          )?.d2cSales || 0
+                        }
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                        renderText={(value) => (
+                          <span className="text-base font-semibold text-gray-800">
+                            {value}
+                          </span>
+                        )}
+                      />
                     </div>
-                  )}
+                    <div className="h-8 w-px bg-gray-200" />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        B2B
+                      </span>
+                      <CurrencyFormat
+                        value={
+                          data?.summary?.last7Days?.refilling?.find(
+                            (d) => d?.date === currDay
+                          )?.b2bSales || 0
+                        }
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix={"₹"}
+                        decimalScale={0}
+                        fixedDecimalScale={true}
+                        renderText={(value) => (
+                          <span className="text-base font-semibold text-gray-800">
+                            {value}
+                          </span>
+                        )}
+                      />
+                    </div>
+                  </div>
                 </div>
                 {/*
              * TOTAL COLLECTION
