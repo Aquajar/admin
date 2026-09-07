@@ -27,7 +27,7 @@ const GROUPS: { label: string; names: string[] }[] = [
   { label: "Sales", names: ["Billing", "Customers", "Invoices", "Account Groups"] },
   { label: "Team", names: ["HR Manager", "Attendance", "Vehicle Log"] },
   { label: "Catalog", names: ["Areas", "Products"] },
-  { label: "Insights", names: ["Reports", "Activity"] },
+  { label: "Insights", names: ["Analytics", "Reports", "Activity"] },
   { label: "System", names: ["Settings"] },
 ];
 

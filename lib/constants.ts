@@ -6,7 +6,7 @@ import { IoMdSettings } from "react-icons/io";
 import { FaPeopleGroup } from "react-icons/fa6";
 import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck, FaRegCalendarCheck } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
-import { MdProductionQuantityLimits } from "react-icons/md";
+import { MdProductionQuantityLimits, MdInsights } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
 import { FiActivity } from "react-icons/fi";
 
@@ -66,6 +66,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Products",
     icon: MdProductionQuantityLimits,
     href: "/products",
+  },
+  {
+    name: "Analytics",
+    icon: MdInsights,
+    href: "/analytics",
   },
   {
     name: "Reports",
