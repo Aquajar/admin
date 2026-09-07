@@ -16,6 +16,8 @@ import { LuFileSpreadsheet } from "react-icons/lu";
 import toast from "react-hot-toast";
 import { reportTypes } from "@/lib/constants";
 import CurrencyFormat from "react-currency-format";
+import { exportPendingListPDF } from "@/lib/reportPdf";
+import { LuFileText } from "react-icons/lu";
 
 const Reports = () => {
   const [startDate, setStartDate] = useState(new Date(new Date()));
@@ -24,6 +26,7 @@ const Reports = () => {
   const [areas, setAreas] = useState<Area[] | null>(null);
   const [address, setAddress] = useState("all");
   const [reportType, setReportType] = useState(reportTypes[0].value);
+  const [segment, setSegment] = useState<"all" | "d2c" | "b2b">("all");
 
   const { data: session } = useSession();
 
@@ -47,7 +50,7 @@ const Reports = () => {
     if (address === "all") area = JSON.stringify(area_names);
     const URL =
       process.env.NEXT_PUBLIC_API_URL +
-      `/report/generate?fromDate=${fromDate}&toDate=${toDate}&area=${area}`;
+      `/report/generate?fromDate=${fromDate}&toDate=${toDate}&area=${area}&segment=${segment}`;
     const promise = axiosInstance.get(URL);
     toast
       .promise(promise, {
@@ -185,6 +188,21 @@ const Reports = () => {
             </select>
           </div>
           {/*
+           *  Classification (D2C / B2B / All)
+           */}
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500">Classification</label>
+            <select
+              value={segment}
+              onChange={(e) => setSegment(e.target.value as "all" | "d2c" | "b2b")}
+              className="border rounded-md cursor-pointer pl-3 pr-10 py-2 mt-1.5 bg-white w-full"
+            >
+              <option value="all">All</option>
+              <option value="d2c">D2C</option>
+              <option value="b2b">B2B</option>
+            </select>
+          </div>
+          {/*
            * Action Buttons
            */}
           <button
@@ -209,6 +227,36 @@ const Reports = () => {
             >
               <LuFileSpreadsheet size={20} className="mr-1" />
               Export XLSX
+            </button>
+          )}
+          {reportData.data && (
+            <button
+              className="bg-red-500 flex items-center text-white px-3 py-2 h-fit justify-center rounded-md"
+              onClick={() => {
+                const till = endDate
+                  .toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                  .toUpperCase();
+                const areaTitle =
+                  address === "all" ? "ALL AREAS" : address.toUpperCase();
+                const segTag =
+                  segment !== "all" ? ` (${segment.toUpperCase()})` : "";
+                exportPendingListPDF(reportData.data, {
+                  title: `${areaTitle} PENDING LIST${segTag}`,
+                  till,
+                  fileBase: `${areaTitle.replace(/\s+/g, "_")}_PENDING_LIST`,
+                })
+                  .then(() => toast.success("PDF downloaded"))
+                  .catch((e) =>
+                    toast.error(e?.message || "Failed to export PDF")
+                  );
+              }}
+            >
+              <LuFileText size={20} className="mr-1" />
+              Download PDF
             </button>
           )}
         </div>
