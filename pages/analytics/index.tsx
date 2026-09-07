@@ -29,6 +29,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+type Segment = "all" | "d2c" | "b2b";
+
 type AtRisk = {
   name: string;
   status: "stopped" | "reduced";
@@ -43,6 +45,7 @@ type AreaRow = {
   totalCustomers: number;
   activeCustomers: number;
   sales: number;
+  jars: number;
   collected: number;
   dues: number;
   atRiskCount: number;
@@ -51,6 +54,7 @@ type AreaRow = {
 
 type Analytics = {
   month: string;
+  segment: Segment;
   generatedAt: string;
   activeSince: string;
   areas: AreaRow[];
@@ -58,6 +62,7 @@ type Analytics = {
 };
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
+const num = (n: number) => Math.round(n || 0).toLocaleString("en-IN");
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -70,7 +75,6 @@ const monthLabel = (key: string) => {
   return `${MONTH_NAMES[m - 1]} ${y}`;
 };
 
-// Last 12 months as "YYYY-MM"
 const monthOptions = () => {
   const out: string[] = [];
   const d = new Date();
@@ -86,12 +90,19 @@ const currentMonthKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
+const SEGMENTS: { value: Segment; label: string }[] = [
+  { value: "all", label: "Both" },
+  { value: "d2c", label: "D2C" },
+  { value: "b2b", label: "B2B" },
+];
+
 const AnalyticsPage = () => {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
   useRefreshTokenRotation(axiosInstance);
 
   const [month, setMonth] = useState(currentMonthKey());
+  const [segment, setSegment] = useState<Segment>("all");
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [riskArea, setRiskArea] = useState<AreaRow | null>(null);
@@ -100,12 +111,12 @@ const AnalyticsPage = () => {
   const months = useMemo(monthOptions, []);
 
   const fetchData = useCallback(
-    async (key: string) => {
+    async (key: string, seg: Segment) => {
       if (!session) return;
       setLoading(true);
       try {
         const { data } = await axiosInstance.get(
-          `${base}/user/area-analytics?month=${key}`
+          `${base}/user/area-analytics?month=${key}&segment=${seg}`
         );
         setData(data);
       } catch (error) {
@@ -120,49 +131,68 @@ const AnalyticsPage = () => {
   );
 
   useEffect(() => {
-    if (session) fetchData(month);
+    if (session) fetchData(month, segment);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, month]);
+  }, [session, month, segment]);
 
   const t = data?.totals;
 
   const kpis = [
     { label: "Total sales", value: t ? inr(t.sales) : "—", sub: monthLabel(month) },
+    { label: "Jars", value: t ? num(t.jars) : "—", sub: "delivered this month" },
     { label: "Collected", value: t ? inr(t.collected) : "—", sub: "this month" },
-    { label: "Dues", value: t ? inr(t.dues) : "—", sub: "outstanding this month" },
+    { label: "Dues", value: t ? inr(t.dues) : "—", sub: "outstanding" },
     { label: "Active customers", value: t ? String(t.activeCustomers) : "—", sub: "last 30 days" },
-    { label: "Taking less / stopped", value: t ? String(t.atRiskCount) : "—", sub: "declining customers" },
+    { label: "Taking less / stopped", value: t ? String(t.atRiskCount) : "—", sub: "declining" },
   ];
 
   return (
     <Wrapper>
       <div className="flex w-full flex-col gap-4">
         {/* Header */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-[#0A0A0A]">
               Area Analytics
             </h1>
             <p className="text-[15px] text-[#6B7280]">
-              Sales, collection and customer activity by service area
+              Sales, jars and customer activity by service area
             </p>
           </div>
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className="h-11 w-48 shrink-0 rounded-xl border-[#EAEAEA] bg-white text-[15px] font-medium text-[#0A0A0A] shadow-none">
-              <span>{monthLabel(month)}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {monthLabel(m)}
-                </SelectItem>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* D2C / B2B / Both toggle */}
+            <div className="inline-flex rounded-xl border border-[#EAEAEA] bg-white p-1">
+              {SEGMENTS.map((s) => (
+                <button
+                  key={s.value}
+                  onClick={() => setSegment(s.value)}
+                  className={`h-9 rounded-lg px-4 text-[14px] font-medium transition-colors ${
+                    segment === s.value
+                      ? "bg-[#0A0A0A] text-white"
+                      : "text-[#6B7280] hover:bg-[#FAFAFA]"
+                  }`}
+                >
+                  {s.label}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="h-11 w-48 shrink-0 rounded-xl border-[#EAEAEA] bg-white text-[15px] font-medium text-[#0A0A0A] shadow-none">
+                <span>{monthLabel(month)}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {monthLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* KPI summary */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {kpis.map((k) => (
             <div
               key={k.label}
@@ -179,11 +209,11 @@ const AnalyticsPage = () => {
 
         {/* Table */}
         <div className="w-full overflow-auto rounded-2xl border border-[#EAEAEA] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          <table className="w-full min-w-[900px] caption-bottom text-[15px]">
+          <table className="w-full min-w-[1000px] caption-bottom text-[15px]">
             <TableHeader className="sticky top-0 z-10">
               <TableRow className="hover:bg-transparent">
                 {[
-                  "Area", "Customers", "Active 30d", "Sales", "Collected", "Dues", "Taking less / stopped",
+                  "Area", "Customers", "Active 30d", "Sales", "Jars", "Collected", "Dues", "Taking less / stopped",
                 ].map((h, i) => (
                   <TableHead
                     key={i}
@@ -213,6 +243,9 @@ const AnalyticsPage = () => {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right font-medium text-[#0A0A0A]">
                     {inr(a.sales)}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right font-medium text-[#0369A1]">
+                    {num(a.jars)}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-right text-green-700">
                     {inr(a.collected)}
@@ -245,6 +278,7 @@ const AnalyticsPage = () => {
                   <TableCell className="px-4 py-3 text-right">{t.totalCustomers}</TableCell>
                   <TableCell className="px-4 py-3 text-right">{t.activeCustomers}</TableCell>
                   <TableCell className="px-4 py-3 text-right">{inr(t.sales)}</TableCell>
+                  <TableCell className="px-4 py-3 text-right text-[#0369A1]">{num(t.jars)}</TableCell>
                   <TableCell className="px-4 py-3 text-right">{inr(t.collected)}</TableCell>
                   <TableCell className="px-4 py-3 text-right">{inr(t.dues)}</TableCell>
                   <TableCell className="px-4 py-3 text-right">{t.atRiskCount}</TableCell>
@@ -260,7 +294,8 @@ const AnalyticsPage = () => {
           )}
           {!loading && data && data.areas.length === 0 && (
             <div className="flex items-center justify-center py-10 text-gray-500">
-              No data for {monthLabel(month)}.
+              No sales for {monthLabel(month)}
+              {segment !== "all" ? ` (${segment.toUpperCase()})` : ""}.
             </div>
           )}
         </div>
