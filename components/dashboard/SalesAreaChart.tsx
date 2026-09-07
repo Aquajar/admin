@@ -52,6 +52,8 @@ export default function SalesLineChart({
   chartData: {
     date: string;
     sales: number;
+    d2cSales?: number;
+    b2bSales?: number;
     jars: number;
     due: number;
     collected: number;
@@ -164,6 +166,18 @@ export default function SalesLineChart({
               Total Sales
             </span>
             <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.map((item) => item.sales).reduce((a, b) => a + b, 0))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="leading-none text-sm text-gray-500">
+              D2C Sales
+            </span>
+            <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.reduce((a, b) => a + (b.d2cSales || 0), 0))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="leading-none text-sm text-gray-500">
+              B2B Sales
+            </span>
+            <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.reduce((a, b) => a + (b.b2bSales || 0), 0))}</span>
           </div>
         </div>
       </CardFooter>
