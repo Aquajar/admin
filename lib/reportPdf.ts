@@ -4,6 +4,8 @@
 // with html2canvas so ₹ and the exact table look come from the browser, then sliced
 // across A4 pages with jsPDF (both already used elsewhere in the app).
 
+import { addImagePaginated } from "./pdfPaginate";
+
 type Row = {
   id: number | string;
   name?: string;
@@ -94,35 +96,9 @@ export async function exportPendingListPDF(
       backgroundColor: "#ffffff",
       useCORS: true,
     });
-
     const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 18; // pt
-    const usableW = pageW - margin * 2;
-    const scale = usableW / canvas.width; // source px -> pt
-    const pageSlicePx = Math.floor((pageH - margin * 2) / scale);
-
-    let rendered = 0;
-    let first = true;
-    while (rendered < canvas.height) {
-      const sliceH = Math.min(pageSlicePx, canvas.height - rendered);
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceH;
-      const ctx = pageCanvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, sliceH);
-        ctx.drawImage(canvas, 0, rendered, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-      }
-      const img = pageCanvas.toDataURL("image/jpeg", 0.92);
-      if (!first) pdf.addPage();
-      pdf.addImage(img, "JPEG", margin, margin, usableW, sliceH * scale);
-      rendered += sliceH;
-      first = false;
-    }
-
+    // Break pages only between data rows so no row is split across a page.
+    addImagePaginated(pdf, canvas, el, { margin: 18, rowSelector: "tbody tr" });
     pdf.save(`${opts.fileBase}.pdf`);
   } finally {
     document.body.removeChild(holder);

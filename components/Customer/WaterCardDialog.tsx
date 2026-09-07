@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import type { AxiosInstance } from "axios";
+import { addImagePaginated } from "@/lib/pdfPaginate";
 import toast from "react-hot-toast";
 import { Droplets, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -225,24 +226,9 @@ const WaterCardDialog: FC<IProps> = ({
 
       const jspdf = await import("jspdf");
       const JsPDF = (jspdf as any).jsPDF || (jspdf as any).default;
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new JsPDF({ unit: "pt", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Slice a tall card across A4 pages if it overflows one page.
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      // Break pages only between table rows so a card row is never split.
+      addImagePaginated(pdf, canvas, cardRef.current!, { format: "PNG" });
 
       pdf.save(
         `Aquajar-WaterCard-${customer?.userID ?? "customer"}-${Date.now()}.pdf`

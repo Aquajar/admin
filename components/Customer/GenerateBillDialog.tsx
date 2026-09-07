@@ -1,5 +1,6 @@
 import React, { FC, useMemo, useRef, useState } from "react";
 import { saveAs } from "file-saver";
+import { addImagePaginated } from "@/lib/pdfPaginate";
 import toast from "react-hot-toast";
 import {
   Receipt,
@@ -126,24 +127,9 @@ const GenerateBillDialog: FC<IProps> = ({ customer, monthwiseSummaries }) => {
       } else {
         const jspdf = await import("jspdf");
         const JsPDF = (jspdf as any).jsPDF || (jspdf as any).default;
-        const imgData = canvas.toDataURL("image/png");
         const pdf = new JsPDF({ unit: "pt", format: "a4" });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        // Slice the tall render across pages if it overflows one A4 page.
-        let heightLeft = imgHeight;
-        let position = 0;
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position -= pageHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
+        // Break pages only between table rows so a bill row is never split.
+        addImagePaginated(pdf, canvas, billRef.current!, { format: "PNG" });
         pdf.save(`${base}.pdf`);
       }
 
