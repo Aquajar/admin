@@ -228,7 +228,10 @@ const WaterCardDialog: FC<IProps> = ({
       const JsPDF = (jspdf as any).jsPDF || (jspdf as any).default;
       const pdf = new JsPDF({ unit: "pt", format: "a4" });
       // Break pages only between table rows so a card row is never split.
-      addImagePaginated(pdf, canvas, cardRef.current!, { format: "PNG" });
+      addImagePaginated(pdf, canvas, cardRef.current!, {
+        format: "PNG",
+        marginTop: 40,
+      });
 
       pdf.save(
         `Aquajar-WaterCard-${customer?.userID ?? "customer"}-${Date.now()}.pdf`

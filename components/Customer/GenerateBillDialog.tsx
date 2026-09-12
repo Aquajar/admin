@@ -129,7 +129,10 @@ const GenerateBillDialog: FC<IProps> = ({ customer, monthwiseSummaries }) => {
         const JsPDF = (jspdf as any).jsPDF || (jspdf as any).default;
         const pdf = new JsPDF({ unit: "pt", format: "a4" });
         // Break pages only between table rows so a bill row is never split.
-        addImagePaginated(pdf, canvas, billRef.current!, { format: "PNG" });
+        addImagePaginated(pdf, canvas, billRef.current!, {
+          format: "PNG",
+          marginTop: 40,
+        });
         pdf.save(`${base}.pdf`);
       }
 

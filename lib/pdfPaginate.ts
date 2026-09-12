@@ -10,12 +10,21 @@ export function addImagePaginated(
   el: HTMLElement,
   opts: {
     margin?: number;
+    /**
+     * Top margin (pt) for continuation pages (page 2 onward). Page 1 keeps its
+     * own `margin` offset so its baked-in header/padding is untouched. Defaults
+     * to `margin`. Set this when the content itself only pads the very top (e.g.
+     * a card/bill wrapper) so sliced continuation pages don't butt against the
+     * top edge.
+     */
+    marginTop?: number;
     rowSelector?: string;
     format?: "JPEG" | "PNG";
     quality?: number;
   } = {}
 ): void {
   const margin = opts.margin ?? 0;
+  const marginTop = opts.marginTop ?? margin;
   const rowSelector = opts.rowSelector ?? "tbody tr, tfoot tr";
   const format = opts.format ?? "JPEG";
   const mime = format === "PNG" ? "image/png" : "image/jpeg";
@@ -35,11 +44,14 @@ export function addImagePaginated(
   const pageH = pdf.internal.pageSize.getHeight();
   const usableW = pageW - margin * 2;
   const scale = usableW / canvas.width; // canvas px -> pt
-  const pageSlicePx = Math.floor((pageH - margin * 2) / scale);
 
   let prev = 0;
   let first = true;
   while (prev < canvas.height) {
+    // Page 1 sits at `margin`; continuation pages sit at `marginTop`. The slice
+    // height is reduced by that top offset so the pushed-down image still fits.
+    const top = first ? margin : marginTop;
+    const pageSlicePx = Math.floor((pageH - top - margin) / scale);
     const target = prev + pageSlicePx;
     // largest row boundary that fits on this page (never split a row)
     let cut = -1;
@@ -57,7 +69,7 @@ export function addImagePaginated(
       ctx.drawImage(canvas, 0, prev, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
     }
     if (!first) pdf.addPage();
-    pdf.addImage(pageCanvas.toDataURL(mime, quality), format, margin, margin, usableW, sliceH * scale);
+    pdf.addImage(pageCanvas.toDataURL(mime, quality), format, margin, top, usableW, sliceH * scale);
     prev = cut;
     first = false;
   }
