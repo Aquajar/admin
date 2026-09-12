@@ -15,7 +15,9 @@ import {
 import { Staff } from "@/types/types";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { KeyRound } from "lucide-react";
 import EarningsTab from "@/components/HR/EarningsTab";
+import SetPasswordDialog from "@/components/HR/SetPasswordDialog";
 
 
 interface MonthData {
@@ -51,6 +53,8 @@ const HRManager = () => {
   const [staffAttendance, setStaffAttendance] = useState<EmployeeData[] | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [tab, setTab] = useState<"employees" | "earnings">("employees");
+  const [pwStaff, setPwStaff] = useState<Staff | null>(null);
+  const [pwOpen, setPwOpen] = useState(false);
 
   const getStaffData = async () => {
     const URL = process.env.NEXT_PUBLIC_API_URL;
@@ -210,6 +214,13 @@ const HRManager = () => {
           </SheetHeader>
         </SheetContent>
       </Sheet>
+
+      <SetPasswordDialog
+        open={pwOpen}
+        onOpenChange={setPwOpen}
+        axiosInstance={axiosInstance}
+        staff={pwStaff}
+      />
 
       {/* Tabs */}
       <div className="mb-6 flex items-center gap-6 border-b border-[#EAEAEA]">
@@ -390,16 +401,29 @@ const HRManager = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedID(staff.employeeID);
-                              setIsSheetOpen(!isSheetOpen)
-                            }}
-                            className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
-                          >
-                            View
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedID(staff.employeeID);
+                                setIsSheetOpen(!isSheetOpen)
+                              }}
+                              className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
+                            >
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setPwStaff(staff);
+                                setPwOpen(true);
+                              }}
+                              className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
+                            >
+                              <KeyRound className="mr-1.5 h-4 w-4" />
+                              Set password
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
