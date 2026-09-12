@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Session } from "next-auth";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { Area, Staff } from "@/types/types";
@@ -112,5 +112,12 @@ export default function useVehicleLogOptions(session: Session | null): Options {
     setReloadKey((k) => k + 1);
   };
 
-  return { areaNames, staffNames, loading, refresh };
+  // "Airport" is a frequent trip location that isn't a saved Area, so always
+  // offer it in the Location picker alongside the fetched area names.
+  const areaOptions = useMemo(
+    () => uniqSorted([...areaNames, "Airport"]),
+    [areaNames]
+  );
+
+  return { areaNames: areaOptions, staffNames, loading, refresh };
 }
