@@ -6,6 +6,7 @@ import React, { FC, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
@@ -43,6 +44,27 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
     console.log(e.target.value);
     if (!customer) return;
     setCustomer({ ...customer, [e.target.name]: e.target.value });
+  };
+
+  // Update a single address field while preserving the others. The address
+  // object is a fixed shape { text, landmark, pincode, latitude, longitude },
+  // so we always spread the current values and override just the changed field.
+  const updateAddress = (
+    field: "text" | "landmark" | "pincode" | "latitude" | "longitude",
+    value: string
+  ) => {
+    if (!customer) return;
+    setCustomer({
+      ...customer,
+      address: {
+        text: customer.address?.text || "",
+        landmark: customer.address?.landmark || "",
+        pincode: customer.address?.pincode || "",
+        latitude: customer.address?.latitude || "",
+        longitude: customer.address?.longitude || "",
+        [field]: value,
+      },
+    });
   };
 
   const handleFetchAreas = async () => {
@@ -250,19 +272,7 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
               <Label htmlFor="area">Area</Label>
               <Select
                 value={customer?.address?.text || ""}
-                onValueChange={(value) => {
-                  if (!customer) return;
-                  setCustomer({
-                    ...customer,
-                    address: {
-                      text: value,
-                      landmark: customer.address?.landmark || "",
-                      pincode: customer.address?.pincode || "",
-                      latitude: customer.address?.latitude || "",
-                      longitude: customer.address?.longitude || "",
-                    },
-                  });
-                }}
+                onValueChange={(value) => updateAddress("text", value)}
               >
                 <SelectTrigger id="area">
                   <SelectValue placeholder="Select delivery area" />
@@ -276,6 +286,36 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Pincode */}
+            <div className="space-y-2">
+              <Label htmlFor="pincode">Pincode</Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                id="pincode"
+                name="pincode"
+                value={customer?.address?.pincode || ""}
+                onChange={(e) => updateAddress("pincode", e.target.value)}
+                placeholder="Enter pincode"
+              />
+            </div>
+
+            {/* Landmark / Full Address */}
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="landmark">Full Address / Landmark</Label>
+              <Textarea
+                id="landmark"
+                name="landmark"
+                rows={3}
+                value={customer?.address?.landmark || ""}
+                onChange={(e) => updateAddress("landmark", e.target.value)}
+                placeholder="House / building, street, landmark — the full delivery address"
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown on bills and the customer list as “{customer?.address?.landmark || "landmark"}, {customer?.address?.text || "area"}”.
+              </p>
             </div>
 
             {/* Coordinates */}
