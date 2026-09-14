@@ -596,14 +596,18 @@ const Orders = () => {
                           {order.customer.name || order.customer.phone}
                         </td>
                         <td className="px-6 w-40 py-6 font-medium">
-                          {order.note?.split("/n").map((item, i) => (
-                            <span
-                              key={i}
-                              className="bg-gray-200 text-gray-800 text-sm font-medium inline-flex items-center px-2.5 py-0.5 rounded-md me-2"
-                            >
-                              {item}
-                            </span>
-                          ))}
+                          {order.note
+                            ?.split("\n")
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                            .map((item, i) => (
+                              <span
+                                key={i}
+                                className="bg-gray-200 text-gray-800 text-sm font-medium inline-flex items-center px-2.5 py-0.5 rounded-md me-2 mb-1"
+                              >
+                                {item}
+                              </span>
+                            ))}
                         </td>
                         <td className="px-6 py-6">
                           {new Date(order.orderDate).toDateString()}
