@@ -35,6 +35,9 @@ const Orders = () => {
   const [isLoading, setIsloading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [deliveryDate, setDeliveryDate] = useState(new Date());
+  // Fast entry: a name or 4-digit ID, plus a jar count.
+  const [orderInput, setOrderInput] = useState("");
+  const [jarQty, setJarQty] = useState(1);
 
   const closeModal = () => {
     setIsOpen(false);
@@ -42,61 +45,65 @@ const Orders = () => {
     setCustomerID("");
     setPhoneNumber("");
     setItems([]);
+    setOrderInput("");
+    setJarQty(1);
   };
 
-  // Create a new order
+  // Create a new order — quick: type a name OR a 4-digit ID (resolved to a
+  // customer) and a jar count.
   const handleCreateOrder = async () => {
+    const input = orderInput.trim();
+    if (!input) {
+      toast.error("Type a customer name or 4-digit ID");
+      return;
+    }
     setIsloading(true);
 
-    let URL = process.env.NEXT_PUBLIC_API_URL! + "/order/create";
-    let note = "";
-
-    items.map((item) => {
-      let n = item.name + " : " + item.quantity;
-      note += n + "\n";
-    });
-
-    const asiaKolkataTimezone = "Asia/Kolkata";
-
-    // Convert the date to the Asia/Kolkata timezone
-    const kolkataDate = toZonedTime(deliveryDate, asiaKolkataTimezone);
-
-    // Format the date to ISO string with the Asia/Kolkata timezone
-    const formatedDeliveryDate = format(
-      kolkataDate,
-      "yyyy-MM-dd'T'HH:mm:ssXXX",
-      {
-        timeZone: asiaKolkataTimezone,
-      }
-    );
-
-    const payload = {
-      customer: {
-        name: customer?.name,
-        phone: customer?.phone,
-        address: `${customer?.address?.landmark}, ${customer?.address?.text}`,
-      },
-      status: "pending",
-      note: note,
-      deliveryDate: formatedDeliveryDate,
-      orderDate: new Date().toUTCString(),
-    };
-
     try {
-      const { data } = await axiosInstance.post(URL, payload);
+      let cust: { name?: string; phone?: string; address?: string } = { name: input };
+      if (/^\d{4}$/.test(input)) {
+        try {
+          const { data } = await axiosInstance.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/user/find-by-userid/${input}`
+          );
+          const c = data?.user;
+          if (c) {
+            cust = {
+              name: c.name,
+              phone: c.phone,
+              address: [c.address?.landmark, c.address?.text].filter(Boolean).join(", "),
+            };
+          }
+        } catch {
+          /* not found — use the input as a free-text name */
+        }
+      }
+
+      const kolkataDate = toZonedTime(deliveryDate, "Asia/Kolkata");
+      const formatedDeliveryDate = format(kolkataDate, "yyyy-MM-dd'T'HH:mm:ssXXX", {
+        timeZone: "Asia/Kolkata",
+      });
+
+      const { data } = await axiosInstance.post(
+        process.env.NEXT_PUBLIC_API_URL! + "/order/create",
+        {
+          customer: cust,
+          status: "pending",
+          note: `Jar : ${jarQty}`,
+          deliveryDate: formatedDeliveryDate,
+          orderDate: new Date().toUTCString(),
+        }
+      );
 
       if (data.status === "success") {
-        toast.success("Order created successfully!");
-        setOrders((prev) => {
-          if (!prev) return;
-          return [...prev, data.order];
-        });
-        setIsloading(false);
+        toast.success("Order created!");
+        setOrders((prev) => (prev ? [...prev, data.order] : prev));
         closeModal();
       }
     } catch (err) {
       console.error(err);
       toast.error("Failed to create order!");
+    } finally {
       setIsloading(false);
     }
   };
@@ -265,181 +272,48 @@ const Orders = () => {
             </button>
 
             <form className="w-full" onSubmit={(e) => e.preventDefault()}>
-              <div className="mb-8">
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Customer ID
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-medium text-gray-900">
+                  Customer (name or 4-digit ID)
                 </label>
                 <input
-                  value={customerID}
-                  onChange={(e) => {
-                    setCustomerID(e.target.value);
-                    setCustomer(undefined);
-                    setPhoneNumber("");
-                  }}
+                  value={orderInput}
+                  onChange={(e) => setOrderInput(e.target.value)}
+                  autoFocus
                   type="text"
-                  id="customerID"
+                  placeholder="e.g. Ramesh   or   1024"
                   className="font-medium bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                  placeholder=""
                 />
-                {customer && (
-                  <span className="text-sm text-green-600 font-medium mt-1 float-right">
-                    {customer.name}
-                  </span>
-                )}
               </div>
-              <div className="mb-8">
-                <label
-                  htmlFor="phoneNumber"
-                  className="block mb-2 text-sm font-medium text-gray-900"
-                >
-                  Phone Number
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-medium text-gray-900">
+                  Jars (refill)
                 </label>
-                <input
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    setPhoneNumber(e.target.value);
-                    setCustomer(undefined);
-                    setCustomerID("");
-                  }}
-                  type="text"
-                  id="phoneNumber"
-                  className="bg-gray-50 font-medium border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                />
-              </div>
-              <div className="flex items-start flex-col mb-8">
-                {/* Items */}
-                <div className="relative overflow-x-auto shadow-sm rounded-lg w-full">
-                  <table className="w-full text-justify">
-                    <thead className="bg-slate-200">
-                      <tr className="">
-                        {/* Sl no. */}
-                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                          Sl No.
-                        </th>
-                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                          Item Name
-                        </th>
-                        <th className="text-md font-medium py-1.5 px-4 text-gray-700">
-                          Qty
-                        </th>
-                        <th className="text-md font-medium py-1.5 px-2 text-gray-700">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-slate-100">
-                      {items.map((item, index) => {
-                        return (
-                          <tr key={index}>
-                            {/* Sl no. */}
-                            <td className="text-md font-medium text-gray-700 px-4 py-2">
-                              {index + 1}.
-                            </td>
-                            {/* Item Name */}
-                            <td className="text-md font-medium text-gray-700 px-2 py-2">
-                              <select
-                                onChange={(e) => {
-                                  const newItems = [...items];
-                                  newItems[index].name = e.target.value;
-
-                                  const product = products?.find(
-                                    (product: Product) =>
-                                      product.name === e.target.value
-                                  );
-
-                                  if (product === undefined) return;
-
-                                  newItems[index].price =
-                                    parseInt(
-                                      product?.price.delivery as string
-                                    ) || 0;
-                                  newItems[index].total =
-                                    newItems[index].quantity *
-                                    newItems[index].price;
-                                  setItems(newItems);
-                                }}
-                                className="border text-md rounded-md capitalize px-2 w-36 md:pr-14 md:pl-4 py-2 mt-1 bg-white"
-                              >
-                                {products &&
-                                  products?.map((product: Product) => {
-                                    return (
-                                      <option
-                                        key={product._id}
-                                        value={product.name}
-                                      >
-                                        {product.name}
-                                      </option>
-                                    );
-                                  })}
-                              </select>
-                            </td>
-                            {/* Quantity */}
-                            <td className="text-md font-medium text-gray-700 px-4 py-2">
-                              <input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const newItems = [...items];
-                                  newItems[index].quantity = parseInt(
-                                    e.target.value
-                                  );
-                                  newItems[index].total =
-                                    parseInt(e.target.value) *
-                                    (customer?.profileRate
-                                      ? customer?.profileRate
-                                      : newItems[index].price);
-                                  setItems(newItems);
-                                }}
-                                className="border w-14 text-center text-md rounded-md px-1 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-gray-500 bg-white"
-                              />
-                            </td>
-                            {/* Delete Button */}
-                            <td className="text-md font-medium text-gray-700 px-4 py-2">
-                              <button
-                                onClick={() => {
-                                  const newItems = [...items];
-                                  newItems.splice(index, 1);
-                                  setItems(newItems);
-                                }}
-                                className="text-[#ED5E68]"
-                              >
-                                <MdOutlineDeleteForever className="w-6 h-6" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Add Item */}
-                <div className="flex justify-end mt-4">
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      setItems([
-                        ...items,
-                        {
-                          name: products ? products[0].name : "jar",
-                          quantity: 0,
-                          price: products
-                            ? parseInt(products[0].price.delivery || "0")
-                            : 0,
-                          total: 0,
-                        },
-                      ]);
-                    }}
-                    className="py-2 flex items-center justify-start"
+                    type="button"
+                    onClick={() => setJarQty((q) => Math.max(1, q - 1))}
+                    className="h-9 w-9 rounded-full bg-gray-100 text-lg font-bold text-gray-700 hover:bg-gray-200"
                   >
-                    <RiAddCircleLine className="w-6 h-6 mx-2" />
-                    Add Item
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={jarQty}
+                    onChange={(e) => setJarQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-20 text-center font-medium bg-gray-50 border border-gray-300 text-gray-900 rounded-lg p-2.5"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setJarQty((q) => q + 1)}
+                    className="h-9 w-9 rounded-full bg-blue-600 text-lg font-bold text-white hover:bg-blue-700"
+                  >
+                    +
                   </button>
                 </div>
               </div>
-              <div className="mb-8 flex flex-col">
+              <div className="mb-6 flex flex-col">
                 <label className="text-md font-medium text-gray-700">
                   Delivery Date
                 </label>
