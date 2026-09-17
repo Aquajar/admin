@@ -631,6 +631,11 @@ const Orders = () => {
                             />
                             {order.status}
                           </div>
+                          {order.status === "delivered" && order.deliveredBy && (
+                            <div className="mt-1 text-xs text-gray-400">
+                              by {order.deliveredBy}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-6 text-right flex items-center">
                           <button

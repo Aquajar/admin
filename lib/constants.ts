@@ -8,7 +8,7 @@ import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck, FaRegCalendarCheck }
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits, MdInsights } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
-import { FiActivity } from "react-icons/fi";
+import { FiActivity, FiPackage } from "react-icons/fi";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -31,6 +31,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Customers",
     icon: FaUsers,
     href: "/customers",
+  },
+  {
+    name: "Orders",
+    icon: FiPackage,
+    href: "/orders",
   },
   {
     name: "Invoices",

@@ -342,6 +342,9 @@ export interface Order {
   note?: string; // Optional field
   status: "pending" | "delivered"; // Enum for status
   deliveryDate?: Date | null; // Optional field, can be null
+  deliveredBy?: string; // staff name, or "Admin", once delivered
+  deliveredByRole?: "staff" | "admin" | "";
+  deliveredAt?: Date | string | null;
 }
 
 interface BankAccount {
