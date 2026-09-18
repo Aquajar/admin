@@ -4,7 +4,7 @@ import { FaUsers } from "react-icons/fa";
 import { RiBillLine } from "react-icons/ri";
 import { IoMdSettings } from "react-icons/io";
 import { FaPeopleGroup } from "react-icons/fa6";
-import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck, FaRegCalendarCheck } from "react-icons/fa";
+import { FaFileInvoice, FaFileAlt, FaMapMarkedAlt, FaTruck, FaRegCalendarCheck, FaWallet } from "react-icons/fa";
 import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits, MdInsights } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
@@ -56,6 +56,11 @@ const SidebarItems: SideBarItem[] = [
     name: "Attendance",
     icon: FaRegCalendarCheck,
     href: "/attendance",
+  },
+  {
+    name: "Payouts",
+    icon: FaWallet,
+    href: "/payouts",
   },
   {
     name: "Vehicle Log",
