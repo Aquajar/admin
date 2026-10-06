@@ -2,7 +2,7 @@ import { SidebarItems } from "@/lib/constants";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React from "react";
+import React, { useEffect } from "react";
 import { LogOut } from "lucide-react";
 import {
   Sidebar,
@@ -17,7 +17,35 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
+const Brand = () => (
+  <>
+    <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/logo.png"
+        alt="Aquajar"
+        className="size-8 object-contain"
+      />
+    </div>
+    <span className="truncate text-[15px] font-bold tracking-tight">
+      Aquajar
+    </span>
+  </>
+);
+
+// Phone-only top bar. Below md the sidebar is an off-canvas sheet that starts
+// closed, so the toggle inside its header can't open it; this one can.
+export const MobileTopBar = () => (
+  <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-white px-4 md:hidden">
+    <SidebarTrigger className="size-9 shrink-0 text-[#64748B]" />
+    <Link href="/" className="flex min-w-0 items-center gap-2">
+      <Brand />
+    </Link>
+  </header>
+);
 
 // Nav grouped into labelled sections. Items are looked up from SidebarItems by
 // name; any item not placed in a group falls into a trailing "More" section, so
@@ -33,6 +61,12 @@ const GROUPS: { label: string; names: string[] }[] = [
 
 const AppSidebar = () => {
   const router = useRouter();
+  const { setOpenMobile } = useSidebar();
+
+  // On phones the sheet stays open over the new page after a link tap; close it.
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [router.asPath, setOpenMobile]);
 
   const isActive = (href: string) =>
     href === "/" ? router.pathname === "/" : router.pathname.startsWith(href);
@@ -52,17 +86,7 @@ const AppSidebar = () => {
             href="/"
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 group-data-[collapsible=icon]:hidden"
           >
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/logo.png"
-                alt="Aquajar"
-                className="size-8 object-contain"
-              />
-            </div>
-            <span className="truncate text-[15px] font-bold tracking-tight">
-              Aquajar
-            </span>
+            <Brand />
           </Link>
           <SidebarTrigger className="size-8 shrink-0 text-[#64748B]" />
         </div>

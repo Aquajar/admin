@@ -1,4 +1,4 @@
-import AppSidebar from "@/components/Sidebar";
+import AppSidebar, { MobileTopBar } from "@/components/Sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useRouter } from "next/router";
 import { StoreProvider as CustomerStoreProvider } from "@/store/customers.store";
@@ -54,6 +54,7 @@ export default function App({
                     <SidebarProvider>
                       <AppSidebar />
                       <SidebarInset className="bg-[#FFFFFF]">
+                        <MobileTopBar />
                         {content}
                       </SidebarInset>
                     </SidebarProvider>
