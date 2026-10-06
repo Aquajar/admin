@@ -3,6 +3,7 @@ import Activities from "@/components/Customer/Activities";
 import Profile from "@/components/Customer/Profile";
 import GenerateBillDialog from "@/components/Customer/GenerateBillDialog";
 import WaterCardDialog from "@/components/Customer/WaterCardDialog";
+import EditInvoiceDialog from "@/components/Customer/EditInvoiceDialog";
 import Statistics from "@/components/Customer/Statistics";
 import { Button } from "@/components/ui/button";
 import Wrapper from "@/components/Wrapper";
@@ -10,7 +11,7 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Activity, Customer, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
-import { ArrowLeft, SquarePen, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -448,6 +449,21 @@ const CustomerInvoicesData = () => {
     }
   };
 
+  // After an invoice edit: a date change can move the row, so reload the list;
+  // otherwise swap the row in place to keep the scroll position.
+  const handleInvoiceSaved = (updated: Invoice, dateChanged: boolean) => {
+    if (dateChanged) {
+      reloadInvoices();
+    } else {
+      setInvoices((prev) =>
+        prev.map((inv) => (inv._id === updated._id ? updated : inv))
+      );
+    }
+    fetchProfileDetails();
+    setActivitiesInitialized(false);
+    setActivities(null);
+  };
+
   return (
     <Wrapper>
       <div className="flex flex-col w-full">
@@ -670,9 +686,13 @@ const CustomerInvoicesData = () => {
                                       </AlertDialogContent>
                                     </AlertDialog>
 
-                                    <Button size="icon" variant="outline" >
-                                      <SquarePen size={16} />
-                                    </Button>
+                                    <EditInvoiceDialog
+                                      invoice={invoice}
+                                      products={products}
+                                      customer={customer}
+                                      axiosInstance={axiosInstance}
+                                      onSaved={handleInvoiceSaved}
+                                    />
                                   </div>
                                 </td>
                               </tr>

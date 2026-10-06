@@ -173,35 +173,23 @@ const Profile: FC<IProps> = ({ customer, axiosInstance, setCustomer }) => {
             {/* Engaged Jars */}
             <div className="space-y-2">
               <Label htmlFor="engagedJars">Engaged Jars</Label>
-              <Select
-                value={
-                  customer?.engagedJars === 0 || customer?.engagedJars === undefined
-                    ? "null"
-                    : String(customer.engagedJars)
-                }
-                onValueChange={(value) => {
+              <Input
+                type="number"
+                id="engagedJars"
+                name="engagedJars"
+                min={0}
+                step={1}
+                value={customer?.engagedJars ? String(customer.engagedJars) : ""}
+                onChange={(e) => {
                   if (!customer) return;
-
+                  const parsed = parseInt(e.target.value, 10);
                   setCustomer({
                     ...customer,
-                    engagedJars: value === "null" ? 0 : Number(value),
+                    engagedJars: isNaN(parsed) ? 0 : Math.max(0, parsed),
                   });
                 }}
-              >
-                <SelectTrigger id="engagedJars">
-                  <SelectValue placeholder="Select jars engaged" />
-                </SelectTrigger>
-
-                <SelectContent>
-                  <SelectItem value="null">Null</SelectItem>
-
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <SelectItem key={num} value={String(num)}>
-                      {num}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="0"
+              />
               <p className="text-xs text-muted-foreground">
                 Number of jars currently in circulation with the customer
               </p>

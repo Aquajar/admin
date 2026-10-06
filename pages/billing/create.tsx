@@ -749,21 +749,17 @@ const Invoice = () => {
 
                   <div className="space-y-2">
                     <Label>Engaged jars</Label>
-                    <Select
-                      value={String(engagedJars)}
-                      onValueChange={(v) => setEngagedJars(Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[0, 1, 2, 3, 4, 5].map((n) => (
-                          <SelectItem key={n} value={String(n)}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={engagedJars ? String(engagedJars) : ""}
+                      onChange={(e) => {
+                        const parsed = parseInt(e.target.value, 10)
+                        setEngagedJars(isNaN(parsed) ? 0 : Math.max(0, parsed))
+                      }}
+                      placeholder="0"
+                    />
                   </div>
 
                   <div className="space-y-2">

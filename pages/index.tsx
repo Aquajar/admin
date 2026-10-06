@@ -32,6 +32,7 @@ import Suggestions from "@/components/dashboard/Suggestions";
 import MonthlySummary from "@/components/dashboard/MonthlySummary";
 import DateSelector from "@/components/dashboard/DateSelector";
 import RefillBarChart from "@/components/dashboard/RefillChart";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 
 
 export default function Home() {
@@ -50,6 +51,9 @@ export default function Home() {
 
   const [superAdminToolsIsexpanded, setSuperAdminToolsIsexpanded] =
     useState(false);
+
+  // Set if the dashboard request fails, so we stop showing the skeleton.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const {
     data,
@@ -103,6 +107,7 @@ export default function Home() {
       setCurrMonthlyData(currMonth);
     } catch (error) {
       console.error(error);
+      setLoadFailed(true);
     }
   };
 
@@ -211,6 +216,18 @@ export default function Home() {
 
 
   console.log(data)
+
+  // The store starts empty; the daily series is the first thing the page needs.
+  const isLoading = !data?.summary?.last7Days?.refilling?.length && !loadFailed;
+
+  if (isLoading) {
+    return (
+      <Wrapper>
+        <Greetings name={user?.name} />
+        <DashboardSkeleton showAdminTools={user?.role === "super_admin"} />
+      </Wrapper>
+    );
+  }
 
   return (
     <Wrapper>
