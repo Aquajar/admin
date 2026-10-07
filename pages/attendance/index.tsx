@@ -1,10 +1,29 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { RefreshCw, Loader2 } from "lucide-react";
+import {
+  RefreshCw,
+  Loader2,
+  Download,
+  ChevronDown,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  STATUS_META,
+  exportAttendancePDF,
+  exportAttendanceXLSX,
+} from "@/components/Attendance/attendanceExport";
 import {
   AttendanceResponse,
   AttendanceRow,
@@ -15,17 +34,6 @@ const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-
-// Status meta — colours mirror the source attendance sheet.
-const STATUS_META: Record<
-  AttendanceStatus,
-  { label: string; bg: string; text: string; name: string }
-> = {
-  P: { label: "P", bg: "#D9EAD3", text: "#274E13", name: "Present" },
-  A: { label: "A", bg: "#EA9999", text: "#5B0000", name: "Absent" },
-  HD: { label: "HD", bg: "#C9DAF8", text: "#1C4587", name: "Half day" },
-  H: { label: "H", bg: "#CFE2F3", text: "#1C4587", name: "Holiday" },
-};
 
 const countOf = (days: Record<string, AttendanceStatus>) => {
   let present = 0;
@@ -54,6 +62,10 @@ const AttendancePage = () => {
   const [rows, setRows] = useState<AttendanceRow[]>([]);
   const [daysInMonth, setDaysInMonth] = useState(31);
   const [loading, setLoading] = useState(false);
+  // Period the loaded rows belong to, so an export never mislabels data while
+  // a month switch is still loading.
+  const [loaded, setLoaded] = useState<{ year: number; month: number } | null>(null);
+  const [exporting, setExporting] = useState<"xlsx" | "pdf" | null>(null);
   const [menu, setMenu] = useState<{
     employeeID: number;
     day: number;
@@ -71,6 +83,7 @@ const AttendancePage = () => {
         );
         setRows(data.rows || []);
         setDaysInMonth(data.daysInMonth || 31);
+        setLoaded({ year: data.year || y, month: data.month || m });
       } catch (error) {
         console.error(error);
         toast.error("Failed to load attendance");
@@ -159,6 +172,28 @@ const AttendancePage = () => {
     setMenu(null);
   };
 
+  const handleExport = async (kind: "xlsx" | "pdf") => {
+    if (!loaded || rows.length === 0) {
+      toast.error("Nothing to export for this month");
+      return;
+    }
+    setExporting(kind);
+    try {
+      const sheet = { ...loaded, daysInMonth, rows };
+      const fileBase = `Aquajar-Attendance-${loaded.year}-${String(loaded.month).padStart(2, "0")}`;
+      if (kind === "xlsx") await exportAttendanceXLSX(sheet, fileBase);
+      else await exportAttendancePDF(sheet, fileBase);
+      toast.success(kind === "xlsx" ? "Excel downloaded" : "PDF downloaded");
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to export ${kind === "xlsx" ? "Excel" : "PDF"}`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const canExport = !loading && rows.length > 0 && exporting === null;
+
   const totalPresent = rows.reduce((s, r) => s + r.present, 0);
   const totalAbsent = rows.reduce((s, r) => s + r.absent, 0);
 
@@ -180,7 +215,7 @@ const AttendancePage = () => {
             <select
               value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
-              className="h-11 rounded-xl border border-[#EAEAEA] bg-white px-3 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
+              className="h-11 w-40 rounded-xl border border-[#EAEAEA] bg-white pl-3 pr-10 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
             >
               {MONTHS.map((mn, i) => (
                 <option key={mn} value={i + 1}>
@@ -191,7 +226,7 @@ const AttendancePage = () => {
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="h-11 rounded-xl border border-[#EAEAEA] bg-white px-3 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
+              className="h-11 w-[104px] rounded-xl border border-[#EAEAEA] bg-white pl-3 pr-10 text-[15px] font-medium text-[#0A0A0A] hover:border-[#D4D4D4] focus:border-[#2563EB] focus:outline-none focus:ring-[3px] focus:ring-[#2563EB]/15"
             >
               {[now.getFullYear() + 1, now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2].map(
                 (y) => (
@@ -209,6 +244,63 @@ const AttendancePage = () => {
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={!canExport}
+                  className="h-11 rounded-xl bg-[#2563EB] px-4 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8] disabled:opacity-60"
+                >
+                  {exporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {exporting ? "Preparing…" : "Download"}
+                  <ChevronDown className="ml-1.5 h-4 w-4 opacity-80" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-[260px] rounded-xl border-[#EAEAEA] bg-white p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
+              >
+                <DropdownMenuLabel className="px-2.5 pb-1.5 pt-1 text-[12px] font-medium uppercase tracking-wide text-[#9CA3AF]">
+                  {MONTHS[month - 1]} {year} · {rows.length} staff
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onSelect={() => handleExport("xlsx")}
+                  className="cursor-pointer gap-3 rounded-lg px-2.5 py-2 focus:bg-[#F5F7FA]"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8F5EC] text-[#15803D]">
+                    <FileSpreadsheet className="h-[18px] w-[18px]" />
+                  </span>
+                  <span className="flex flex-col">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      Excel (.xlsx)
+                    </span>
+                    <span className="text-[12px] text-[#6B7280]">
+                      Colour-coded sheet with totals
+                    </span>
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => handleExport("pdf")}
+                  className="cursor-pointer gap-3 rounded-lg px-2.5 py-2 focus:bg-[#F5F7FA]"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FDECEC] text-[#DC2626]">
+                    <FileText className="h-[18px] w-[18px]" />
+                  </span>
+                  <span className="flex flex-col">
+                    <span className="text-[14px] font-medium text-[#0A0A0A]">
+                      PDF
+                    </span>
+                    <span className="text-[12px] text-[#6B7280]">
+                      Print-ready, A4 landscape
+                    </span>
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
