@@ -212,7 +212,7 @@ const AddLogDialog: FC<Props> = ({
           <DialogTitle>{editing ? "Edit Log" : "Add Vehicle Log"}</DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[65vh] space-y-4 overflow-y-auto px-1 py-1">
+        <div className="max-h-[75vh] space-y-4 overflow-y-auto px-1 py-1">
           {/* Date + times */}
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -240,6 +240,19 @@ const AddLogDialog: FC<Props> = ({
                 value={arrivalTime}
                 onChange={(e) => setArrivalTime(e.target.value)}
                 className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Location — kept near the top so it's visible without scrolling */}
+          <div>
+            <Label className="text-xs text-gray-600">Location</Label>
+            <div className="mt-1">
+              <TagSelect
+                value={location}
+                options={areaNames}
+                onChange={setLocation}
+                placeholder="Add location…"
               />
             </div>
           </div>
@@ -288,12 +301,21 @@ const AddLogDialog: FC<Props> = ({
             if the actual value differs.
           </p>
 
-          {/* Cash */}
+          {/* Cash + note */}
           <div className="grid grid-cols-3 gap-3">
             {numField("Cash (₹)", cash, setCash)}
+            <div className="col-span-2">
+              <Label className="text-xs text-gray-600">Note (optional)</Label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="mt-1"
+                placeholder="Any remarks"
+              />
+            </div>
           </div>
 
-          {/* Staff + driver + location */}
+          {/* Staff + driver */}
           <div>
             <Label className="text-xs text-gray-600">Staff</Label>
             <div className="mt-1">
@@ -339,28 +361,6 @@ const AddLogDialog: FC<Props> = ({
               Only the driver is paid the driver rate — everyone else on the trip
               is paid as labour.
             </p>
-          </div>
-          <div>
-            <Label className="text-xs text-gray-600">Location</Label>
-            <div className="mt-1">
-              <TagSelect
-                value={location}
-                options={areaNames}
-                onChange={setLocation}
-                placeholder="Add location…"
-              />
-            </div>
-          </div>
-
-          {/* Note */}
-          <div>
-            <Label className="text-xs text-gray-600">Note (optional)</Label>
-            <Input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="mt-1"
-              placeholder="Any remarks"
-            />
           </div>
         </div>
 
