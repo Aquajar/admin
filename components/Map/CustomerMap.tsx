@@ -21,7 +21,7 @@ interface IProps {
 // Loads Leaflet (CSS + JS) from the public CDN exactly once and resolves with
 // the global `L`. Kept out of npm so the map works without adding a dependency.
 let leafletPromise: Promise<any> | null = null;
-function loadLeaflet(): Promise<any> {
+export function loadLeaflet(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject("no window");
   if ((window as any).L) return Promise.resolve((window as any).L);
   if (leafletPromise) return leafletPromise;

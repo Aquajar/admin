@@ -54,6 +54,7 @@ const GROUPS: { label: string; names: string[] }[] = [
   { label: "General", names: ["Dashboard", "Map"] },
   { label: "Sales", names: ["Billing", "Customers", "Orders", "Invoices", "Account Groups"] },
   { label: "Team", names: ["HR Manager", "Attendance", "Payouts", "Vehicle Log"] },
+  { label: "Trips", names: ["Live Tracking", "Trip Review", "Sites & Vehicles", "Trip Attendance", "Trip Reports", "Trip Settings"] },
   { label: "Catalog", names: ["Areas", "Products"] },
   { label: "Insights", names: ["Analytics", "Reports", "Activity"] },
   { label: "System", names: ["Settings"] },
