@@ -5,7 +5,6 @@ import { FaMinusCircle } from "react-icons/fa";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { useSession } from "next-auth/react";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
-import axios from "axios";
 import { Customer } from "@/types/types";
 import toast from "react-hot-toast";
 
@@ -45,7 +44,7 @@ const Create = () => {
     }
 
     try {
-      const { data } = await axios.get(url);
+      const { data } = await axiosInstance.get(url);
       setResultUser((prev) => [...prev, data.user]);
     } catch (err) {
       console.log(err);

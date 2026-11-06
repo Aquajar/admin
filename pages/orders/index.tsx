@@ -2,7 +2,6 @@ import Wrapper from "@/components/Wrapper";
 import { customModalStyles } from "@/lib/constants";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { Customer, Item, Order, Product } from "@/types/types";
-import axios from "axios";
 import { getCookie } from "cookies-next";
 import { toZonedTime, format } from "date-fns-tz";
 import { useSession } from "next-auth/react";
@@ -205,7 +204,7 @@ const Orders = () => {
       setIsloading(true);
       const URL =
         process.env.NEXT_PUBLIC_API_URL + "/user/find-by-phone/" + phoneNumber;
-      axios
+      axiosInstance
         .get(URL)
         .then((res) => {
           const customer: Customer = res.data.user;

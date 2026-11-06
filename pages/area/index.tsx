@@ -3,6 +3,9 @@ import { Area } from "@/types/types";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
+import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL + "/area";
 
@@ -11,6 +14,10 @@ const Areas = () => {
   const [serviceable, setserviceable] = useState(true);
   const [areas, setAreas] = useState<Area[] | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const { data: session } = useSession();
+  const axiosInstance = useAxiosInstance(session);
+  useRefreshTokenRotation(axiosInstance);
 
   // Add area
   const handleAddArea = async (e: React.FormEvent) => {
@@ -24,7 +31,7 @@ const Areas = () => {
     }
 
     // Promise
-    const promise = axios.post(BASE_URL + "/new", {
+    const promise = axiosInstance.post(BASE_URL + "/new", {
       name,
       serviceable,
     });

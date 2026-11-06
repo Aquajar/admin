@@ -2,6 +2,7 @@
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 
 export function useTrackingApi() {
   const { data: session } = useSession();
@@ -10,6 +11,7 @@ export function useTrackingApi() {
     () => axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL, headers: { Authorization: `Bearer ${token}` } }),
     [token]
   );
+  useRefreshTokenRotation(api);
   return { api, ready: !!token };
 }
 

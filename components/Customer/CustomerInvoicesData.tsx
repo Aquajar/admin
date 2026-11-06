@@ -1,4 +1,5 @@
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Invoice } from "@/types/types";
 import { useSession } from "next-auth/react";
@@ -35,6 +36,7 @@ const CustomerInvoicesData: FC<IProps> = ({
 
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+  useRefreshTokenRotation(axiosInstance);
 
   // Get the invoice for the user
   const handleFetchInvoice = async () => {

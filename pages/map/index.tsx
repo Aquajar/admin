@@ -1,6 +1,7 @@
 import Wrapper from "@/components/Wrapper";
 import { STATUS_COLORS } from "@/components/Map/CustomerMap";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { MapCustomer, MapMode, MapStatus } from "@/types/types";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
@@ -36,6 +37,7 @@ const LEGENDS: Record<MapMode, { status: MapStatus; label: string }[]> = {
 const MapPage = () => {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+  useRefreshTokenRotation(axiosInstance);
 
   const [mode, setMode] = useState<MapMode>("sales");
   const [customers, setCustomers] = useState<MapCustomer[] | null>(null);

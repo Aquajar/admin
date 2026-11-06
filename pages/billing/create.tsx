@@ -204,7 +204,7 @@ const Invoice = () => {
       setIsloading(true);
       const URL =
         process.env.NEXT_PUBLIC_API_URL + "/user/find-by-phone/" + phoneNumber;
-      axios
+      axiosInstance
         .get(URL)
         .then((res) => {
           const customer: Customer = res.data.user;
@@ -228,7 +228,7 @@ const Invoice = () => {
       setIsloading(true);
       const URL =
         process.env.NEXT_PUBLIC_API_URL + "/user/find-by-userid/" + customerID;
-      axios
+      axiosInstance
         .get(URL)
         .then((res) => {
           const customer: Customer = res.data.user;

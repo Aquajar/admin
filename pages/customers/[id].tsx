@@ -8,6 +8,7 @@ import Statistics from "@/components/Customer/Statistics";
 import { Button } from "@/components/ui/button";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { copyTextToKeyboard } from "@/lib/utils";
 import { Activity, Customer, Invoice, Product } from "@/types/types";
 import { getCookie, setCookie } from "cookies-next";
@@ -128,6 +129,7 @@ const CustomerInvoicesData = () => {
 
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+  useRefreshTokenRotation(axiosInstance);
 
   // First load (profile + summary + products) is ready
   const firstLoadReady = Boolean(customer && products && summary);
