@@ -152,39 +152,34 @@ export interface AttendanceResponse {
   rows: AttendanceRow[];
 }
 
-export interface TripRates {
-  driver: { airport: number; local: number };
-  labour: { airport: number; local: number };
-}
-
-export interface TripRateConfig {
-  rates: TripRates;
-  airportKeyword: string;
-}
-
+// Salary-based payout row (GET /vehicle-log/earnings).
 export interface StaffEarning {
+  staffId: string;
   name: string;
-  role: "driver" | "labour";
+  role: string;
   employeeID?: number | null;
   matched: boolean;
+  salary: number;
+  perDay: number;
+  fullDays: number;
+  halfDays: number;
+  holidays: number;
+  payableDays: number;
   daysWorked: number;
   trips: number;
   jars: number;
   earned: number;
-  perDay: number;
 }
 
 export interface EarningsResponse {
   range: { start: string; end: string };
-  rates: TripRates;
-  airportKeyword: string;
   rows: StaffEarning[];
   totals: {
     people: number;
     trips: number;
+    payableDays: number;
     jarsDelivered: number;
     totalEarned: number;
-    wageCostPerJar: number;
   };
 }
 
@@ -204,6 +199,12 @@ export interface VehicleLog {
   location: string[];
   driver?: string;
   note?: string;
+  // Review: entries from the staff app wait for approval; sheet rows count as approved.
+  status?: "pending" | "approved" | "rejected";
+  source?: "sheet" | "admin" | "app" | "gps";
+  tripId?: string | null;
+  rejectReason?: string;
+  gps?: { reasonCodes: string[]; severity: string; distanceKm: number } | null;
   createdAt?: string;
   updatedAt?: string;
 }

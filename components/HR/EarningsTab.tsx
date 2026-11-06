@@ -5,9 +5,8 @@ import toast from "react-hot-toast";
 import {
   IndianRupee,
   Truck,
-  Droplets,
-  Gauge,
-  SlidersHorizontal,
+  CalendarCheck,
+  Users,
   FileSpreadsheet,
   Loader2,
   AlertCircle,
@@ -16,15 +15,17 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EarningsResponse, StaffEarning, TripRateConfig } from "@/types/types";
-import RatesDialog from "@/components/HR/RatesDialog";
+import { EarningsResponse, StaffEarning } from "@/types/types";
 
 type SortKey =
   | "name"
   | "role"
-  | "daysWorked"
+  | "salary"
+  | "fullDays"
+  | "halfDays"
+  | "holidays"
+  | "payableDays"
   | "trips"
-  | "jars"
   | "earned"
   | "perDay";
 
@@ -56,9 +57,7 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
   const [month, setMonth] = useState(currentMonthKey());
   const [months, setMonths] = useState<string[]>([]);
   const [data, setData] = useState<EarningsResponse | null>(null);
-  const [config, setConfig] = useState<TripRateConfig | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ratesOpen, setRatesOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("earned");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -77,12 +76,8 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
     async (key: string) => {
       setLoading(true);
       try {
-        const [earn, cfg] = await Promise.all([
-          axiosInstance.get(`${base}/vehicle-log/earnings?month=${key}`),
-          axiosInstance.get(`${base}/trip-rate`),
-        ]);
+        const earn = await axiosInstance.get(`${base}/vehicle-log/earnings?month=${key}`);
         setData(earn.data);
-        setConfig(cfg.data.config);
       } catch (error) {
         console.error(error);
         toast.error("Failed to load earnings");
@@ -176,35 +171,34 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
     setExporting(true);
     try {
       const XLSX = await import("xlsx");
-      const header = ["Person", "Role", "Days Worked", "Trips", "Jars", "Total Earned", "Per Day"];
+      const header = ["Person", "Role", "Monthly Salary", "Per Day", "Full Days", "Half Days", "Holidays", "Payable Days", "Trips", "Payout"];
       const body = sortedRows.map((r) => [
         r.name,
-        r.role === "driver" ? "Driver" : "Labour",
-        r.daysWorked,
-        r.trips,
-        r.jars,
-        r.earned,
+        r.role,
+        r.salary,
         r.perDay,
+        r.fullDays,
+        r.halfDays,
+        r.holidays,
+        r.payableDays,
+        r.trips,
+        r.earned,
       ]);
-      const totalRow = ["TOTAL", "", "", totals?.trips ?? "", totals?.jarsDelivered ?? "", totals?.totalEarned ?? "", ""];
+      const totalRow = ["TOTAL", "", "", "", "", "", "", totals?.payableDays ?? "", totals?.trips ?? "", totals?.totalEarned ?? ""];
       const aoa = [
-        [`AQUAJAR EARNINGS — ${monthLabel(month).toUpperCase()}`],
-        [],
+        [`AQUAJAR PAYOUT — ${monthLabel(month).toUpperCase()}`],
+        ["Per day = monthly salary ÷ days in the month. 1–2 approved trips = half day, 3+ = full day, holiday (H) = full day."],
         header,
         ...body,
         [],
         totalRow,
-        [],
-        ["Trips", totals?.trips ?? ""],
-        ["Jars delivered (trip level)", totals?.jarsDelivered ?? ""],
-        ["Wage cost per jar", totals?.wageCostPerJar ?? ""],
       ];
       const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
-      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+      ws["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 13 }, { wch: 8 }, { wch: 12 }];
+      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Earnings");
-      XLSX.writeFile(wb, `Aquajar-Earnings-${month}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Payout");
+      XLSX.writeFile(wb, `Aquajar-Payout-${month}.xlsx`);
     } catch (error) {
       console.error(error);
       toast.error("Export failed");
@@ -229,23 +223,11 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
               </option>
             ))}
           </select>
-          {config && (
-            <span className="hidden text-[13px] text-[#6B7280] md:inline">
-              D&nbsp;{inr(config.rates.driver.airport)}/{inr(config.rates.driver.local)}
-              &nbsp;·&nbsp;L&nbsp;{inr(config.rates.labour.airport)}/{inr(config.rates.labour.local)}
-              &nbsp;(air/local per jar)
-            </span>
-          )}
+          <span className="hidden text-[13px] text-[#6B7280] md:inline">
+            Per day = salary ÷ days in month · 1–2 trips = ½ day · 3+ trips or holiday = full day
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setRatesOpen(true)}
-            className="h-11 rounded-xl border-[#EAEAEA] px-5 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
-          >
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
-            Edit Rates
-          </Button>
           <Button
             variant="outline"
             onClick={handleExport}
@@ -265,45 +247,48 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          label="Total Wage"
+          label="Total Payout"
           value={loading ? "…" : inr(totals?.totalEarned ?? 0)}
           icon={<IndianRupee className="h-5 w-5" />}
         />
         <StatCard
-          label="Trips"
+          label="Payable Days"
+          value={loading ? "…" : totals?.payableDays ?? 0}
+          icon={<CalendarCheck className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Approved Trips"
           value={loading ? "…" : totals?.trips ?? 0}
           icon={<Truck className="h-5 w-5" />}
         />
         <StatCard
-          label="Jars Delivered"
-          value={loading ? "…" : totals?.jarsDelivered ?? 0}
-          icon={<Droplets className="h-5 w-5" />}
-        />
-        <StatCard
-          label="Wage / Jar"
-          value={loading ? "…" : inr(totals?.wageCostPerJar ?? 0)}
-          icon={<Gauge className="h-5 w-5" />}
+          label="Staff"
+          value={loading ? "…" : totals?.people ?? 0}
+          icon={<Users className="h-5 w-5" />}
         />
       </div>
 
       {/* Earnings table */}
       <div className="w-full overflow-x-auto rounded-2xl border border-[#EAEAEA] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <table className="w-full min-w-[720px] text-[15px]">
+        <table className="w-full min-w-[960px] text-[15px]">
           <thead className="border-b border-[#EAEAEA] bg-[#FAFAFA] text-[#0A0A0A]">
             <tr>
               {sortHead("Person", "name", "left", true)}
               {sortHead("Role", "role", "left", true)}
-              {sortHead("Days", "daysWorked")}
-              {sortHead("Trips", "trips")}
-              {sortHead("Jars", "jars")}
-              {sortHead("Total Earned", "earned")}
+              {sortHead("Salary", "salary")}
               {sortHead("Per Day", "perDay")}
+              {sortHead("Full", "fullDays")}
+              {sortHead("Half", "halfDays")}
+              {sortHead("Holiday", "holidays")}
+              {sortHead("Payable Days", "payableDays")}
+              {sortHead("Trips", "trips")}
+              {sortHead("Payout", "earned")}
             </tr>
           </thead>
           <tbody>
             {sortedRows.map((r: StaffEarning) => (
               <tr
-                key={r.name}
+                key={r.staffId || r.name}
                 className="border-b border-[#EAEAEA] transition-colors hover:bg-[#FAFAFA]"
               >
                 <td className="px-6 py-4 font-medium text-[#0A0A0A]">
@@ -331,26 +316,30 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
                     {r.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.daysWorked}</td>
+                <td className="px-6 py-4 text-right text-[#0A0A0A]">
+                  {r.salary ? inr(r.salary) : <span className="text-amber-700">Not set</span>}
+                </td>
+                <td className="px-6 py-4 text-right text-[#6B7280]">{inr(r.perDay)}</td>
+                <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.fullDays}</td>
+                <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.halfDays}</td>
+                <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.holidays}</td>
+                <td className="px-6 py-4 text-right font-medium text-[#0A0A0A]">{r.payableDays}</td>
                 <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.trips}</td>
-                <td className="px-6 py-4 text-right text-[#0A0A0A]">{r.jars}</td>
                 <td className="px-6 py-4 text-right font-semibold text-[#0A0A0A]">
                   {inr(r.earned)}
                 </td>
-                <td className="px-6 py-4 text-right text-[#6B7280]">{inr(r.perDay)}</td>
               </tr>
             ))}
           </tbody>
           {rows.length > 0 && totals && (
             <tfoot>
               <tr className="border-t border-[#EAEAEA] bg-[#FAFAFA] font-semibold text-[#0A0A0A]">
-                <td className="px-6 py-4" colSpan={3}>
+                <td className="px-6 py-4" colSpan={7}>
                   Total
                 </td>
+                <td className="px-6 py-4 text-right">{totals.payableDays}</td>
                 <td className="px-6 py-4 text-right">{totals.trips}</td>
-                <td className="px-6 py-4 text-right">{totals.jarsDelivered}</td>
                 <td className="px-6 py-4 text-right">{inr(totals.totalEarned)}</td>
-                <td className="px-6 py-4" />
               </tr>
             </tfoot>
           )}
@@ -364,18 +353,11 @@ const EarningsTab: FC<Props> = ({ session, axiosInstance }) => {
         )}
         {!loading && rows.length === 0 && (
           <div className="py-10 text-center text-gray-500">
-            No trips logged for {monthLabel(month)}.
+            No staff to pay for {monthLabel(month)}.
           </div>
         )}
       </div>
 
-      <RatesDialog
-        open={ratesOpen}
-        onOpenChange={setRatesOpen}
-        axiosInstance={axiosInstance}
-        config={config}
-        onSaved={() => fetchEarnings(month)}
-      />
     </div>
   );
 };

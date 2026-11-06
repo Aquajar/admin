@@ -148,10 +148,12 @@ const AddLogDialog: FC<Props> = ({
       toast.error("Date is required");
       return;
     }
-    if (staff.length > 0 && !driver) {
-      toast.error("Mark the driver for this trip");
-      return;
-    }
+    // Every trip needs time, delivery location, jars out, staff and driver.
+    if (!departureTime) return void toast.error("Departure time is required");
+    if (location.length === 0) return void toast.error("Delivery location is required");
+    if (out === "") return void toast.error("Jars out is required");
+    if (staff.length === 0) return void toast.error("Pick the staff on this trip");
+    if (!driver) return void toast.error("Mark the driver for this trip");
     setSaving(true);
     try {
       const base = process.env.NEXT_PUBLIC_API_URL;
@@ -182,7 +184,7 @@ const AddLogDialog: FC<Props> = ({
       onSaved();
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save log");
+      toast.error((error as any)?.response?.data?.error?.message || "Failed to save log");
     } finally {
       setSaving(false);
     }

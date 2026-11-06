@@ -2,7 +2,7 @@ import Wrapper from "@/components/Wrapper";
 import { PageTitle } from "@/components/Tracking/Bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { errMsg, fmtTime, todayIST, useTrackingApi } from "@/lib/tracking";
+import { errMsg, todayIST, useTrackingApi } from "@/lib/tracking";
 import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -10,9 +10,10 @@ type Row = {
   staffId: string;
   employeeID: number;
   name: string;
-  days: Record<number, { value: number; trips: number; checkInAt: string | null }>;
+  days: Record<number, { value: number; trips: number; holiday?: boolean }>;
   fullDays: number;
   halfDays: number;
+  holidays: number;
   payableDays: number;
   salary: number;
   payout: number;
@@ -20,7 +21,7 @@ type Row = {
 type Sheet = { month: string; daysInMonth: number; rows: Row[]; locked: boolean };
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
-const CELL: Record<string, string> = { "1": "bg-green-100 text-green-800", "0.5": "bg-amber-100 text-amber-800", "0": "text-gray-300" };
+const CELL: Record<string, string> = { "1": "bg-green-100 text-green-800", "0.5": "bg-amber-100 text-amber-800", "0": "text-gray-300", H: "bg-sky-100 text-sky-800" };
 
 // Trip-based attendance (design 14): approved trips per day → 0, ½ or 1 day;
 // payout = salary ÷ 30 × payable days. Locking a finished month freezes trips and values.
@@ -72,7 +73,7 @@ const TripAttendance = () => {
       ...sheet.rows.map((r) => [
         r.employeeID,
         r.name,
-        ...days.map((d) => (r.days[d] ? r.days[d].value : "")),
+        ...days.map((d) => (r.days[d] ? (r.days[d].holiday ? "H" : r.days[d].value) : "")),
         r.fullDays,
         r.halfDays,
         r.payableDays,
@@ -92,7 +93,7 @@ const TripAttendance = () => {
     <Wrapper>
       <PageTitle
         title="Trip attendance and payout"
-        sub="0 approved trips = absent, 1–2 = half day, 3+ = full day. Also marked on the Attendance sheet unless a mark was set by hand."
+        sub="Approved vehicle-log trips: 1–2 = half day, 3+ = full day; holiday (H on the Attendance sheet) = full day. Pay per day = salary ÷ days in the month."
         right={
           <div className="flex flex-wrap items-center gap-2">
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
@@ -138,10 +139,10 @@ const TripAttendance = () => {
                   return (
                     <td
                       key={d}
-                      title={c ? `${c.trips} approved trip(s)${c.checkInAt ? ` · in ${fmtTime(c.checkInAt)}` : ""}` : ""}
-                      className={`px-1 py-2 text-center ${c ? CELL[String(c.value)] : ""}`}
+                      title={c ? (c.holiday ? "Holiday (paid)" : `${c.trips} approved trip(s)`) : ""}
+                      className={`px-1 py-2 text-center ${c ? CELL[c.holiday ? "H" : String(c.value)] : ""}`}
                     >
-                      {c ? (c.value === 1 ? "P" : c.value === 0.5 ? "½" : "·") : ""}
+                      {c ? (c.holiday ? "H" : c.value === 1 ? "P" : c.value === 0.5 ? "½" : "·") : ""}
                     </td>
                   );
                 })}

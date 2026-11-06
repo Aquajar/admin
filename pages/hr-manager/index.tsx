@@ -18,6 +18,7 @@ import axios from "axios";
 import { KeyRound } from "lucide-react";
 import EarningsTab from "@/components/HR/EarningsTab";
 import SetPasswordDialog from "@/components/HR/SetPasswordDialog";
+import SalaryDialog from "@/components/HR/SalaryDialog";
 
 
 interface MonthData {
@@ -55,6 +56,7 @@ const HRManager = () => {
   const [tab, setTab] = useState<"employees" | "earnings">("employees");
   const [pwStaff, setPwStaff] = useState<Staff | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
+  const [salaryStaff, setSalaryStaff] = useState<Staff | null>(null);
 
   const getStaffData = async () => {
     const URL = process.env.NEXT_PUBLIC_API_URL;
@@ -215,6 +217,13 @@ const HRManager = () => {
         </SheetContent>
       </Sheet>
 
+      <SalaryDialog
+        open={!!salaryStaff}
+        onOpenChange={(o) => !o && setSalaryStaff(null)}
+        axiosInstance={axiosInstance}
+        staff={salaryStaff}
+        onSaved={getStaffData}
+      />
       <SetPasswordDialog
         open={pwOpen}
         onOpenChange={setPwOpen}
@@ -322,6 +331,9 @@ const HRManager = () => {
                     Role
                   </th>
                   <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
+                    Salary
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
                     Status
                   </th>
                   <th scope="col" className="px-6 py-4 text-[15px] font-medium text-[#0A0A0A]">
@@ -389,6 +401,15 @@ const HRManager = () => {
                             {staff.type}
                           </span>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-[15px] text-[#0A0A0A]">
+                          {(() => {
+                            const now = Date.now();
+                            const cur = [...(staff.salary || [])]
+                              .filter((x) => +new Date(x.startDate) <= now)
+                              .sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate))[0];
+                            return cur ? "₹" + Math.round(cur.value).toLocaleString("en-IN") : <span className="text-amber-700">Not set</span>;
+                          })()}
+                        </td>
                         <td className="px-6 py-4">
                           <span
                             className={`inline-block rounded-full px-3 py-1 text-[13px] font-medium capitalize ${
@@ -411,6 +432,13 @@ const HRManager = () => {
                               className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
                             >
                               View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setSalaryStaff(staff)}
+                              className="h-9 rounded-xl border-[#EAEAEA] px-4 text-[15px] font-medium text-[#0A0A0A] shadow-none hover:bg-[#FAFAFA]"
+                            >
+                              Salary
                             </Button>
                             <Button
                               variant="outline"

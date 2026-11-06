@@ -11,7 +11,13 @@ import {
   Loader2,
   Car,
   Truck,
+  Check,
+  X,
+  MapPin,
 } from "lucide-react";
+import Link from "next/link";
+import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
+import { REASONS } from "@/lib/tracking";
 import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useVehicleLogOptions from "@/lib/hooks/useVehicleLogOptions";
@@ -88,6 +94,7 @@ const fmtDate = (iso: string) => {
 const VehicleLogPage = () => {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+  useRefreshTokenRotation(axiosInstance);
   const { areaNames, staffNames, refresh: refreshOptions } =
     useVehicleLogOptions(session);
 
@@ -101,6 +108,8 @@ const VehicleLogPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<VehicleLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleLog | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
 
@@ -194,6 +203,27 @@ const VehicleLogPage = () => {
       setExporting(null);
     }
   };
+
+  // Approve or reject an entry sent from the staff app (only approved trips are paid).
+  const review = async (log: VehicleLog, action: "approve" | "reject") => {
+    let reason = "";
+    if (action === "reject") {
+      reason = window.prompt("Why is this not a valid trip?") || "";
+      if (!reason.trim()) return;
+    }
+    setReviewing(log._id || null);
+    try {
+      await axiosInstance.patch(`${base}/vehicle-log/${log._id}/review`, { action, reason });
+      toast.success(action === "approve" ? "Trip approved" : "Trip rejected");
+      fetchData(month);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error?.message || "Failed to update");
+    } finally {
+      setReviewing(null);
+    }
+  };
+  const shown = statusFilter === "all" ? logs : logs.filter((l) => (l.status || "approved") === statusFilter);
+  const pendingCount = logs.filter((l) => l.status === "pending").length;
 
   const handleDelete = async () => {
     if (!deleteTarget?._id) return;
@@ -310,8 +340,20 @@ const VehicleLogPage = () => {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-base font-semibold text-[#0A0A0A]">
-              Trips <span className="font-normal text-[#9CA3AF]">({logs.length})</span>
+              Trips <span className="font-normal text-[#9CA3AF]">({shown.length})</span>
             </h2>
+            <div className="flex gap-1">
+              {(["all", "pending", "approved", "rejected"] as const).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setStatusFilter(k)}
+                  className={`rounded-full border px-3 py-1 text-sm capitalize ${statusFilter === k ? "border-[#2563EB] bg-[#2563EB] text-white" : "border-[#EAEAEA] text-[#0A0A0A]"}`}
+                >
+                  {k}
+                  {k === "pending" && pendingCount > 0 ? ` (${pendingCount})` : ""}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div
@@ -322,7 +364,7 @@ const VehicleLogPage = () => {
               <TableHeader className="sticky top-0 z-10">
                 <TableRow className="hover:bg-transparent">
                   {[
-                    "#", "Date", "Dep.", "Arr.", "Out", "Return",
+                    "#", "Status", "Date", "Dep.", "Arr.", "Out", "Return",
                     "Engaged", "Filled", "Empty", "Recorded", "Cash",
                     "Staff", "Location", "",
                   ].map((h, i) => (
@@ -340,12 +382,38 @@ const VehicleLogPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.map((log, idx) => (
+                {shown.map((log, idx) => (
                   <TableRow
                     key={log._id}
                     className="border-b border-[#EAEAEA] hover:bg-[#FAFAFA]"
                   >
                     <TableCell className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</TableCell>
+                    <TableCell className="px-4 py-3 min-w-[150px]">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                          log.status === "pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : log.status === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                        }`}
+                        title={log.rejectReason || undefined}
+                      >
+                        {log.status || "approved"}
+                      </span>
+                      <span className="ml-1 text-xs text-[#9CA3AF]">
+                        {log.source === "gps" ? "GPS" : log.source === "app" ? "App" : ""}
+                      </span>
+                      {log.gps?.reasonCodes?.length ? (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {log.gps.reasonCodes.map((c) => (
+                            <span key={c} className="rounded bg-gray-100 px-1 text-[11px] text-gray-700">
+                              {REASONS[c] || c}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-[#0A0A0A]">
                       {fmtDate(log.date)}
                     </TableCell>
@@ -412,6 +480,39 @@ const VehicleLogPage = () => {
                     </TableCell>
                     <TableCell className="whitespace-nowrap px-4 py-3">
                       <div className="flex gap-1">
+                        {log.status === "pending" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={reviewing === log._id}
+                              onClick={() => review(log, "approve")}
+                              title="Approve"
+                              className="size-8 rounded-lg text-green-600 hover:bg-green-50"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={reviewing === log._id}
+                              onClick={() => review(log, "reject")}
+                              title="Reject"
+                              className="size-8 rounded-lg text-red-600 hover:bg-red-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        {log.tripId && (
+                          <Link
+                            href={`/trips/${log.tripId}`}
+                            title="GPS route"
+                            className="flex size-8 items-center justify-center rounded-lg text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Link>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
