@@ -122,6 +122,7 @@ const LivePage = () => {
             <tr>
               <th className="px-3 py-2">Staff</th>
               <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Phone</th>
               <th className="px-3 py-2">Check-in</th>
               <th className="px-3 py-2">Mode</th>
               <th className="px-3 py-2">Last upload</th>
@@ -145,9 +146,10 @@ const LivePage = () => {
                       <span className="text-gray-600">{r.reasons.join(", ") || "OK"}</span>
                     </span>
                   </td>
+                  <td className="px-3 py-2">{r.device ? r.device.model || "Linked" : <span className="text-gray-400">Not signed in</span>}</td>
                   <td className="px-3 py-2">{r.checkinAt ? fmtTime(r.checkinAt) : "—"}</td>
                   <td className="px-3 py-2">{r.device?.lastPing?.mode || "—"}</td>
-                  <td className="px-3 py-2">{r.device ? ago(r.device.lastSeenAt) : "No phone"}</td>
+                  <td className="px-3 py-2">{r.device?.lastSeenAt ? ago(r.device.lastSeenAt) : r.device ? "After check-in" : "—"}</td>
                   <td className="px-3 py-2">
                     {h.battery != null ? `${Math.round(h.battery * 100)}%` : "—"}
                     {h.charging ? " ⚡" : ""}
