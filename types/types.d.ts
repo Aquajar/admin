@@ -188,7 +188,7 @@ export interface VehicleLog {
   date: string; // ISO date
   departureTime: string; // "HH:mm"
   arrivalTime: string; // "HH:mm"
-  out: number;
+  out: number | null; // null on a vehicle-QR entry until the crew fills it in
   returned: number; // "Return"
   engaged: number; // returned - out (derived)
   filled: number;
@@ -200,11 +200,18 @@ export interface VehicleLog {
   driver?: string;
   note?: string;
   // Review: entries from the staff app wait for approval; sheet rows count as approved.
-  status?: "pending" | "approved" | "rejected";
-  source?: "sheet" | "admin" | "app" | "gps";
+  // "unlogged" = a GPS trip nobody scanned or filled in (a virtual row, not saved yet)
+  status?: "pending" | "approved" | "rejected" | "unlogged";
+  // gps = GPS trip without a vehicle QR scan · qr = started by a QR scan · admin = typed by the admin
+  source?: "sheet" | "admin" | "app" | "gps" | "qr";
+  virtual?: boolean;
+  vehicle?: string;
+  scanAt?: string;
   tripId?: string | null;
   rejectReason?: string;
   gps?: { reasonCodes: string[]; severity: string; distanceKm: number } | null;
+  // Does the staff phones' GPS back up a QR / admin entry?
+  gpsCheck?: { state: "match" | "waiting" | "mismatch"; reason?: string } | null;
   createdAt?: string;
   updatedAt?: string;
 }

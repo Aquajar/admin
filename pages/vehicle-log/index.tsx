@@ -81,6 +81,12 @@ const monthLabel = (key: string) => {
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
 
+// The three kinds of trip entry (plus old sheet / app rows).
+const KIND: Record<string, string> = { gps: "GPS only", qr: "QR scanned", admin: "Admin", sheet: "Sheet", app: "App" };
+// GPS-only trips, and QR / admin entries the phones' GPS does not back up.
+const needsAttention = (l: VehicleLog) =>
+  !!l.virtual || (l.source === "gps" && l.status === "pending") || l.gpsCheck?.state === "mismatch";
+
 const fmtDate = (iso: string) => {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
@@ -108,7 +114,7 @@ const VehicleLogPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<VehicleLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleLog | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "attention" | "pending" | "approved" | "rejected">("all");
   const [reviewing, setReviewing] = useState<string | null>(null);
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -184,7 +190,8 @@ const VehicleLogPage = () => {
   const totals = analytics?.totals;
 
   const handleExport = async (kind: "xlsx" | "pdf") => {
-    if (logs.length === 0) {
+    const saved = logs.filter((l) => !l.virtual);
+    if (saved.length === 0) {
       toast.error("Nothing to export for this month");
       return;
     }
@@ -192,9 +199,9 @@ const VehicleLogPage = () => {
     try {
       const fileBase = `Vehicle-Log-${month}`;
       if (kind === "xlsx") {
-        await exportVehicleLogXLSX(logs, monthLabel(month), fileBase);
+        await exportVehicleLogXLSX(saved, monthLabel(month), fileBase);
       } else {
-        await exportVehicleLogPDF(logs, monthLabel(month), fileBase);
+        await exportVehicleLogPDF(saved, monthLabel(month), fileBase);
       }
     } catch (error) {
       console.error(error);
@@ -222,8 +229,14 @@ const VehicleLogPage = () => {
       setReviewing(null);
     }
   };
-  const shown = statusFilter === "all" ? logs : logs.filter((l) => (l.status || "approved") === statusFilter);
+  const shown =
+    statusFilter === "all"
+      ? logs
+      : statusFilter === "attention"
+        ? logs.filter(needsAttention)
+        : logs.filter((l) => (l.status || "approved") === statusFilter);
   const pendingCount = logs.filter((l) => l.status === "pending").length;
+  const attentionCount = logs.filter(needsAttention).length;
 
   const handleDelete = async () => {
     if (!deleteTarget?._id) return;
@@ -343,14 +356,15 @@ const VehicleLogPage = () => {
               Trips <span className="font-normal text-[#9CA3AF]">({shown.length})</span>
             </h2>
             <div className="flex gap-1">
-              {(["all", "pending", "approved", "rejected"] as const).map((k) => (
+              {(["all", "attention", "pending", "approved", "rejected"] as const).map((k) => (
                 <button
                   key={k}
                   onClick={() => setStatusFilter(k)}
                   className={`rounded-full border px-3 py-1 text-sm capitalize ${statusFilter === k ? "border-[#2563EB] bg-[#2563EB] text-white" : "border-[#EAEAEA] text-[#0A0A0A]"}`}
                 >
-                  {k}
+                  {k === "attention" ? "Needs attention" : k}
                   {k === "pending" && pendingCount > 0 ? ` (${pendingCount})` : ""}
+                  {k === "attention" && attentionCount > 0 ? ` (${attentionCount})` : ""}
                 </button>
               ))}
             </div>
@@ -388,10 +402,10 @@ const VehicleLogPage = () => {
                     className="border-b border-[#EAEAEA] hover:bg-[#FAFAFA]"
                   >
                     <TableCell className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</TableCell>
-                    <TableCell className="px-4 py-3 min-w-[150px]">
+                    <TableCell className="px-4 py-3 min-w-[210px]">
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                          log.status === "pending"
+                          log.status === "pending" || log.status === "unlogged"
                             ? "bg-amber-100 text-amber-800"
                             : log.status === "rejected"
                               ? "bg-red-100 text-red-800"
@@ -399,11 +413,18 @@ const VehicleLogPage = () => {
                         }`}
                         title={log.rejectReason || undefined}
                       >
-                        {log.status || "approved"}
+                        {log.status === "unlogged" ? "Not logged" : log.status || "approved"}
                       </span>
-                      <span className="ml-1 text-xs text-[#9CA3AF]">
-                        {log.source === "gps" ? "GPS" : log.source === "app" ? "App" : ""}
-                      </span>
+                      <span className="ml-1 text-xs text-[#6B7280]">{KIND[log.source || "sheet"]}</span>
+                      {needsAttention(log) && (
+                        <div className="mt-1 text-xs font-medium text-orange-700">
+                          ⚠ Needs attention
+                          {log.gpsCheck?.state === "mismatch" ? `: ${log.gpsCheck.reason}` : log.virtual ? ": not scanned or filled in" : ""}
+                        </div>
+                      )}
+                      {log.gpsCheck?.state === "match" && <div className="mt-1 text-xs text-green-700">✓ GPS matches</div>}
+                      {log.gpsCheck?.state === "waiting" && <div className="mt-1 text-xs text-[#9CA3AF]">Waiting for GPS</div>}
+                      {log.vehicle && <div className="mt-1 text-xs text-[#6B7280]">{log.vehicle}</div>}
                       {log.gps?.reasonCodes?.length ? (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {log.gps.reasonCodes.map((c) => (
@@ -423,7 +444,7 @@ const VehicleLogPage = () => {
                     <TableCell className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
                       {log.arrivalTime || "—"}
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.out}</TableCell>
+                    <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.out ?? "—"}</TableCell>
                     <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">
                       {log.returned}
                     </TableCell>
@@ -513,27 +534,42 @@ const VehicleLogPage = () => {
                             <MapPin className="h-4 w-4" />
                           </Link>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditing(log);
-                            setDialogOpen(true);
-                          }}
-                          title="Edit"
-                          className="size-8 rounded-lg text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(log)}
-                          title="Delete"
-                          className="size-8 rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {log.virtual ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setEditing(log);
+                              setDialogOpen(true);
+                            }}
+                            className="h-8 rounded-lg px-3 text-sm"
+                          >
+                            Fill in
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditing(log);
+                                setDialogOpen(true);
+                              }}
+                              title="Edit"
+                              className="size-8 rounded-lg text-[#9CA3AF] hover:bg-[#FAFAFA] hover:text-[#2563EB]"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteTarget(log)}
+                              title="Delete"
+                              className="size-8 rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

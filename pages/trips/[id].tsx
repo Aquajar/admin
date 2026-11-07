@@ -169,8 +169,8 @@ const TripDetail = () => {
 
   return (
     <Wrapper>
-      <Link href="/trips" className="text-sm text-blue-600">
-        ← Trip review
+      <Link href="/vehicle-log" className="text-sm text-blue-600">
+        ← Vehicle log
       </Link>
       <div className="mb-4 mt-2 flex flex-wrap items-center gap-3">
         <SeverityDot severity={trip.severity} />

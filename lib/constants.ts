@@ -9,8 +9,8 @@ import { TbLocationFilled } from "react-icons/tb";
 import { MdProductionQuantityLimits, MdInsights } from "react-icons/md";
 import { GrOrganization } from "react-icons/gr";
 import { FiActivity, FiPackage } from "react-icons/fi";
-import { FaRoute, FaQrcode } from "react-icons/fa6";
-import { MdOutlineMyLocation, MdOutlineTune } from "react-icons/md";
+import { FaQrcode } from "react-icons/fa6";
+import { MdOutlineMyLocation, MdOutlineTune, MdHistory } from "react-icons/md";
 
 const SidebarItems: SideBarItem[] = [
   {
@@ -100,7 +100,7 @@ const SidebarItems: SideBarItem[] = [
     href: "/settings",
   },
   { name: "Live Tracking", icon: MdOutlineMyLocation, href: "/tracking/live" },
-  { name: "Trip Review", icon: FaRoute, href: "/trips" },
+  { name: "GPS History", icon: MdHistory, href: "/tracking/history" },
   { name: "Sites & Vehicles", icon: FaQrcode, href: "/tracking/setup" },
   { name: "Trip Attendance", icon: FaRegCalendarCheck, href: "/tracking/attendance" },
   { name: "Trip Reports", icon: MdInsights, href: "/tracking/reports" },

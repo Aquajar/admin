@@ -172,8 +172,10 @@ const AddLogDialog: FC<Props> = ({
         driver,
         location,
         note,
+        // A GPS-only row from the list: the new entry stays linked to that trip.
+        ...(editing?.virtual && { tripId: editing.tripId }),
       };
-      if (editing?._id) {
+      if (editing?._id && !editing.virtual) {
         await axiosInstance.put(`${base}/vehicle-log/${editing._id}`, payload);
         toast.success("Log updated");
       } else {
@@ -211,7 +213,7 @@ const AddLogDialog: FC<Props> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit Log" : "Add Vehicle Log"}</DialogTitle>
+          <DialogTitle>{editing?.virtual ? "Fill in GPS trip" : editing ? "Edit Log" : "Add Vehicle Log"}</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[75vh] space-y-4 overflow-y-auto px-1 py-1">
@@ -376,7 +378,7 @@ const AddLogDialog: FC<Props> = ({
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {editing ? "Update Log" : "Add Log"}
+                {editing && !editing.virtual ? "Update Log" : "Add Log"}
               </>
             )}
           </Button>

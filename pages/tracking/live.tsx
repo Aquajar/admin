@@ -91,8 +91,8 @@ const LivePage = () => {
                 <StatusBadge status={s} /> {n}
               </span>
             ))}
-            <Link href="/trips" className="font-medium text-blue-600">
-              Review queue →
+            <Link href="/vehicle-log" className="font-medium text-blue-600">
+              Vehicle log →
             </Link>
           </div>
         }

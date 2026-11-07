@@ -42,7 +42,7 @@ export async function exportVehicleLogXLSX(
     fmtDate(l.date),
     l.departureTime || "",
     l.arrivalTime || "",
-    l.out,
+    l.out ?? "",
     l.returned,
     l.engaged,
     l.filled,
@@ -183,7 +183,7 @@ function buildPrintTable(logs: VehicleLog[], monthLabel: string): HTMLElement {
       `<tr>${td(fmtDate(l.date))}${td(l.departureTime || "—", "center")}${td(
         l.arrivalTime || "—",
         "center"
-      )}${td(l.out, "right")}${td(l.returned, "right")}${td(
+      )}${td(l.out ?? "", "right")}${td(l.returned, "right")}${td(
         l.engaged,
         "right"
       )}${td(l.filled, "right")}${td(l.empty, "right")}${td(
