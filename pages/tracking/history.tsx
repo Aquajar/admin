@@ -17,11 +17,11 @@ type History = {
   distanceKm: number;
 };
 
-const KEEP_DAYS = 60;
+const KEEP_DAYS = 30;
 const PAGE = 100;
 const minDay = () => new Date(Date.now() + 330 * 60000 - (KEEP_DAYS - 1) * 86400000).toISOString().slice(0, 10);
 
-// Raw phone locations for one staff member, one day, optionally a time window. Kept 60 days.
+// Raw phone locations for one staff member, one day, optionally a time window. Kept 30 days.
 const GpsHistory = () => {
   const { api, ready } = useTrackingApi();
   const [staffId, setStaffId] = useState("");
