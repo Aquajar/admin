@@ -1,7 +1,7 @@
 import Wrapper from "@/components/Wrapper";
 import { MapLoading, PageTitle, StatusBadge } from "@/components/Tracking/Bits";
 import { Button } from "@/components/ui/button";
-import { HEALTH_DOT, HealthRow, ROUTE_COLORS, Site, Trip, ago, errMsg, esc, fmtTime, routeLatLng, useTrackingApi } from "@/lib/tracking";
+import { HEALTH_DOT, HealthRow, ROUTE_COLORS, STAFF_COLORS, Site, Trip, ago, errMsg, esc, fmtTime, initials, routeLatLng, useTrackingApi } from "@/lib/tracking";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -49,6 +49,23 @@ const LivePage = () => {
     }
   };
 
+  const endShift = async (r: HealthRow) => {
+    if (!window.confirm(`End ${r.name}'s shift? Their GPS stops for today and they can't scan the gate or a vehicle again until tomorrow.`)) return;
+    setAsking(r.staffId);
+    try {
+      await api.post(`/admin/staff/${r.staffId}/end-shift`);
+      toast.success(`${r.name}'s shift has ended.`);
+      load();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setAsking(null);
+    }
+  };
+
+  // Same colour for a staff member on the map and in the table (rows come sorted by employee ID).
+  const colorOf = useMemo(() => new Map((live?.rows || []).map((r, i) => [r.staffId, STAFF_COLORS[i % STAFF_COLORS.length]])), [live]);
+
   const resolve = async (id: string) => {
     try {
       await api.patch(`/admin/alerts/${id}`);
@@ -77,7 +94,9 @@ const LivePage = () => {
             return {
               lat: p.lat,
               lng: p.lng,
-              color: HEALTH_DOT[r.status],
+              color: colorOf.get(r.staffId) || "#2563eb",
+              ring: HEALTH_DOT[r.status],
+              text: esc(initials(r.name)),
               label: r.name,
               popup: `<b>${esc(r.name)}</b><br/>${p.mode === "road" ? "On trip" : "At factory"} · ${esc(ago(p.ts))}<br/>Battery ${
                 h.battery != null ? Math.round(h.battery * 100) + "%" : "—"
@@ -86,7 +105,7 @@ const LivePage = () => {
           }),
       ],
     };
-  }, [live]);
+  }, [live, colorOf]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -155,7 +174,18 @@ const LivePage = () => {
               return (
                 <tr key={r.staffId} className="border-t">
                   <td className="px-3 py-2 font-medium capitalize">
-                    {r.name} <span className="text-gray-400">#{r.employeeID}</span>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        style={{ background: colorOf.get(r.staffId) }}
+                        aria-hidden
+                      >
+                        {initials(r.name)}
+                      </span>
+                      <span>
+                        {r.name} <span className="text-gray-400">#{r.employeeID}</span>
+                      </span>
+                    </span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-2">
@@ -191,10 +221,21 @@ const LivePage = () => {
                   <td className="px-3 py-2">{h.pending ?? "—"}</td>
                   <td className="px-3 py-2 text-gray-500">{h.appVersion || "—"}</td>
                   <td className="px-3 py-2">
-                    {r.checkinAt && r.device && (
-                      <Button size="sm" variant="outline" disabled={asking === r.staffId} onClick={() => refresh(r)}>
-                        {asking === r.staffId ? "Asking…" : "Refresh location"}
-                      </Button>
+                    {r.shiftEndedAt ? (
+                      <span className="whitespace-nowrap text-gray-500">Ended {fmtTime(r.shiftEndedAt)}</span>
+                    ) : (
+                      r.checkinAt && (
+                        <span className="flex gap-2">
+                          {r.device && (
+                            <Button size="sm" variant="outline" disabled={asking === r.staffId} onClick={() => refresh(r)}>
+                              {asking === r.staffId ? "Asking…" : "Refresh location"}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" className="text-red-600" disabled={asking === r.staffId} onClick={() => endShift(r)}>
+                            End shift
+                          </Button>
+                        </span>
+                      )
                     )}
                   </td>
                 </tr>

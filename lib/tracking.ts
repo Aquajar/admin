@@ -73,6 +73,12 @@ export const HEALTH_DOT: Record<string, string> = {
   grey: "#9ca3af",
 };
 
+// One colour per staff member on the live map (white initials stay readable on each).
+export const STAFF_COLORS = ["#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c", "#0891b2", "#db2777", "#4d7c0f", "#4338ca", "#b45309", "#0f766e", "#be123c"];
+export const initials = (name: string) => {
+  const w = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || "?").slice(0, 2)).toUpperCase();
+};
 export const ROUTE_COLORS = ["#2563eb", "#7c3aed", "#db2777", "#0891b2", "#ea580c", "#65a30d", "#4f46e5", "#b91c1c"];
 
 export type Stop = {
@@ -149,6 +155,7 @@ export type HealthRow = {
   employeeID: number;
   consentAt: string | null;
   checkinAt: string | null;
+  shiftEndedAt: string | null;
   lastVehicle: { name: string; day: string; at: string | null } | null;
   status: "green" | "amber" | "red" | "grey";
   reasons: string[];

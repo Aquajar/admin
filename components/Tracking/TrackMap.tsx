@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, loadLeaflet } from "@/components/Map/CustomerMap";
 
-export type MapMarker = { lat: number; lng: number; color: string; label?: string; popup?: string; size?: number };
+// text: a short badge (e.g. initials) drawn in a circle of `color`; ring: its border colour.
+export type MapMarker = { lat: number; lng: number; color: string; label?: string; popup?: string; size?: number; text?: string; ring?: string };
 export type MapLine = { points: [number, number][]; color: string; weight?: number; dashed?: boolean };
 export type MapCircle = { lat: number; lng: number; radius: number; color: string; popup?: string };
 
@@ -62,7 +63,16 @@ const TrackMap = ({ markers = [], lines = [], circles = [], height = "60vh", fit
       bounds.push(...l.points);
     });
     markers.forEach((m) => {
-      const mk = L.circleMarker([m.lat, m.lng], { radius: m.size || 8, color: "#fff", weight: 2, fillColor: m.color, fillOpacity: 1 }).addTo(layer.current);
+      const mk = m.text
+        ? L.marker([m.lat, m.lng], {
+            icon: L.divIcon({
+              className: "",
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+              html: `<div style="width:30px;height:30px;border-radius:50%;background:${m.color};border:3px solid ${m.ring || "#fff"};box-shadow:0 1px 4px rgba(0,0,0,.35);color:#fff;font:700 12px/24px system-ui,sans-serif;text-align:center">${m.text}</div>`,
+            }),
+          }).addTo(layer.current)
+        : L.circleMarker([m.lat, m.lng], { radius: m.size || 8, color: "#fff", weight: 2, fillColor: m.color, fillOpacity: 1 }).addTo(layer.current);
       if (m.popup) mk.bindPopup(m.popup);
       if (m.label) mk.bindTooltip(m.label);
       bounds.push([m.lat, m.lng]);
