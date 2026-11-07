@@ -39,6 +39,8 @@ const TripDetail = () => {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [audit, setAudit] = useState<Audit[]>([]);
   const [sameDay, setSameDay] = useState<Other[]>([]);
+  // The vehicle log entry linked to this trip (jar counts live there).
+  const [log, setLog] = useState<{ out: number | null; filled?: number; returned?: number; location?: string[]; driver?: string; status?: string } | null>(null);
   const [voice, setVoice] = useState<string | null>(null);
   const [replay, setReplay] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -55,6 +57,7 @@ const TripDetail = () => {
       setTrip(data.trip);
       setAudit(data.audit);
       setSameDay(data.sameDay);
+      setLog(data.log || null);
       setReplay(0);
     } catch (e) {
       toast.error(errMsg(e));
@@ -108,9 +111,6 @@ const TripDetail = () => {
             departAt: toLocal(trip.departAt),
             returnAt: toLocal(trip.returnAt),
             purpose: trip.purpose,
-            jarsLoaded: trip.jarsLoaded ?? "",
-            jarsDelivered: trip.jarsDelivered ?? "",
-            emptiesReturned: trip.emptiesReturned ?? "",
             challan: trip.challan,
           }
         : m === "reassign"
@@ -316,12 +316,27 @@ const TripDetail = () => {
             <dl className="grid grid-cols-[120px_1fr] gap-y-1 text-sm">
               <dt className="text-gray-500">Purpose</dt>
               <dd className="capitalize">{trip.purpose || "—"}</dd>
-              <dt className="text-gray-500">Jars loaded</dt>
-              <dd>{trip.jarsLoaded ?? "—"}</dd>
-              <dt className="text-gray-500">Delivered</dt>
-              <dd>{trip.jarsDelivered ?? "—"}</dd>
-              <dt className="text-gray-500">Empties back</dt>
-              <dd>{trip.emptiesReturned ?? "—"}</dd>
+              <dt className="text-gray-500">Out</dt>
+              <dd>{log ? (log.out ?? "Not entered yet") : "No vehicle log entry"}</dd>
+              {log && (
+                <>
+                  <dt className="text-gray-500">Full jars back</dt>
+                  <dd>{log.filled ?? 0}</dd>
+                  <dt className="text-gray-500">Returned</dt>
+                  <dd>{log.returned ?? 0}</dd>
+                  <dt className="text-gray-500">Location</dt>
+                  <dd>{(log.location || []).join(", ") || "—"}</dd>
+                  <dt className="text-gray-500">Driver</dt>
+                  <dd className="capitalize">{log.driver || "—"}</dd>
+                  <dt className="text-gray-500">Entry</dt>
+                  <dd className="capitalize">
+                    {log.status || "approved"} ·{" "}
+                    <Link href="/vehicle-log" className="text-blue-600">
+                      edit in the vehicle log
+                    </Link>
+                  </dd>
+                </>
+              )}
               <dt className="text-gray-500">Challan</dt>
               <dd>{trip.challan || "—"}</dd>
               <dt className="text-gray-500">Logged</dt>
@@ -366,9 +381,6 @@ const TripDetail = () => {
                 </select>
               </div>
               {field("challan", "Challan")}
-              {field("jarsLoaded", "Jars loaded", "number")}
-              {field("jarsDelivered", "Delivered", "number")}
-              {field("emptiesReturned", "Empties back", "number")}
             </div>
           )}
           {mode === "reassign" && (
