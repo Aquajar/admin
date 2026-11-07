@@ -115,6 +115,7 @@ const VehicleLogPage = () => {
   const [editing, setEditing] = useState<VehicleLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleLog | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "attention" | "pending" | "approved" | "rejected">("all");
+  const [staffFilter, setStaffFilter] = useState("");
   const [reviewing, setReviewing] = useState<string | null>(null);
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -189,15 +190,23 @@ const VehicleLogPage = () => {
 
   const totals = analytics?.totals;
 
+  // Staff filter applies to the table, the counts and the exports.
+  // Names in this month's entries (the picked one stays listed when another month has none).
+  const loggedStaff = useMemo(
+    () => Array.from(new Set([...logs.flatMap((l) => l.staff || []), ...(staffFilter ? [staffFilter] : [])])).sort(),
+    [logs, staffFilter]
+  );
+  const byStaff = staffFilter ? logs.filter((l) => (l.staff || []).includes(staffFilter)) : logs;
+
   const handleExport = async (kind: "xlsx" | "pdf") => {
-    const saved = logs.filter((l) => !l.virtual);
+    const saved = byStaff.filter((l) => !l.virtual);
     if (saved.length === 0) {
       toast.error("Nothing to export for this month");
       return;
     }
     setExporting(kind);
     try {
-      const fileBase = `Vehicle-Log-${month}`;
+      const fileBase = `Vehicle-Log-${month}${staffFilter ? `-${staffFilter.replace(/\s+/g, "-")}` : ""}`;
       if (kind === "xlsx") {
         await exportVehicleLogXLSX(saved, monthLabel(month), fileBase);
       } else {
@@ -231,12 +240,12 @@ const VehicleLogPage = () => {
   };
   const shown =
     statusFilter === "all"
-      ? logs
+      ? byStaff
       : statusFilter === "attention"
-        ? logs.filter(needsAttention)
-        : logs.filter((l) => (l.status || "approved") === statusFilter);
-  const pendingCount = logs.filter((l) => l.status === "pending").length;
-  const attentionCount = logs.filter(needsAttention).length;
+        ? byStaff.filter(needsAttention)
+        : byStaff.filter((l) => (l.status || "approved") === statusFilter);
+  const pendingCount = byStaff.filter((l) => l.status === "pending").length;
+  const attentionCount = byStaff.filter(needsAttention).length;
 
   const handleDelete = async () => {
     if (!deleteTarget?._id) return;
@@ -355,7 +364,20 @@ const VehicleLogPage = () => {
             <h2 className="text-base font-semibold text-[#0A0A0A]">
               Trips <span className="font-normal text-[#9CA3AF]">({shown.length})</span>
             </h2>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap items-center gap-1">
+              <select
+                value={staffFilter}
+                onChange={(e) => setStaffFilter(e.target.value)}
+                aria-label="Filter by staff"
+                className={`mr-1 h-8 w-44 rounded-full border px-3 text-sm ${staffFilter ? "border-[#2563EB] text-[#2563EB]" : "border-[#EAEAEA] text-[#0A0A0A]"}`}
+              >
+                <option value="">All staff</option>
+                {loggedStaff.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
               {(["all", "attention", "pending", "approved", "rejected"] as const).map((k) => (
                 <button
                   key={k}
