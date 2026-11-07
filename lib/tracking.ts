@@ -149,6 +149,7 @@ export type HealthRow = {
   employeeID: number;
   consentAt: string | null;
   checkinAt: string | null;
+  lastVehicle: { name: string; day: string; at: string | null } | null;
   status: "green" | "amber" | "red" | "grey";
   reasons: string[];
   device: null | {

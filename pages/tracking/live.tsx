@@ -17,6 +17,7 @@ type Live = { day: string; rows: HealthRow[]; trips: Trip[]; sites: Site[]; aler
 const LivePage = () => {
   const { api, ready } = useTrackingApi();
   const [live, setLive] = useState<Live | null>(null);
+  const [asking, setAsking] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!ready) return;
@@ -33,6 +34,20 @@ const LivePage = () => {
     const t = setInterval(load, 20000);
     return () => clearInterval(t);
   }, [load]);
+
+  // Silent push: the phone takes a GPS fix now and uploads (shift hours, checked-in staff only).
+  const refresh = async (r: HealthRow) => {
+    setAsking(r.staffId);
+    try {
+      await api.post(`/admin/staff/${r.staffId}/locate`);
+      toast.success(`Asked ${r.name}'s phone for its location. The map updates within a minute.`);
+      setTimeout(load, 20000);
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setAsking(null);
+    }
+  };
 
   const resolve = async (id: string) => {
     try {
@@ -124,12 +139,14 @@ const LivePage = () => {
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Phone</th>
               <th className="px-3 py-2">Check-in</th>
+              <th className="px-3 py-2">Last vehicle</th>
               <th className="px-3 py-2">Mode</th>
               <th className="px-3 py-2">Last upload</th>
               <th className="px-3 py-2">Battery</th>
               <th className="px-3 py-2">GPS / permission</th>
               <th className="px-3 py-2">Unsynced</th>
               <th className="px-3 py-2">App</th>
+              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
@@ -148,6 +165,20 @@ const LivePage = () => {
                   </td>
                   <td className="px-3 py-2">{r.device ? r.device.model || "Linked" : <span className="text-gray-400">Not signed in</span>}</td>
                   <td className="px-3 py-2">{r.checkinAt ? fmtTime(r.checkinAt) : "—"}</td>
+                  <td className="px-3 py-2">
+                    {r.lastVehicle ? (
+                      <>
+                        <div>{r.lastVehicle.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {r.lastVehicle.day === live?.day && r.lastVehicle.at
+                            ? `Today ${fmtTime(r.lastVehicle.at)}`
+                            : new Date(`${r.lastVehicle.day}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}
+                        </div>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="px-3 py-2">{r.device?.lastPing?.mode || "—"}</td>
                   <td className="px-3 py-2">{r.device?.lastSeenAt ? ago(r.device.lastSeenAt) : r.device ? "After check-in" : "—"}</td>
                   <td className="px-3 py-2">
@@ -159,6 +190,13 @@ const LivePage = () => {
                   </td>
                   <td className="px-3 py-2">{h.pending ?? "—"}</td>
                   <td className="px-3 py-2 text-gray-500">{h.appVersion || "—"}</td>
+                  <td className="px-3 py-2">
+                    {r.checkinAt && r.device && (
+                      <Button size="sm" variant="outline" disabled={asking === r.staffId} onClick={() => refresh(r)}>
+                        {asking === r.staffId ? "Asking…" : "Refresh location"}
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               );
             })}
