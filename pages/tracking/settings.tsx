@@ -11,7 +11,7 @@ type Version = { version: number; changedBy: string; changedAt: string; values: 
 
 // Labels for every threshold in the design's configuration reference (section 25).
 const GROUPS: [string, [string, string][]][] = [
-  ["Shift", [["checkinOpens", "Check-in opens"], ["shiftStart", "Shift start (no check-in alert)"], ["shiftEnd", "Shift end"]]],
+  ["Shift", [["checkinOpens", "Check-in opens"], ["checkinCloses", "Check-in closes"], ["shiftStart", "Shift start (no check-in alert)"], ["shiftEnd", "Shift end"]]],
   [
     "Departure and return",
     [

@@ -250,8 +250,10 @@ const VehicleLogPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget?._id) return;
     try {
-      await axiosInstance.delete(`${base}/vehicle-log/${deleteTarget._id}`);
-      toast.success("Log deleted");
+      // A GPS-only row is a GPS trip with no entry: mark it not-a-work-trip so it stays gone.
+      if (deleteTarget.virtual) await axiosInstance.patch(`${base}/admin/trips/${deleteTarget.tripId}`, { action: "nonwork", value: true });
+      else await axiosInstance.delete(`${base}/vehicle-log/${deleteTarget._id}`);
+      toast.success(deleteTarget.virtual ? "GPS trip removed" : "Log deleted");
       setDeleteTarget(null);
       refreshAll();
     } catch (error) {
@@ -567,6 +569,17 @@ const VehicleLogPage = () => {
                           >
                             Fill in
                           </Button>
+                        ) : null}
+                        {log.virtual ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteTarget(log)}
+                            title="Delete GPS trip"
+                            className="size-8 rounded-lg text-[#9CA3AF] hover:bg-red-50 hover:text-[#DC2626]"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         ) : (
                           <>
                             <Button
@@ -677,11 +690,11 @@ const VehicleLogPage = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this log?</AlertDialogTitle>
+            <AlertDialogTitle>{deleteTarget?.virtual ? "Delete this GPS trip?" : "Delete this log?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the trip
-              {deleteTarget ? ` on ${fmtDate(deleteTarget.date)}` : ""}. This
-              cannot be undone.
+              {deleteTarget?.virtual
+                ? `GPS found this trip${deleteTarget ? ` on ${fmtDate(deleteTarget.date)}` : ""} but nobody logged it. Deleting marks it as not a work trip: it leaves the vehicle log and is not counted anywhere. The GPS route stays in GPS History.`
+                : `This permanently removes the trip${deleteTarget ? ` on ${fmtDate(deleteTarget.date)}` : ""}. This cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
