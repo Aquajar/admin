@@ -63,6 +63,20 @@ const LivePage = () => {
     }
   };
 
+  const reopen = async (r: HealthRow) => {
+    if (!window.confirm(`Reopen ${r.name}'s shift? They can scan again, and tracking restarts when they open the app.`)) return;
+    setAsking(r.staffId);
+    try {
+      await api.post(`/admin/staff/${r.staffId}/reopen-shift`);
+      toast.success(`${r.name}'s shift is open again. Their phone was asked to start tracking.`);
+      load();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setAsking(null);
+    }
+  };
+
   // Same colour for a staff member on the map and in the table (rows come sorted by employee ID).
   const colorOf = useMemo(() => new Map((live?.rows || []).map((r, i) => [r.staffId, STAFF_COLORS[i % STAFF_COLORS.length]])), [live]);
 
@@ -222,7 +236,12 @@ const LivePage = () => {
                   <td className="px-3 py-2 text-gray-500">{h.appVersion || "—"}</td>
                   <td className="px-3 py-2">
                     {r.shiftEndedAt ? (
-                      <span className="whitespace-nowrap text-gray-500">Ended {fmtTime(r.shiftEndedAt)}</span>
+                      <span className="flex items-center gap-2 whitespace-nowrap text-gray-500">
+                        Ended {fmtTime(r.shiftEndedAt)}
+                        <Button size="sm" variant="outline" disabled={asking === r.staffId} onClick={() => reopen(r)}>
+                          Reopen shift
+                        </Button>
+                      </span>
                     ) : (
                       r.checkinAt && (
                         <span className="flex gap-2">
