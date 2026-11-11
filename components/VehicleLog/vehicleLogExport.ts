@@ -1,4 +1,5 @@
 import type { VehicleLog } from "@/types/types";
+import { addImagePaginated } from "@/lib/pdfPaginate";
 
 // Column order exactly matches the physical "VEHICLE LOG" sheet.
 const HEADERS = [
@@ -29,13 +30,27 @@ const fmtDate = (iso: string) => {
 const sum = (logs: VehicleLog[], key: keyof VehicleLog) =>
   logs.reduce((acc, l) => acc + (Number(l[key]) || 0), 0);
 
+const statusOf = (l: VehicleLog) => l.status || "approved";
+
+// Rejected trips never add to the totals, unless the file holds nothing else.
+const totalsOf = (logs: VehicleLog[]) => {
+  const counted = logs.filter((l) => statusOf(l) !== "rejected");
+  return counted.length === 0 || counted.length === logs.length
+    ? { counted: logs, label: "TOTAL" }
+    : { counted, label: "TOTAL (rejected not counted)" };
+};
+
 // ── XLSX (SheetJS) ────────────────────────────────────────────────────────────
+// withStatus adds a Status column, for files that hold more than approved trips.
 export async function exportVehicleLogXLSX(
   logs: VehicleLog[],
   monthLabel: string,
-  fileBase: string
+  fileBase: string,
+  withStatus = false
 ) {
   const XLSX = await import("xlsx");
+  const headers = withStatus ? [...HEADERS, "Status"] : HEADERS;
+  const { counted, label } = totalsOf(logs);
 
   const title = `VEHICLE LOG ${monthLabel.toUpperCase()}`;
   const dataRows = logs.map((l) => [
@@ -51,19 +66,20 @@ export async function exportVehicleLogXLSX(
     l.cash,
     (l.staff || []).join("/"),
     (l.location || []).join("/"),
+    ...(withStatus ? [statusOf(l)] : []),
   ]);
 
   const totalRow = [
-    "TOTAL",
+    label,
     "",
     "",
-    sum(logs, "out"),
-    sum(logs, "returned"),
-    sum(logs, "engaged"),
-    sum(logs, "filled"),
-    sum(logs, "empty"),
-    sum(logs, "recorded"),
-    sum(logs, "cash"),
+    sum(counted, "out"),
+    sum(counted, "returned"),
+    sum(counted, "engaged"),
+    sum(counted, "filled"),
+    sum(counted, "empty"),
+    sum(counted, "recorded"),
+    sum(counted, "cash"),
     "",
     "",
   ];
@@ -71,7 +87,7 @@ export async function exportVehicleLogXLSX(
   const aoa: (string | number)[][] = [
     [title],
     [],
-    HEADERS,
+    headers,
     ...dataRows,
     [],
     totalRow,
@@ -91,28 +107,29 @@ export async function exportVehicleLogXLSX(
     { wch: 9 }, // Cash
     { wch: 22 }, // Staff
     { wch: 26 }, // Location
+    { wch: 10 }, // Status
   ];
-  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: HEADERS.length - 1 } }];
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Vehicle Log");
   XLSX.writeFile(wb, `${fileBase}.xlsx`);
 }
 
-// ── PDF (html2canvas + jsPDF, A4 landscape, per-page crop + JPEG) ──────────────
-// Builds a document-style table off-screen, rasterises it, and slices it across
-// landscape A4 pages. Per-page cropping keeps the file small (no re-embedding the
-// full image per page) and JPEG compression keeps it well under a MB.
+// ── PDF (html2canvas + jsPDF, A4 landscape) ───────────────────────────────────
+// Builds a document-style table off-screen, rasterises it, and lays it across
+// landscape A4 pages, breaking only between rows.
 export async function exportVehicleLogPDF(
   logs: VehicleLog[],
   monthLabel: string,
-  fileBase: string
+  fileBase: string,
+  withStatus = false
 ) {
   const html2canvas = (await import("html2canvas")).default;
   const jspdf = await import("jspdf");
   const JsPDF = (jspdf as any).jsPDF || (jspdf as any).default;
 
-  const el = buildPrintTable(logs, monthLabel);
+  const el = buildPrintTable(logs, monthLabel, withStatus);
   const holder = document.createElement("div");
   holder.style.cssText =
     "position:fixed;left:-10000px;top:0;z-index:-1;pointer-events:none;background:#ffffff;";
@@ -125,43 +142,9 @@ export async function exportVehicleLogPDF(
       backgroundColor: "#ffffff",
       useCORS: true,
     });
-
     const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const scale = pageW / canvas.width; // source px -> pt
-    const pageSlicePx = Math.floor(pageH / scale);
-
-    let rendered = 0;
-    let first = true;
-    while (rendered < canvas.height) {
-      const sliceH = Math.min(pageSlicePx, canvas.height - rendered);
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceH;
-      const ctx = pageCanvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, sliceH);
-        ctx.drawImage(
-          canvas,
-          0,
-          rendered,
-          canvas.width,
-          sliceH,
-          0,
-          0,
-          canvas.width,
-          sliceH
-        );
-      }
-      const img = pageCanvas.toDataURL("image/jpeg", 0.9);
-      if (!first) pdf.addPage();
-      pdf.addImage(img, "JPEG", 0, 0, pageW, sliceH * scale);
-      rendered += sliceH;
-      first = false;
-    }
-
+    // The table's own padding is the page-1 margin; later pages need one at the top.
+    addImagePaginated(pdf, canvas, el, { marginTop: 20, rowSelector: "tbody tr", quality: 0.9 });
     pdf.save(`${fileBase}.pdf`);
   } finally {
     document.body.removeChild(holder);
@@ -169,7 +152,8 @@ export async function exportVehicleLogPDF(
 }
 
 // Builds the off-screen printable table (inline styles only).
-function buildPrintTable(logs: VehicleLog[], monthLabel: string): HTMLElement {
+function buildPrintTable(logs: VehicleLog[], monthLabel: string, withStatus: boolean): HTMLElement {
+  const { counted, label } = totalsOf(logs);
   const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
   const th = (t: string, align = "left", w = "") =>
     `<th style="border:1px solid #94a3b8;padding:6px 8px;text-align:${align};background:#1c63b0;color:#fff;font-size:11px;${w}">${t}</th>`;
@@ -196,11 +180,11 @@ function buildPrintTable(logs: VehicleLog[], monthLabel: string): HTMLElement {
     .join("");
 
   const totalRow = `<tr style="background:#eff6ff;">
-    ${td("TOTAL", "left", true)}${td("", "center")}${td("", "center")}
-    ${td(sum(logs, "out"), "right", true)}${td(sum(logs, "returned"), "right", true)}
-    ${td(sum(logs, "engaged"), "right", true)}${td(sum(logs, "filled"), "right", true)}
-    ${td(sum(logs, "empty"), "right", true)}${td(sum(logs, "recorded"), "right", true)}
-    ${td(inr(sum(logs, "cash")), "right", true)}${td("", "left")}${td("", "left")}
+    <td colspan="3" style="border:1px solid #cbd5e1;padding:5px 8px;font-size:11px;font-weight:700;">${label}</td>
+    ${td(sum(counted, "out"), "right", true)}${td(sum(counted, "returned"), "right", true)}
+    ${td(sum(counted, "engaged"), "right", true)}${td(sum(counted, "filled"), "right", true)}
+    ${td(sum(counted, "empty"), "right", true)}${td(sum(counted, "recorded"), "right", true)}
+    ${td(inr(sum(counted, "cash")), "right", true)}${td("", "left")}${td("", "left")}${withStatus ? td("") : ""}
   </tr>`;
 
   const el = document.createElement("div");
@@ -222,7 +206,7 @@ function buildPrintTable(logs: VehicleLog[], monthLabel: string): HTMLElement {
         ${th("Date")}${th("Departure", "center")}${th("Arrival", "center")}
         ${th("Out", "right")}${th("Return", "right")}${th("Engaged", "right")}
         ${th("Filled", "right")}${th("Empty", "right")}${th("Recorded", "right")}
-        ${th("Cash", "right")}${th("Staff")}${th("Location")}
+        ${th("Cash", "right")}${th("Staff")}${th("Location")}${withStatus ? th("Status") : ""}
       </tr></thead>
       <tbody>${rows}${totalRow}</tbody>
     </table>`;
