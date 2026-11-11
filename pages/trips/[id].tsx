@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trip, errMsg, fmtDate, fmtTime, minutesBetween, tripLayers, useTrackingApi } from "@/lib/tracking";
+import { STAFF_COLORS, Trip, errMsg, fmtDate, fmtTime, minutesBetween, routeLatLng, tripLayers, useTrackingApi } from "@/lib/tracking";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -16,6 +16,10 @@ const TrackMap = dynamic(() => import("@/components/Tracking/TrackMap"), { ssr: 
 type Audit = { _id: string; actor: string; action: string; at: string };
 type Other = { _id: string; departAt: string; returnAt: string | null; vehicleName: string; status: string; members: { name: string }[] };
 type Mode = null | "edit" | "reassign" | "merge" | "split";
+// One member's own phone track during the trip.
+type Track = { staffId: string; name: string; points: [number, number, number][] };
+// The trip route is drawn in STAFF_COLORS[0] (blue), so member tracks start from the next colour.
+const trackColor = (i: number) => STAFF_COLORS[(i + 1) % STAFF_COLORS.length];
 
 // <input type="datetime-local"> works in local time; the admin is in IST.
 const toLocal = (v?: string | null) => {
@@ -41,6 +45,8 @@ const TripDetail = () => {
   const [sameDay, setSameDay] = useState<Other[]>([]);
   // The vehicle log entry linked to this trip (jar counts live there).
   const [log, setLog] = useState<{ out: number | null; filled?: number; returned?: number; location?: string[]; driver?: string; status?: string } | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [hiddenTracks, setHiddenTracks] = useState<string[]>([]);
   const [voice, setVoice] = useState<string | null>(null);
   const [replay, setReplay] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -58,6 +64,7 @@ const TripDetail = () => {
       setAudit(data.audit);
       setSameDay(data.sameDay);
       setLog(data.log || null);
+      setTracks(data.tracks || []);
       setReplay(0);
     } catch (e) {
       toast.error(errMsg(e));
@@ -146,10 +153,15 @@ const TripDetail = () => {
 
   const layers = useMemo(() => {
     if (!trip) return { lines: [], markers: [] };
-    const l = tripLayers(trip);
+    const base = tripLayers(trip);
+    // Each member's phone track, dashed so tracks that overlap the route stay visible.
+    const own = tracks
+      .map((t, i) => ({ points: routeLatLng({ route: t.points }), color: trackColor(i), weight: 3, dashed: true, id: String(t.staffId) }))
+      .filter((t) => !hiddenTracks.includes(t.id));
+    const l = { ...base, lines: [...base.lines, ...own] };
     const p = trip.route[replay];
     return p ? { ...l, markers: [...l.markers, { lat: p[1], lng: p[0], color: "#111827", size: 9, label: fmtTime(p[2] * 1000) }] } : l;
-  }, [trip, replay]);
+  }, [trip, replay, tracks, hiddenTracks]);
 
   if (!trip)
     return (
@@ -296,7 +308,11 @@ const TripDetail = () => {
           </Section>
           <Section title="Team">
             <ul className="space-y-1.5 text-sm">
-              {trip.members.map((m) => (
+              {trip.members.map((m) => {
+                const ti = tracks.findIndex((t) => String(t.staffId) === String(m.staffId));
+                const hasTrack = ti >= 0 && tracks[ti].points.length > 1;
+                const shown = hasTrack && !hiddenTracks.includes(String(m.staffId));
+                return (
                 <li key={m.staffId}>
                   <span className="font-medium capitalize">{m.name}</span>{" "}
                   <span className="text-gray-500">
@@ -308,9 +324,27 @@ const TripDetail = () => {
                       {e.type === "leave" ? "Dropped off" : "Picked up"} at {fmtTime(e.at)}
                     </div>
                   ))}
+                  {hasTrack ? (
+                    <label className="mt-0.5 flex cursor-pointer items-center gap-2 text-xs text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={shown}
+                        onChange={() =>
+                          setHiddenTracks((h) => (shown ? [...h, String(m.staffId)] : h.filter((x) => x !== String(m.staffId))))
+                        }
+                      />
+                      <span className="inline-block h-1 w-6 rounded" style={{ background: trackColor(ti) }} />
+                      Phone GPS on map · {fmtTime(tracks[ti].points[0][2] * 1000)}–
+                      {fmtTime(tracks[ti].points[tracks[ti].points.length - 1][2] * 1000)}
+                    </label>
+                  ) : (
+                    <div className="mt-0.5 text-xs text-gray-400">No phone GPS for this trip</div>
+                  )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
+            <p className="mt-2 text-xs text-gray-400">Solid blue line: the trip route. Dashed lines: each person&apos;s own phone.</p>
           </Section>
           <Section title="Staff log">
             <dl className="grid grid-cols-[120px_1fr] gap-y-1 text-sm">
