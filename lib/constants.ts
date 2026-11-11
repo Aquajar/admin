@@ -104,6 +104,7 @@ const SidebarItems: SideBarItem[] = [
   { name: "Sites & Vehicles", icon: FaQrcode, href: "/tracking/setup" },
   { name: "Trip Attendance", icon: FaRegCalendarCheck, href: "/tracking/attendance" },
   { name: "Trip Reports", icon: MdInsights, href: "/tracking/reports" },
+  { name: "Staff Performance", icon: MdInsights, href: "/tracking/performance" },
   { name: "Trip Settings", icon: MdOutlineTune, href: "/tracking/settings" },
 ];
 

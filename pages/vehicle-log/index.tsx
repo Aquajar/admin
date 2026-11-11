@@ -434,34 +434,6 @@ const VehicleLogPage = () => {
           </div>
         </div>
 
-        {/* Review queue call-out: shown from any month, until the queue is empty */}
-        {pendingAll.length > 0 && tab !== "pending" && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <ClipboardCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="font-semibold text-amber-900">
-                  {pendingAll.length} {pendingAll.length === 1 ? "trip is" : "trips are"} waiting for approval
-                </div>
-                <div className="text-sm text-amber-800">
-                  Only approved trips are paid. Oldest from {fmtDate(pendingAll[0].date)}.
-                </div>
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                clearFilters();
-                setTab("pending");
-              }}
-              className="h-10 rounded-xl bg-amber-600 px-5 font-medium text-white shadow-none hover:bg-amber-700"
-            >
-              Review now
-            </Button>
-          </div>
-        )}
-
         {/* Logs table */}
         <div>
           <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
