@@ -14,7 +14,6 @@ import {
   Check,
   X,
   MapPin,
-  AlertTriangle,
   ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
@@ -44,6 +43,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -68,11 +68,86 @@ import MonthSelect, { currentMonthKey, monthLabel } from "@/components/VehicleLo
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
 
-// The three kinds of trip entry (plus old sheet / app rows).
-const KIND: Record<string, string> = { gps: "GPS only", qr: "QR scanned", admin: "Admin", sheet: "Sheet", app: "App" };
+// How an entry got here when it was not a vehicle QR scan or a GPS trip.
+const KIND: Record<string, string> = { admin: "Admin entry", sheet: "Sheet entry", app: "App entry" };
 // GPS-only trips, and QR / admin entries the phones' GPS does not back up.
 const needsAttention = (l: VehicleLog) =>
   !!l.virtual || (l.source === "gps" && l.status === "pending") || l.gpsCheck?.state === "mismatch";
+
+// The "how was it recorded" filter: GPS found the trip, the crew scanned the QR, or both agree.
+const SOURCES = [
+  { value: "gps", label: "GPS only" },
+  { value: "matched", label: "GPS + QR matched" },
+  { value: "qr", label: "QR scan only" },
+];
+const sourceOf = (l: VehicleLog) =>
+  l.virtual || l.source === "gps" ? "gps" : l.source === "qr" ? (l.gpsCheck?.state === "match" ? "matched" : "qr") : "";
+
+const TONE = {
+  green: "bg-green-100 text-green-800",
+  amber: "bg-amber-100 text-amber-800",
+  red: "bg-red-100 text-red-800",
+  orange: "bg-orange-100 text-orange-800",
+  blue: "bg-blue-100 text-blue-800",
+  gray: "bg-gray-100 text-gray-700",
+};
+const Pill = ({ tone, children }: { tone: keyof typeof TONE; children: React.ReactNode }) => (
+  <span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${TONE[tone]}`}>{children}</span>
+);
+const dash = <span className="text-[#9CA3AF]">—</span>;
+
+const QrStatus = ({ log }: { log: VehicleLog }) =>
+  log.source === "qr" ? (
+    <>
+      <Pill tone="green">Scanned</Pill>
+      {log.scanAt && (
+        <div className="mt-1 text-xs text-[#6B7280]">
+          {new Date(log.scanAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}
+        </div>
+      )}
+    </>
+  ) : log.virtual || log.source === "gps" ? (
+    <Pill tone="amber">Not scanned</Pill>
+  ) : (
+    <span className="whitespace-nowrap text-xs text-[#6B7280]">{KIND[log.source || "sheet"]}</span>
+  );
+
+const GpsStatus = ({ log }: { log: VehicleLog }) => {
+  const check = log.gpsCheck?.state;
+  return (
+    <>
+      {log.virtual || log.source === "gps" ? (
+        <Pill tone="blue">GPS trip{log.gps?.distanceKm ? ` · ${log.gps.distanceKm} km` : ""}</Pill>
+      ) : check === "match" ? (
+        <Pill tone="green">Matched</Pill>
+      ) : check === "waiting" ? (
+        <Pill tone="gray">Waiting</Pill>
+      ) : check === "mismatch" ? (
+        <>
+          <Pill tone="orange">No match</Pill>
+          <div className="mt-1 max-w-[180px] text-xs text-orange-700">{log.gpsCheck?.reason}</div>
+        </>
+      ) : (
+        dash
+      )}
+      {log.gps?.reasonCodes?.length ? (
+        <div className="mt-1 flex max-w-[180px] flex-wrap gap-1">
+          {log.gps.reasonCodes.map((c) => (
+            <span key={c} className="rounded bg-gray-100 px-1 text-[11px] text-gray-700">
+              {REASONS[c] || c}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+const LogStatus = ({ log }: { log: VehicleLog }) => (
+  <Pill tone={log.status === "pending" || log.status === "unlogged" ? "amber" : log.status === "rejected" ? "red" : "green"}>
+    {log.status === "unlogged" ? "Not logged" : log.status === "pending" ? "Pending" : log.status === "rejected" ? "Rejected" : "Approved"}
+  </Pill>
+);
 
 type Tab = "all" | "pending" | "attention" | "approved" | "rejected";
 const TABS: { key: Tab; label: string }[] = [
@@ -83,6 +158,10 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "rejected", label: "Rejected" },
 ];
 
+const COLUMNS = [
+  "#", "Date", "Dep.", "Arr.", "Staff", "Location", "Vehicle", "QR", "GPS", "Status",
+  "Out", "Return", "Engaged", "Filled", "Empty", "Recorded", "Cash", "Actions",
+];
 const NUMERIC = ["Out", "Return", "Engaged", "Filled", "Empty", "Recorded", "Cash"];
 const SUM_KEYS = ["out", "returned", "engaged", "filled", "empty", "recorded"] as const;
 
@@ -95,6 +174,22 @@ const fmtDate = (iso: string) => {
     year: "numeric",
   });
 };
+// Local YYYY-MM-DD, the same day fmtDate shows.
+const dayKey = (iso: string) => new Date(iso).toLocaleDateString("en-CA");
+
+// Kept while the admin is on another page (a trip's GPS route), so coming back shows
+// the same list, filters and scroll position at once instead of loading from scratch.
+const saved: {
+  month?: string;
+  tab?: Tab;
+  staff?: string;
+  kind?: string;
+  day?: string;
+  logs?: VehicleLog[];
+  pendingAll?: VehicleLog[];
+  months?: string[];
+  scrollTop?: number;
+} = {};
 
 const VehicleLogPage = () => {
   const { data: session } = useSession();
@@ -103,21 +198,26 @@ const VehicleLogPage = () => {
   const { areaNames, staffNames, refresh: refreshOptions } =
     useVehicleLogOptions(session);
 
-  const [month, setMonth] = useState(currentMonthKey());
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
-  const [logs, setLogs] = useState<VehicleLog[]>([]);
+  const [month, setMonth] = useState(saved.month || currentMonthKey());
+  const [availableMonths, setAvailableMonths] = useState<string[]>(saved.months || []);
+  const [logs, setLogs] = useState<VehicleLog[]>(saved.logs || []);
+  // The month `logs` belongs to (it lags `month` while a new month loads).
+  const [loadedMonth, setLoadedMonth] = useState(saved.logs ? saved.month : "");
   // Every trip still waiting for approval, whatever its month.
-  const [pendingAll, setPendingAll] = useState<VehicleLog[]>([]);
+  const [pendingAll, setPendingAll] = useState<VehicleLog[]>(saved.pendingAll || []);
   const [loading, setLoading] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [editing, setEditing] = useState<VehicleLog | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleLog | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<VehicleLog | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<VehicleLog | null>(null);
+  const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const [tab, setTab] = useState<Tab>("all");
-  const [staffFilter, setStaffFilter] = useState("");
+  const [tab, setTab] = useState<Tab>(saved.tab || "all");
+  const [staffFilter, setStaffFilter] = useState(saved.staff || "");
+  const [kind, setKind] = useState(saved.kind || "");
+  const [day, setDay] = useState(saved.day || ""); // YYYY-MM-DD: only that day's trips
   const [reviewing, setReviewing] = useState<string | null>(null);
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -147,6 +247,7 @@ const VehicleLogPage = () => {
       try {
         const { data } = await axiosInstance.get(`${base}/vehicle-log?month=${key}`);
         setLogs(data.logs || []);
+        setLoadedMonth(key);
       } catch (error) {
         console.error(error);
         toast.error("Failed to load vehicle logs");
@@ -168,14 +269,24 @@ const VehicleLogPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, month]);
 
-  // A month lists oldest→newest, so jump to the bottom where today's trips are.
-  // The review queue starts at the top: the oldest waiting trip comes first.
+  useEffect(() => {
+    Object.assign(saved, { month, tab, staff: staffFilter, kind, day, logs, pendingAll, months: availableMonths });
+  });
+
+  // A month lists oldest→newest, so a newly opened month jumps to the bottom where today's
+  // trips are; the review queue starts at the top (oldest waiting trip first). A refresh
+  // (after approving, or coming back from a trip page) keeps the place.
+  const view = `${month}|${tab}`;
+  const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
     const el = tableScrollRef.current;
-    if (el && !loading) el.scrollTop = tab === "pending" ? 0 : el.scrollHeight;
-  }, [logs, loading, tab]);
+    if (!el || loadedMonth !== month || scrolledFor.current === view) return;
+    if (scrolledFor.current === null && saved.scrollTop != null) el.scrollTop = saved.scrollTop;
+    else el.scrollTop = tab === "pending" ? 0 : el.scrollHeight;
+    scrolledFor.current = view;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedMonth, view]);
 
-  // Staff filter applies to the table and its totals.
   const loggedStaff = useMemo(
     () =>
       Array.from(
@@ -183,11 +294,32 @@ const VehicleLogPage = () => {
       ).sort(),
     [logs, pendingAll, staffFilter]
   );
-  const byStaff = (rows: VehicleLog[]) =>
-    staffFilter ? rows.filter((l) => (l.staff || []).includes(staffFilter)) : rows;
+  // The staff, source and day filters apply to the table and its totals.
+  const filtersOn = !!(staffFilter || kind || day);
+  const filtered = (rows: VehicleLog[]) =>
+    rows.filter(
+      (l) =>
+        (!staffFilter || (l.staff || []).includes(staffFilter)) &&
+        (!kind || sourceOf(l) === kind) &&
+        (!day || dayKey(l.date) === day)
+    );
+  const clearFilters = () => {
+    setStaffFilter("");
+    setKind("");
+    setDay("");
+  };
+  // Picking a day in another month opens that month; picking another month drops the day.
+  const pickDay = (v: string) => {
+    setDay(v);
+    if (v && v.slice(0, 7) !== month) setMonth(v.slice(0, 7));
+  };
+  const pickMonth = (m: string) => {
+    setMonth(m);
+    if (day.slice(0, 7) !== m) setDay("");
+  };
 
-  const monthRows = byStaff(logs);
-  const pendingRows = byStaff(pendingAll);
+  const monthRows = filtered(logs);
+  const pendingRows = filtered(pendingAll);
   const shown =
     tab === "pending"
       ? pendingRows
@@ -202,12 +334,9 @@ const VehicleLogPage = () => {
   };
 
   // Totals follow the rows on screen; rejected trips only count on their own tab.
-  const totals = useMemo(() => {
-    const rows = shown.filter((l) => !l.virtual && (tab === "rejected" || l.status !== "rejected"));
-    const sum = (k: keyof VehicleLog) => rows.reduce((a, l) => a + (Number(l[k]) || 0), 0);
-    return { trips: rows.length, cash: sum("cash"), cols: SUM_KEYS.map(sum) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logs, pendingAll, tab, staffFilter]);
+  const counted = shown.filter((l) => !l.virtual && (tab === "rejected" || l.status !== "rejected"));
+  const sum = (k: keyof VehicleLog) => counted.reduce((a, l) => a + (Number(l[k]) || 0), 0);
+  const totals = { trips: counted.length, cash: sum("cash"), cols: SUM_KEYS.map(sum) };
 
   // Approve or reject an entry sent from the staff app (only approved trips are paid).
   const review = async (log: VehicleLog, action: "approve" | "reject", reason = "") => {
@@ -215,7 +344,7 @@ const VehicleLogPage = () => {
     try {
       await axiosInstance.patch(`${base}/vehicle-log/${log._id}/review`, { action, reason });
       toast.success(action === "approve" ? "Trip approved" : "Trip rejected");
-      setRejectTarget(null);
+      setReviewTarget(null);
       refreshAll();
     } catch (e: any) {
       toast.error(e?.response?.data?.error?.message || "Failed to update");
@@ -272,7 +401,7 @@ const VehicleLogPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <MonthSelect value={month} onChange={setMonth} months={availableMonths} />
+            <MonthSelect value={month} onChange={pickMonth} months={availableMonths} />
 
             <Button
               variant="outline"
@@ -323,7 +452,7 @@ const VehicleLogPage = () => {
             </div>
             <Button
               onClick={() => {
-                setStaffFilter("");
+                clearFilters();
                 setTab("pending");
               }}
               className="h-10 rounded-xl bg-amber-600 px-5 font-medium text-white shadow-none hover:bg-amber-700"
@@ -362,11 +491,32 @@ const VehicleLogPage = () => {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="whitespace-nowrap text-sm text-[#6B7280]">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 whitespace-nowrap text-sm text-[#6B7280]">
                 {shown.length} {shown.length === 1 ? "trip" : "trips"}
                 {tab === "pending" ? " · all months" : ""}
               </span>
+              <Input
+                type="date"
+                value={day}
+                onChange={(e) => pickDay(e.target.value)}
+                aria-label="Show one day"
+                title="Show one day"
+                className={`h-9 w-40 rounded-full bg-white px-3 text-sm shadow-none ${day ? "border-[#2563EB] text-[#2563EB]" : "border-[#EAEAEA] text-[#0A0A0A]"}`}
+              />
+              <select
+                value={kind}
+                onChange={(e) => setKind(e.target.value)}
+                aria-label="Filter by GPS and QR scan"
+                className={`h-9 !w-48 rounded-full border bg-white px-3 text-sm ${kind ? "border-[#2563EB] text-[#2563EB]" : "border-[#EAEAEA] text-[#0A0A0A]"}`}
+              >
+                <option value="">GPS and QR: all</option>
+                {SOURCES.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
               <select
                 value={staffFilter}
                 onChange={(e) => setStaffFilter(e.target.value)}
@@ -380,26 +530,29 @@ const VehicleLogPage = () => {
                   </option>
                 ))}
               </select>
+              {filtersOn && (
+                <Button variant="ghost" onClick={clearFilters} className="h-9 rounded-full px-3 text-sm text-[#6B7280]">
+                  <X className="mr-1 h-4 w-4" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 
           <div
             ref={tableScrollRef}
+            onScroll={(e) => (saved.scrollTop = e.currentTarget.scrollTop)}
             className="w-full max-h-[calc(100dvh-15rem)] min-h-[20rem] overflow-auto rounded-2xl border border-[#EAEAEA] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
           >
-            <table className="w-full min-w-[1100px] caption-bottom text-[15px] tabular-nums">
+            <table className="w-full min-w-[1400px] caption-bottom text-[15px] tabular-nums">
               <TableHeader className="sticky top-0 z-20">
                 <TableRow className="hover:bg-transparent">
-                  {[
-                    "#", "Status", "Date", "Dep.", "Arr.", "Out", "Return",
-                    "Engaged", "Filled", "Empty", "Recorded", "Cash",
-                    "Staff", "Location", "Actions",
-                  ].map((h) => (
+                  {COLUMNS.map((h) => (
                     <TableHead
                       key={h}
-                      className={`whitespace-nowrap border-b border-[#EAEAEA] bg-[#FAFAFA] px-4 py-3 text-[13px] font-medium uppercase tracking-wide text-[#6B7280] ${
+                      className={`whitespace-nowrap border-b border-[#EAEAEA] bg-[#FAFAFA] px-3 py-3 text-[13px] font-medium uppercase tracking-wide text-[#6B7280] ${
                         NUMERIC.includes(h) ? "text-right" : "text-left"
-                      } ${h === "Staff" ? "min-w-[200px]" : ""} ${h === "Actions" ? "sticky right-0" : ""}`}
+                      } ${h === "Staff" ? "min-w-[170px]" : ""} ${h === "Actions" ? "sticky right-0" : ""}`}
                     >
                       {h}
                     </TableHead>
@@ -416,75 +569,17 @@ const VehicleLogPage = () => {
                       key={log._id}
                       className={`group border-b border-[#EAEAEA] ${rowBg} hover:bg-[#FAFAFA]`}
                     >
-                      <TableCell className="px-4 py-3 text-[#9CA3AF]">{idx + 1}</TableCell>
-                      <TableCell className="min-w-[210px] px-4 py-3">
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                            pending || log.status === "unlogged"
-                              ? "bg-amber-100 text-amber-800"
-                              : log.status === "rejected"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {log.status === "unlogged" ? "Not logged" : log.status || "approved"}
-                        </span>
-                        <span className="ml-1.5 text-xs text-[#6B7280]">{KIND[log.source || "sheet"]}</span>
-                        {log.status === "rejected" && log.rejectReason && (
-                          <div className="mt-1 text-xs text-red-700">Reason: {log.rejectReason}</div>
-                        )}
-                        {needsAttention(log) && (
-                          <div className="mt-1 flex items-start gap-1 text-xs font-medium text-orange-700">
-                            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
-                            <span>
-                              Needs attention
-                              {log.gpsCheck?.state === "mismatch" ? `: ${log.gpsCheck.reason}` : log.virtual ? ": not scanned or filled in" : ""}
-                            </span>
-                          </div>
-                        )}
-                        {log.gpsCheck?.state === "match" && (
-                          <div className="mt-1 flex items-center gap-1 text-xs text-green-700">
-                            <Check className="h-3.5 w-3.5" />
-                            GPS matches
-                          </div>
-                        )}
-                        {log.gpsCheck?.state === "waiting" && <div className="mt-1 text-xs text-[#9CA3AF]">Waiting for GPS</div>}
-                        {log.vehicle && <div className="mt-1 text-xs text-[#6B7280]">{log.vehicle}</div>}
-                        {log.gps?.reasonCodes?.length ? (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {log.gps.reasonCodes.map((c) => (
-                              <span key={c} className="rounded bg-gray-100 px-1 text-[11px] text-gray-700">
-                                {REASONS[c] || c}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-3 font-medium text-[#0A0A0A]">
+                      <TableCell className="px-3 py-3 text-[#9CA3AF]">{idx + 1}</TableCell>
+                      <TableCell className="whitespace-nowrap px-3 py-3 font-medium text-[#0A0A0A]">
                         {fmtDate(log.date)}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
+                      <TableCell className="whitespace-nowrap px-3 py-3 text-[#6B7280]">
                         {log.departureTime || "—"}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap px-4 py-3 text-[#6B7280]">
+                      <TableCell className="whitespace-nowrap px-3 py-3 text-[#6B7280]">
                         {log.arrivalTime || "—"}
                       </TableCell>
-                      <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.out ?? "—"}</TableCell>
-                      <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.returned}</TableCell>
-                      <TableCell
-                        className={`px-4 py-3 text-right ${
-                          log.engaged < 0 ? "text-[#DC2626]" : "text-[#0A0A0A]"
-                        }`}
-                      >
-                        {log.engaged}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.filled}</TableCell>
-                      <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.empty}</TableCell>
-                      <TableCell className="px-4 py-3 text-right text-[#0A0A0A]">{log.recorded}</TableCell>
-                      <TableCell className="px-4 py-3 text-right font-medium text-[#0A0A0A]">
-                        {log.cash ? inr(log.cash) : <span className="text-[#9CA3AF]">—</span>}
-                      </TableCell>
-                      <TableCell className="min-w-[200px] px-4 py-3">
+                      <TableCell className="min-w-[170px] px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(log.staff || []).map((s) => {
                             const isDriver = log.driver === s;
@@ -507,51 +602,77 @@ const VehicleLogPage = () => {
                           })}
                         </div>
                       </TableCell>
-                      <TableCell className="px-4 py-3">
+                      <TableCell className="min-w-[150px] px-3 py-3">
                         <div className="flex flex-wrap gap-1">
                           {(log.location || []).map((l) => (
                             <Badge
                               key={l}
                               variant="secondary"
-                              className="border-transparent bg-slate-100 text-[13px] text-slate-600 hover:bg-slate-100"
+                              className="border-transparent whitespace-nowrap bg-slate-100 text-[13px] text-slate-600 hover:bg-slate-100"
                             >
                               {l}
                             </Badge>
                           ))}
                         </div>
                       </TableCell>
-                      {/* Pinned so approve / reject never needs a sideways scroll */}
+                      <TableCell className="whitespace-nowrap px-3 py-3 text-[#0A0A0A]">
+                        {/* QR entries store "name · reg no": two lines keep the column narrow */}
+                        {log.vehicle
+                          ? log.vehicle.split(" · ").map((part, i) => (
+                              <div key={i} className={i ? "text-xs text-[#6B7280]" : ""}>
+                                {part}
+                              </div>
+                            ))
+                          : dash}
+                      </TableCell>
+                      <TableCell className="px-3 py-3">
+                        <QrStatus log={log} />
+                      </TableCell>
+                      <TableCell className="px-3 py-3">
+                        <GpsStatus log={log} />
+                      </TableCell>
+                      <TableCell className="px-3 py-3">
+                        <LogStatus log={log} />
+                        {log.status === "rejected" && log.rejectReason && (
+                          <div className="mt-1 max-w-[180px] text-xs text-red-700">Reason: {log.rejectReason}</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-3 py-3 text-right text-[#0A0A0A]">{log.out ?? "—"}</TableCell>
+                      <TableCell className="px-3 py-3 text-right text-[#0A0A0A]">{log.returned}</TableCell>
+                      <TableCell
+                        className={`px-3 py-3 text-right ${
+                          log.engaged < 0 ? "text-[#DC2626]" : "text-[#0A0A0A]"
+                        }`}
+                      >
+                        {log.engaged}
+                      </TableCell>
+                      <TableCell className="px-3 py-3 text-right text-[#0A0A0A]">{log.filled}</TableCell>
+                      <TableCell className="px-3 py-3 text-right text-[#0A0A0A]">{log.empty}</TableCell>
+                      <TableCell className="px-3 py-3 text-right text-[#0A0A0A]">{log.recorded}</TableCell>
+                      <TableCell className="px-3 py-3 text-right font-medium text-[#0A0A0A]">
+                        {log.cash ? inr(log.cash) : <span className="text-[#9CA3AF]">—</span>}
+                      </TableCell>
+                      {/* Pinned so the row actions never need a sideways scroll */}
                       <TableCell
                         className={`sticky right-0 z-10 whitespace-nowrap border-l border-[#EAEAEA] px-3 py-3 ${rowBg} group-hover:bg-[#FAFAFA]`}
                       >
                         <div className="flex items-center justify-end gap-1">
                           {pending && (
-                            <>
-                              <Button
-                                disabled={reviewing === log._id}
-                                onClick={() => review(log, "approve")}
-                                className="h-9 rounded-lg bg-green-600 px-3 text-sm font-medium text-white shadow-none hover:bg-green-700"
-                              >
-                                {reviewing === log._id ? (
-                                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Check className="mr-1 h-4 w-4" />
-                                )}
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                disabled={reviewing === log._id}
-                                onClick={() => {
-                                  setRejectReason("");
-                                  setRejectTarget(log);
-                                }}
-                                className="h-9 rounded-lg border-red-200 px-3 text-sm font-medium text-red-700 shadow-none hover:bg-red-50 hover:text-red-800"
-                              >
-                                <X className="mr-1 h-4 w-4" />
-                                Reject
-                              </Button>
-                            </>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={reviewing === log._id}
+                              onClick={() => {
+                                setRejecting(false);
+                                setRejectReason("");
+                                setReviewTarget(log);
+                              }}
+                              aria-label="Approve or reject"
+                              title="Approve or reject"
+                              className="size-9 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 hover:text-amber-900"
+                            >
+                              {reviewing === log._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
+                            </Button>
                           )}
                           {log.virtual && (
                             <Button variant="outline" onClick={() => openEditor(log)} className="h-9 rounded-lg px-3 text-sm">
@@ -599,7 +720,7 @@ const VehicleLogPage = () => {
               {totals.trips > 0 && (
                 <TableFooter className="sticky bottom-0 z-20 border-t border-[#EAEAEA] bg-transparent">
                   <TableRow className="font-semibold text-[#0A0A0A] hover:bg-transparent [&>td]:bg-[#FAFAFA]">
-                    <TableCell className="px-4 py-3" colSpan={5}>
+                    <TableCell className="px-3 py-3" colSpan={10}>
                       Total
                       <span className="ml-2 font-normal text-[#6B7280]">
                         {totals.trips} {totals.trips === 1 ? "trip" : "trips"}
@@ -607,12 +728,12 @@ const VehicleLogPage = () => {
                       </span>
                     </TableCell>
                     {totals.cols.map((v, i) => (
-                      <TableCell key={SUM_KEYS[i]} className="px-4 py-3 text-right">
+                      <TableCell key={SUM_KEYS[i]} className="px-3 py-3 text-right">
                         {v}
                       </TableCell>
                     ))}
-                    <TableCell className="px-4 py-3 text-right">{inr(totals.cash)}</TableCell>
-                    <TableCell colSpan={3} />
+                    <TableCell className="px-3 py-3 text-right">{inr(totals.cash)}</TableCell>
+                    <TableCell />
                   </TableRow>
                 </TableFooter>
               )}
@@ -641,7 +762,7 @@ const VehicleLogPage = () => {
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  {tab === "all" && !staffFilter ? (
+                  {tab === "all" && !filtersOn ? (
                     <Button
                       onClick={() => openEditor(null)}
                       className="h-11 rounded-xl bg-[#2563EB] px-5 text-[15px] font-medium text-white shadow-none hover:bg-[#1D4ED8]"
@@ -654,7 +775,7 @@ const VehicleLogPage = () => {
                       variant="outline"
                       onClick={() => {
                         setTab("all");
-                        setStaffFilter("");
+                        clearFilters();
                       }}
                       className={outlineBtn}
                     >
@@ -683,7 +804,7 @@ const VehicleLogPage = () => {
           refreshOptions();
         }}
         editing={editing}
-        defaultDate={isCurrentMonth ? undefined : `${month}-01`}
+        defaultDate={day || (isCurrentMonth ? undefined : `${month}-01`)}
       />
 
       <ExportDialog
@@ -696,41 +817,97 @@ const VehicleLogPage = () => {
         staffNames={Array.from(new Set([...staffNames, ...loggedStaff])).sort()}
       />
 
-      {/* Reject: the reason is shown to the crew, so it is required */}
-      <Dialog open={!!rejectTarget} onOpenChange={(o) => !o && setRejectTarget(null)}>
+      {/* Approve / reject: one dialog, so an approval is always confirmed against the trip's details */}
+      <Dialog open={!!reviewTarget} onOpenChange={(o) => !o && setReviewTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reject this trip?</DialogTitle>
+            <DialogTitle>{rejecting ? "Reject this trip?" : "Approve this trip?"}</DialogTitle>
             <DialogDescription>
-              {rejectTarget
-                ? `${fmtDate(rejectTarget.date)} · ${(rejectTarget.staff || []).join(", ") || "no staff"}. A rejected trip is not paid.`
-                : ""}
+              {rejecting ? "A rejected trip is not paid. The crew sees your reason." : "Check the details. Only approved trips are paid."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="vlog-reject-reason" className="text-xs text-gray-600">
-              Why is this not a valid trip? <span className="text-red-600">*</span>
-            </Label>
-            <Textarea
-              id="vlog-reject-reason"
-              autoFocus
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="e.g. Duplicate of the 10:30 trip"
-            />
-          </div>
+          {reviewTarget && (
+            <dl className="grid grid-cols-[90px_1fr] items-start gap-x-3 gap-y-2 rounded-xl bg-[#FAFAFA] p-3 text-sm">
+              <dt className="text-[#6B7280]">Date</dt>
+              <dd className="font-medium text-[#0A0A0A]">
+                {fmtDate(reviewTarget.date)} · {reviewTarget.departureTime || "—"} to {reviewTarget.arrivalTime || "—"}
+              </dd>
+              <dt className="text-[#6B7280]">Staff</dt>
+              <dd>
+                {(reviewTarget.staff || []).map((n) => (n === reviewTarget.driver ? `${n} (driver)` : n)).join(", ") || "—"}
+              </dd>
+              <dt className="text-[#6B7280]">Location</dt>
+              <dd>{(reviewTarget.location || []).join(", ") || "—"}</dd>
+              <dt className="text-[#6B7280]">Vehicle</dt>
+              <dd>{reviewTarget.vehicle || "—"}</dd>
+              <dt className="text-[#6B7280]">Jars</dt>
+              <dd className="tabular-nums">
+                Out {reviewTarget.out ?? "—"} · Return {reviewTarget.returned} · Filled {reviewTarget.filled}
+                {reviewTarget.cash ? ` · Cash ${inr(reviewTarget.cash)}` : ""}
+              </dd>
+              <dt className="text-[#6B7280]">QR</dt>
+              <dd>
+                <QrStatus log={reviewTarget} />
+              </dd>
+              <dt className="text-[#6B7280]">GPS</dt>
+              <dd>
+                <GpsStatus log={reviewTarget} />
+              </dd>
+            </dl>
+          )}
+          {rejecting && (
+            <div className="space-y-1.5">
+              <Label htmlFor="vlog-reject-reason" className="text-xs text-gray-600">
+                Why is this not a valid trip? <span className="text-red-600">*</span>
+              </Label>
+              <Textarea
+                id="vlog-reject-reason"
+                autoFocus
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Duplicate of the 10:30 trip"
+              />
+            </div>
+          )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setRejectTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={!rejectReason.trim() || !!reviewing}
-              onClick={() => rejectTarget && review(rejectTarget, "reject", rejectReason.trim())}
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
-              {reviewing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reject trip
-            </Button>
+            {rejecting ? (
+              <>
+                <Button variant="outline" disabled={!!reviewing} onClick={() => setRejecting(false)}>
+                  Back
+                </Button>
+                <Button
+                  disabled={!rejectReason.trim() || !!reviewing}
+                  onClick={() => reviewTarget && review(reviewTarget, "reject", rejectReason.trim())}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  {reviewing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Reject trip
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  disabled={!!reviewing}
+                  onClick={() => setRejecting(true)}
+                  className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 sm:mr-auto"
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Reject
+                </Button>
+                <Button variant="outline" disabled={!!reviewing} onClick={() => setReviewTarget(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  disabled={!!reviewing}
+                  onClick={() => reviewTarget && review(reviewTarget, "approve")}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  {reviewing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+                  Approve
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
