@@ -3,12 +3,13 @@ import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import { useSession } from "next-auth/react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import CurrencyFormat from "react-currency-format";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   Wallet,
+  Banknote,
+  HandCoins,
   Plus,
   Loader2,
   CheckCircle2,
@@ -32,7 +33,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Staff } from "@/types/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -46,6 +56,8 @@ type Payout = {
   date: string;
   amount: number;
   note?: string;
+  type?: PayType;
+  settledBy?: string | null;
   notifiedAt?: string | null;
   receipt?: {
     at?: string | null;
@@ -63,7 +75,19 @@ type Payout = {
     userAgent?: string;
   };
 };
-type StaffTotal = { employeeID: number; name: string; total: number; count: number };
+type PayType = "salary" | "advance";
+type StaffTotal = {
+  employeeID: number;
+  name: string;
+  role: string;
+  active: boolean;
+  salary: number;
+  advance: number;
+  total: number;
+  count: number;
+  pending: number;
+};
+type Summary = { total: number; salary: number; advance: number; pending: number };
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
 const dayLabel = (d: string) =>
@@ -72,6 +96,30 @@ const dayLabel = (d: string) =>
 const timeLabel = (d: string) =>
   new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 const isPending = (p: Payout) => !!p.notifiedAt && !p.receipt?.at;
+const typeOf = (p: Payout): PayType => p.type || "salary";
+
+// Text + colour, never colour alone.
+const TypeBadge = ({ p }: { p: Payout }) =>
+  typeOf(p) === "advance" ? (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+      <HandCoins size={12} /> Advance
+    </span>
+  ) : (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200"
+      title={p.settledBy ? "Paid as an advance, settled into a later salary" : undefined}
+    >
+      <Banknote size={12} /> Salary{p.settledBy ? " · was advance" : ""}
+    </span>
+  );
+
+// Money cell: right-aligned tabular figures; zero shows a quiet dash so rows line up.
+const Money = ({ n, strong, tone }: { n: number; strong?: boolean; tone?: string }) =>
+  n ? (
+    <span className={`tabular-nums ${strong ? "font-semibold text-gray-900" : tone || "text-gray-700"}`}>{inr(n)}</span>
+  ) : (
+    <span className="text-gray-300" aria-label="none">—</span>
+  );
 
 // Whether the staff member confirmed receipt, with the proof they left.
 const ReceiptStatus = ({ p }: { p: Payout }) => {
@@ -122,19 +170,21 @@ const now = new Date();
 const Payouts = () => {
   const { data: session } = useSession();
   const axiosInstance = useAxiosInstance(session);
+  const api = process.env.NEXT_PUBLIC_API_URL;
 
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [loading, setLoading] = useState(true);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [byStaff, setByStaff] = useState<StaffTotal[]>([]);
-  const [total, setTotal] = useState(0);
+  const [sum, setSum] = useState<Summary>({ total: 0, salary: 0, advance: 0, pending: 0 });
   const [openId, setOpenId] = useState<number | null>(null);
+  const [changing, setChanging] = useState<string | null>(null);
 
   // record-payout dialog
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [formStaff, setFormStaff] = useState<string>("");
+  const [formType, setFormType] = useState<PayType>("advance");
   const [formAmount, setFormAmount] = useState("");
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
@@ -143,12 +193,10 @@ const Payouts = () => {
     if (!session) return;
     setLoading(true);
     try {
-      const { data } = await axiosInstance.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/payout?year=${year}&month=${month}`
-      );
+      const { data } = await axiosInstance.get(`${api}/payout?year=${year}&month=${month}`);
       setPayouts(data.payouts || []);
       setByStaff(data.byStaff || []);
-      setTotal(data.total || 0);
+      setSum({ total: data.total || 0, salary: data.salary || 0, advance: data.advance || 0, pending: data.pending || 0 });
     } catch (e) {
       toast.error("Failed to load payouts");
     } finally {
@@ -169,6 +217,7 @@ const Payouts = () => {
     if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth() + 1)) return;
     setYear(y);
     setMonth(m);
+    setOpenId(null);
   };
 
   const payoutsFor = useMemo(() => {
@@ -181,30 +230,29 @@ const Payouts = () => {
     return map;
   }, [payouts]);
 
-  const openDialog = async () => {
-    setDialogOpen(true);
-    if (staffList.length === 0) {
-      try {
-        const { data } = await axiosInstance.get(`${process.env.NEXT_PUBLIC_API_URL}/staff`);
-        setStaffList(data || []);
-      } catch { /* ignore */ }
-    }
-  };
+  const activeStaff = byStaff.filter((s) => s.active);
+  const formStaffName = activeStaff.find((s) => String(s.employeeID) === formStaff)?.name;
 
   const record = async () => {
     if (!formStaff) return toast.error("Pick a staff member");
     if (!formAmount || Number(formAmount) <= 0) return toast.error("Enter an amount");
     setSaving(true);
     try {
-      await axiosInstance.post(`${process.env.NEXT_PUBLIC_API_URL}/payout`, {
+      const { data } = await axiosInstance.post(`${api}/payout`, {
         employeeID: Number(formStaff),
         amount: Number(formAmount),
+        type: formType,
         date: new Date(formDate).toISOString(),
       });
-      toast.success("Payout recorded");
+      toast.success(
+        formType === "salary"
+          ? `Salary recorded${data.settled ? ` · ${data.settled} advance${data.settled === 1 ? "" : "s"} settled` : ""}`
+          : "Advance recorded"
+      );
       setDialogOpen(false);
       setFormStaff("");
       setFormAmount("");
+      setFormType("advance");
       setFormDate(new Date().toISOString().slice(0, 10));
       load();
     } catch (e) {
@@ -214,6 +262,29 @@ const Payouts = () => {
     }
   };
 
+  const changeType = async (p: Payout, type: PayType) => {
+    setChanging(p._id);
+    try {
+      const { data } = await axiosInstance.patch(`${api}/payout/${p._id}`, { type });
+      if (data.payout?.type !== type) toast("Kept as salary: a later salary already covers this payment.");
+      else if (type === "salary")
+        toast.success(`Marked as salary${data.settled ? ` · ${data.settled} advance${data.settled === 1 ? "" : "s"} settled` : ""}`);
+      else toast.success("Marked as advance");
+      load();
+    } catch (e) {
+      toast.error("Could not change the payment type");
+    } finally {
+      setChanging(null);
+    }
+  };
+
+  const tiles = [
+    { label: "Total paid", value: sum.total, sub: `${payouts.length} payment${payouts.length === 1 ? "" : "s"}`, Icon: Wallet, primary: true },
+    { label: "Salary", value: sum.salary, sub: "Includes settled advances", Icon: Banknote },
+    { label: "Advance", value: sum.advance, sub: "Not yet settled by a salary", Icon: HandCoins },
+    { label: "Awaiting confirmation", value: sum.pending, sub: "Payments staff haven’t confirmed", Icon: Clock, count: true },
+  ];
+
   return (
     <Wrapper>
       {/* Header: month nav + record */}
@@ -221,106 +292,193 @@ const Payouts = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => shift(-1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50"
+            aria-label="Previous month"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
           >
             <ChevronLeft size={20} />
           </button>
-          <span className="min-w-[170px] text-center text-xl font-semibold text-gray-900">
+          <h1 className="min-w-[170px] text-center text-xl font-semibold text-gray-900">
             {MONTHS[month - 1]} {year}
-          </span>
+          </h1>
           <button
             onClick={() => shift(1)}
             disabled={isCurrentMonth}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 disabled:opacity-40"
+            aria-label="Next month"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronRight size={20} />
           </button>
         </div>
-        <Button onClick={openDialog} className="gap-2">
+        <Button onClick={() => setDialogOpen(true)} className="h-11 gap-2">
           <Plus size={18} />
           Record payout
         </Button>
       </div>
 
-      {/* Total */}
-      <div className="mb-6 flex items-center justify-between rounded-2xl bg-blue-600 p-6 text-white">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
-            <Wallet size={24} />
+      {/* Summary tiles */}
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map(({ label, value, sub, Icon, primary, count }) => (
+          <div
+            key={label}
+            className={`rounded-2xl p-4 md:p-5 ${primary ? "bg-blue-600 text-white" : "border border-gray-200 bg-white"}`}
+          >
+            <div className="flex items-center gap-2">
+              <Icon size={18} className={primary ? "text-blue-100" : count && value ? "text-amber-600" : "text-gray-400"} />
+              <p className={`text-sm font-medium ${primary ? "text-blue-100" : "text-gray-500"}`}>{label}</p>
+            </div>
+            <p
+              className={`mt-2 text-2xl font-bold tabular-nums md:text-3xl ${
+                primary ? "" : count && value ? "text-amber-700" : "text-gray-900"
+              }`}
+            >
+              {loading ? "…" : count ? value : inr(value)}
+            </p>
+            <p className={`mt-1 text-xs ${primary ? "text-blue-100" : "text-gray-500"}`}>{sub}</p>
           </div>
-          <div>
-            <p className="text-blue-100">Total paid</p>
-            <p className="text-3xl font-bold">{inr(total)}</p>
-          </div>
-        </div>
-        <p className="text-right text-blue-100">
-          {payouts.length} payment{payouts.length === 1 ? "" : "s"}
-          <br />
-          {byStaff.length} staff
-        </p>
+        ))}
       </div>
 
-      {/* Per-staff */}
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : byStaff.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 bg-gray-50 py-16 text-center text-gray-500">
-          No payouts in {MONTHS[month - 1]} {year}.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {byStaff.map((s) => {
-            const open = openId === s.employeeID;
-            return (
-              <div key={s.employeeID} className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                <button
-                  onClick={() => setOpenId(open ? null : s.employeeID)}
-                  className="flex w-full items-center justify-between p-5 text-left hover:bg-gray-50"
-                >
-                  <div>
-                    <p className="text-lg font-semibold capitalize text-gray-900">{s.name}</p>
-                    <p className="text-sm text-gray-500">
-                      ID {s.employeeID} · {s.count} payment{s.count === 1 ? "" : "s"}
-                      {(() => {
-                        const n = (payoutsFor.get(s.employeeID) || []).filter(isPending).length;
-                        return n ? <span className="text-amber-600"> · {n} awaiting confirmation</span> : null;
-                      })()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CurrencyFormat
-                      value={s.total}
-                      displayType="text"
-                      thousandSeparator
-                      prefix="₹"
-                      renderText={(v) => <span className="text-xl font-bold text-gray-900">{v}</span>}
-                    />
-                    <ChevronDown
-                      size={20}
-                      className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
-                    />
-                  </div>
-                </button>
-                {open && (
-                  <div className="border-t border-gray-100 bg-gray-50/60 px-5 py-2">
-                    {(payoutsFor.get(s.employeeID) || []).map((p) => (
-                      <div key={p._id} className="flex items-start justify-between gap-4 border-b border-gray-100 py-3 last:border-0">
-                        <div>
-                          <span className="text-base text-gray-700">{dayLabel(p.date)}</span>
-                          <ReceiptStatus p={p} />
-                        </div>
-                        <span className="text-base font-semibold text-gray-900">{inr(p.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* All staff, one uniform table */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50 hover:bg-gray-50">
+              <TableHead className="text-gray-600">Staff</TableHead>
+              <TableHead className="text-right text-gray-600">Salary</TableHead>
+              <TableHead className="text-right text-gray-600">Advance</TableHead>
+              <TableHead className="text-right text-gray-600">Total</TableHead>
+              <TableHead className="hidden text-right text-gray-600 sm:table-cell">Payments</TableHead>
+              <TableHead className="hidden text-gray-600 md:table-cell">Confirmation</TableHead>
+              <TableHead className="hidden w-10 sm:table-cell"><span className="sr-only">Details</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={7}>
+                      <Skeleton className="h-9 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : byStaff.map((s) => {
+                  const open = openId === s.employeeID;
+                  const list = payoutsFor.get(s.employeeID) || [];
+                  const asked = list.some((p) => p.notifiedAt);
+                  return (
+                    <React.Fragment key={s.employeeID}>
+                      <TableRow
+                        className={`cursor-pointer ${open ? "bg-blue-50/40" : ""}`}
+                        onClick={() => s.count && setOpenId(open ? null : s.employeeID)}
+                      >
+                        <TableCell className="py-3">
+                          <p className="text-base font-semibold capitalize text-gray-900">{s.name}</p>
+                          <p className="text-xs text-gray-500">
+                            ID {s.employeeID}
+                            {s.role ? ` · ${s.role}` : ""}
+                            {!s.active && (
+                              <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-600">inactive</span>
+                            )}
+                          </p>
+                          {s.pending > 0 && (
+                            <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 md:hidden">
+                              <Clock size={12} /> {s.pending} awaiting
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right"><Money n={s.salary} /></TableCell>
+                        <TableCell className="text-right"><Money n={s.advance} tone="font-medium text-amber-700" /></TableCell>
+                        <TableCell className="text-right"><Money n={s.total} strong /></TableCell>
+                        <TableCell className="hidden text-right tabular-nums text-gray-600 sm:table-cell">
+                          {s.count || <span className="text-gray-300">—</span>}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {s.pending > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700">
+                              <Clock size={14} /> {s.pending} awaiting
+                            </span>
+                          ) : asked ? (
+                            <span className="inline-flex items-center gap-1 text-sm font-medium text-green-700">
+                              <CheckCircle2 size={14} /> All confirmed
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden text-right sm:table-cell">
+                          {s.count > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenId(open ? null : s.employeeID);
+                              }}
+                              aria-expanded={open}
+                              aria-label={`${open ? "Hide" : "Show"} ${s.name}'s payments`}
+                              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                            >
+                              <ChevronDown size={18} className={`text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+                            </button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {open && (
+                        <TableRow className="hover:bg-transparent">
+                          <TableCell colSpan={7} className="bg-gray-50/70 px-3 py-2 md:px-6">
+                            <ul className="divide-y divide-gray-200">
+                              {list.map((p) => (
+                                <li key={p._id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
+                                  <div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="w-14 text-sm font-medium text-gray-700">{dayLabel(p.date)}</span>
+                                      <TypeBadge p={p} />
+                                      <span className="font-semibold tabular-nums text-gray-900">{inr(p.amount)}</span>
+                                    </div>
+                                    <ReceiptStatus p={p} />
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={changing !== null}
+                                    onClick={() => changeType(p, typeOf(p) === "advance" ? "salary" : "advance")}
+                                    className="h-9 shrink-0 self-start"
+                                  >
+                                    {changing === p._id && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                                    Mark as {typeOf(p) === "advance" ? "salary" : "advance"}
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+            {!loading && byStaff.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-12 text-center text-gray-500">
+                  No active staff, and no payouts in {MONTHS[month - 1]} {year}.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+          {!loading && byStaff.length > 0 && (
+            <TableFooter>
+              <TableRow className="bg-gray-50 font-semibold hover:bg-gray-50">
+                <TableCell>Total</TableCell>
+                <TableCell className="text-right"><Money n={sum.salary} /></TableCell>
+                <TableCell className="text-right"><Money n={sum.advance} tone="text-amber-700" /></TableCell>
+                <TableCell className="text-right"><Money n={sum.total} strong /></TableCell>
+                <TableCell className="hidden text-right tabular-nums sm:table-cell">{payouts.length}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {sum.pending > 0 ? <span className="text-amber-700">{sum.pending} awaiting</span> : null}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell" />
+              </TableRow>
+            </TableFooter>
+          )}
+        </Table>
+      </div>
 
       {/* Record payout dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -336,8 +494,8 @@ const Payouts = () => {
                   <SelectValue placeholder="Select staff" />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffList.map((s) => (
-                    <SelectItem key={s._id} value={String(s.employeeID)}>
+                  {activeStaff.map((s) => (
+                    <SelectItem key={s.employeeID} value={String(s.employeeID)}>
                       {s.name} · {s.employeeID}
                     </SelectItem>
                   ))}
@@ -345,9 +503,40 @@ const Payouts = () => {
               </Select>
             </div>
             <div>
-              <Label className="text-sm text-gray-600">Amount (₹)</Label>
+              <Label id="pay-type" className="text-sm text-gray-600">Type</Label>
+              <div role="radiogroup" aria-labelledby="pay-type" className="mt-1 grid grid-cols-2 gap-2">
+                {(["advance", "salary"] as PayType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="radio"
+                    aria-checked={formType === t}
+                    onClick={() => setFormType(t)}
+                    className={`flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 ${
+                      formType === t
+                        ? t === "salary"
+                          ? "border-blue-600 bg-blue-50 text-blue-700"
+                          : "border-amber-500 bg-amber-50 text-amber-800"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t === "salary" ? <Banknote size={16} /> : <HandCoins size={16} />}
+                    {t === "salary" ? "Salary" : "Advance"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-500">
+                {formType === "salary"
+                  ? `All advances paid to ${formStaffName || "this staff member"} on or before this date will count as salary.`
+                  : "Stays an advance until a salary is recorded on or after this date."}
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="pay-amount" className="text-sm text-gray-600">Amount (₹)</Label>
               <Input
+                id="pay-amount"
                 type="number"
+                inputMode="numeric"
                 value={formAmount}
                 onChange={(e) => setFormAmount(e.target.value)}
                 className="mt-1"
@@ -355,8 +544,9 @@ const Payouts = () => {
               />
             </div>
             <div>
-              <Label className="text-sm text-gray-600">Date</Label>
+              <Label htmlFor="pay-date" className="text-sm text-gray-600">Date</Label>
               <Input
+                id="pay-date"
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
@@ -367,7 +557,7 @@ const Payouts = () => {
           <DialogFooter>
             <Button onClick={record} disabled={saving} className="w-full sm:w-auto">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-              Record
+              Record {formType}
             </Button>
           </DialogFooter>
         </DialogContent>
