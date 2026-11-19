@@ -11,6 +11,9 @@ import {
   Wallet,
   Plus,
   Loader2,
+  CheckCircle2,
+  Clock,
+  MapPin,
 } from "lucide-react";
 import {
   Dialog,
@@ -43,12 +46,76 @@ type Payout = {
   date: string;
   amount: number;
   note?: string;
+  notifiedAt?: string | null;
+  receipt?: {
+    at?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    accuracy?: number | null;
+    fixAt?: string | null;
+    mocked?: boolean;
+    deviceId?: string;
+    model?: string;
+    platform?: string;
+    osVersion?: string;
+    appVersion?: string;
+    ip?: string;
+    userAgent?: string;
+  };
 };
 type StaffTotal = { employeeID: number; name: string; total: number; count: number };
 
 const inr = (n: number) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
 const dayLabel = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+
+const timeLabel = (d: string) =>
+  new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const isPending = (p: Payout) => !!p.notifiedAt && !p.receipt?.at;
+
+// Whether the staff member confirmed receipt, with the proof they left.
+const ReceiptStatus = ({ p }: { p: Payout }) => {
+  const r = p.receipt;
+  if (r?.at) {
+    const device = [r.model, r.platform && `${r.platform} ${r.osVersion || ""}`.trim(), r.appVersion && `app ${r.appVersion}`]
+      .filter(Boolean)
+      .join(" · ");
+    return (
+      <div className="mt-1 text-sm text-gray-500">
+        <span className="inline-flex items-center gap-1 font-medium text-green-700">
+          <CheckCircle2 size={14} /> Received · confirmed {timeLabel(r.at)}
+        </span>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          {r.lat != null && r.lng != null ? (
+            <a
+              href={`https://www.google.com/maps?q=${r.lat},${r.lng}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+            >
+              <MapPin size={13} /> Location{r.accuracy != null ? ` (±${Math.round(r.accuracy)} m)` : ""}
+              {r.fixAt && Math.abs(new Date(r.at).getTime() - new Date(r.fixAt).getTime()) > 120000
+                ? `, fix from ${timeLabel(r.fixAt)}`
+                : ""}
+            </a>
+          ) : (
+            <span>No location</span>
+          )}
+          {r.mocked && <span className="font-medium text-red-600">Mock location</span>}
+          {device && <span>{device}</span>}
+          {r.ip && <span title={[r.deviceId && `Device ID ${r.deviceId}`, r.userAgent].filter(Boolean).join("\n")}>IP {r.ip}</span>}
+        </div>
+      </div>
+    );
+  }
+  if (isPending(p))
+    return (
+      <span className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-amber-600">
+        <Clock size={14} /> Awaiting confirmation
+      </span>
+    );
+  return null;
+};
 
 const now = new Date();
 
@@ -216,6 +283,10 @@ const Payouts = () => {
                     <p className="text-lg font-semibold capitalize text-gray-900">{s.name}</p>
                     <p className="text-sm text-gray-500">
                       ID {s.employeeID} · {s.count} payment{s.count === 1 ? "" : "s"}
+                      {(() => {
+                        const n = (payoutsFor.get(s.employeeID) || []).filter(isPending).length;
+                        return n ? <span className="text-amber-600"> · {n} awaiting confirmation</span> : null;
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -235,8 +306,11 @@ const Payouts = () => {
                 {open && (
                   <div className="border-t border-gray-100 bg-gray-50/60 px-5 py-2">
                     {(payoutsFor.get(s.employeeID) || []).map((p) => (
-                      <div key={p._id} className="flex items-center justify-between border-b border-gray-100 py-3 last:border-0">
-                        <span className="text-base text-gray-700">{dayLabel(p.date)}</span>
+                      <div key={p._id} className="flex items-start justify-between gap-4 border-b border-gray-100 py-3 last:border-0">
+                        <div>
+                          <span className="text-base text-gray-700">{dayLabel(p.date)}</span>
+                          <ReceiptStatus p={p} />
+                        </div>
                         <span className="text-base font-semibold text-gray-900">{inr(p.amount)}</span>
                       </div>
                     ))}
