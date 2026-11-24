@@ -3,8 +3,7 @@ const formatToINR = (amount: number): string => {
   const formatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    // minimumFractionDigits: 2,
-    // maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   });
 
   // Use the format method to get the formatted string.
@@ -33,6 +32,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Invoice } from "@/types/types"
+import { Em } from "./StatCard"
 import { set } from "date-fns";
 import { Dispatch, SetStateAction } from "react";
 
@@ -65,38 +65,35 @@ export default function SalesLineChart({
   salesStatsType: "weekly" | "monthly" | "yearly"
   setSalesStatsType: Dispatch<SetStateAction<"weekly" | "monthly" | "yearly">>
 }) {
-  console.log("chartData : ", chartData)
+  const total = chartData.reduce((a, b) => a + b.sales, 0);
+  const d2c = chartData.reduce((a, b) => a + (b.d2cSales || 0), 0);
+  const b2b = chartData.reduce((a, b) => a + (b.b2bSales || 0), 0);
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="absolute right-14">
-          <Select
-            // Set the default value on the root component
-            defaultValue="weekly"
-            onValueChange={(value: "weekly" | "monthly" | "yearly") => setSalesStatsType(value)}
-          >
-            <SelectTrigger className="w-[150px]">
-              {/* This placeholder will be shown if no default value was set */}
-              <SelectValue
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                  border: "none",
-                }}
-                placeholder="Select a period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Last 7 Days</SelectItem>
-              <SelectItem value="monthly">Last 6 Months</SelectItem>
-              <SelectItem value="yearly">This Year</SelectItem>
-            </SelectContent>
-          </Select>
+    <Card className="rounded-xl shadow-sm">
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 p-4 pb-2">
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-sm">Sales</CardTitle>
+          <CardDescription className="text-xs">
+            {salesStatsType === "weekly" ? "Daily sales, last 7 days" : salesStatsType === "monthly" ? "Monthly sales, last 6 months" : "Monthly sales this year"}
+          </CardDescription>
         </div>
-        <CardTitle>Sales</CardTitle>
-        <CardDescription>Daily sales performance</CardDescription>
+        <Select
+          value={salesStatsType}
+          onValueChange={(value: "weekly" | "monthly" | "yearly") => setSalesStatsType(value)}
+        >
+          <SelectTrigger className="h-8 w-[132px] shrink-0 text-xs" aria-label="Sales period">
+            <SelectValue placeholder="Select a period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="weekly">Last 7 Days</SelectItem>
+            <SelectItem value="monthly">Last 6 Months</SelectItem>
+            <SelectItem value="yearly">This Year</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
-      <CardContent>
-        {chartData && <ChartContainer config={chartConfig}>
+      <CardContent className="px-4 pb-3">
+        {chartData && <ChartContainer config={chartConfig} className="aspect-auto h-[170px] w-full">
           <LineChart
             accessibilityLayer
             data={[...chartData].reverse()}
@@ -150,36 +147,18 @@ export default function SalesLineChart({
           </LineChart>
         </ChartContainer>}
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex flex-col space-y-3 w-full">
-          <span className="text-sm font-medium mb-2">
-            {salesStatsType === "weekly" ? "Last 7 days" : salesStatsType === "monthly" ? "Last 6 months" : "This year"} Summary
-          </span>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              {salesStatsType === "weekly" ? "Average Daily Sales" : salesStatsType === "monthly" ? "Average Monthly Sales" : "Average Yearly Sales"}
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{formatToINR((chartData?.map((item) => item.sales).reduce((a, b) => a + b, 0) / chartData.length))}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              Total Sales
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.map((item) => item.sales).reduce((a, b) => a + b, 0))}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              D2C Sales
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.reduce((a, b) => a + (b.d2cSales || 0), 0))}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              B2B Sales
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{formatToINR(chartData?.reduce((a, b) => a + (b.b2bSales || 0), 0))}</span>
-          </div>
-        </div>
+      <CardFooter className="p-4 pt-0">
+        <p className="text-sm leading-relaxed text-gray-600">
+          {total ? (
+            <>
+              <Em>{formatToINR(total)}</Em> {salesStatsType === "weekly" ? "over the last 7 days" : salesStatsType === "monthly" ? "over the last 6 months" : "so far this year"}, about{" "}
+              <Em>{formatToINR(total / (chartData.length || 1))}</Em> a {salesStatsType === "weekly" ? "day" : "month"}. <Em>{Math.round((Math.max(d2c, b2b) / total) * 100)}%</Em> came from{" "}
+              {b2b >= d2c ? "B2B" : "D2C"}.
+            </>
+          ) : (
+            <>No sales in this period.</>
+          )}
+        </p>
       </CardFooter>
     </Card>
   )

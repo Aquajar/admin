@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
 import {
   Card,
@@ -18,6 +18,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Invoice } from "@/types/types";
+import { Em } from "./StatCard";
 
 // Chart Config
 const chartConfig = {
@@ -87,15 +88,17 @@ export default function RefillBarChart({
     };
   });
 
+  const total = chartData.reduce((a, b) => a + b.jars, 0);
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>Daily Jars Summary</CardTitle>
-        <CardDescription>Track delivered jars per day</CardDescription>
+    <Card className="rounded-xl shadow-sm">
+      <CardHeader className="space-y-1 p-4 pb-2">
+        <CardTitle className="text-sm">Jars Delivered</CardTitle>
+        <CardDescription className="text-xs">Per day, last 7 days</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={formattedData} margin={{ top: 20 }}>
+      <CardContent className="px-4 pb-3">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[170px] w-full">
+          <BarChart accessibilityLayer data={formattedData} margin={{ top: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="dateFormatted"
@@ -105,37 +108,17 @@ export default function RefillBarChart({
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent />}
             />
-            <Bar dataKey="jars" fill="var(--chart-1)" radius={8}>
-              <LabelList
-                position="top"
-                offset={12}
-                className="fill-foreground"
-                fontSize={12}
-              />
-            </Bar>
+            <Bar dataKey="jars" fill="var(--chart-1)" radius={6} />
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col">
-        <div className="flex flex-col space-y-3 w-full">
-          <span className="text-sm font-medium mb-2">
-            Last 7 days summary
-          </span>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              Average jars delivered per day
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{(chartData.map((item) => item.jars).reduce((a, b) => a + b, 0) / chartData.length).toFixed(0)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="leading-none text-sm text-gray-500">
-              Total jar delivered
-            </span>
-            <span className="leading-none font-semibold text-gray-800">{(chartData.map((item) => item.jars).reduce((a, b) => a + b, 0))}</span>
-          </div>
-        </div>
+      <CardFooter className="p-4 pt-0">
+        <p className="text-sm leading-relaxed text-gray-600">
+          Averaging <Em>{Math.round(total / chartData.length).toLocaleString("en-IN")}</Em> jars a day, <Em>{total.toLocaleString("en-IN")}</Em> in
+          the last 7 days.
+        </p>
       </CardFooter>
     </Card>
   );

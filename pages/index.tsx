@@ -2,38 +2,38 @@ import Wrapper from "@/components/Wrapper";
 import useAxiosInstance from "@/lib/hooks/useAxiosInstance";
 import useRefreshTokenRotation from "@/lib/hooks/useRefreshToken";
 import { useSession } from "next-auth/react";
-import CurrencyFormat from "react-currency-format";
 import { useEffect, useState } from "react";
-import Card from "@/components/dashboard/Card";
 import { Accordion, AccordionItem } from "@szhsin/react-accordion";
-import { SlCalender } from "react-icons/sl";
-import { TbLayoutNavbarExpand } from "react-icons/tb";
-import {
-  FaCaretLeft,
-  FaCaretRight,
-  FaChevronLeft,
-  FaChevronRight,
-  FaCircle,
-} from "react-icons/fa";
-import { FaAngleUp, FaAngleRight } from "react-icons/fa6";
+import { ChevronDown, Droplets, IndianRupee, Landmark, Receipt, Wallet } from "lucide-react";
 import useAuthUser from "@/lib/hooks/useAuthUser";
-import CustomerInsight from "@/components/dashboard/CustomerInsight";
 import SalesSummary from "@/components/dashboard/SalesSummary";
 import { useDashboardStore } from "@/store/dashboardData.store";
 import Greetings from "@/components/dashboard/Greetings";
 import SalesAreaChart from "@/components/dashboard/SalesAreaChart";
 import { useCustomersStore } from "@/store/customers.store";
-import { useInvoicesStore } from "@/store/invoices.store";
-import DriverSalesBarGraph from "@/components/Driver/Charts/BarGraph";
-import { monthAbbr, monthsInAnYear } from "@/lib/constants";
-import DriverSalesCollection from "@/components/Driver/Collection";
-import { IoIosTrendingUp, IoIosTrendingDown } from "react-icons/io";
-import Suggestions from "@/components/dashboard/Suggestions";
-import MonthlySummary from "@/components/dashboard/MonthlySummary";
+import { monthsInAnYear } from "@/lib/constants";
 import DateSelector from "@/components/dashboard/DateSelector";
 import RefillBarChart from "@/components/dashboard/RefillChart";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import QuickStats from "@/components/dashboard/QuickStats";
+import StatCard, { Em, Trend, inr, num } from "@/components/dashboard/StatCard";
 
+// Section heading: title plus a quiet note; `live` adds a pulsing dot (static when reduced motion is on).
+const SectionTitle = ({ title, sub, live }: { title: string; sub?: string; live?: boolean }) => (
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+    {live && (
+      <span className="relative flex size-2" aria-hidden>
+        <span className="absolute inline-flex size-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
+        <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+      </span>
+    )}
+    <h2 className="whitespace-nowrap text-sm font-semibold text-gray-900">{title}</h2>
+    {sub && <span className="text-sm text-gray-500">{sub}</span>}
+  </div>
+);
+
+// % change from a to b; null when there is nothing to compare against.
+const pctChange = (a?: number, b?: number) => (a && b != null ? ((b - a) / a) * 100 : null);
 
 export default function Home() {
   const { data: session } = useSession();
@@ -43,14 +43,8 @@ export default function Home() {
 
   const [salesStatsType, setSalesStatsType] = useState<"weekly" | "monthly" | "yearly">("weekly");
 
-  const [jarPercertageChange, setJarPercertageChange] = useState(0);
-  const [salePercertageChange, setSalePercertageChange] = useState(0);
-
   const [showMonthOptions, setShowMonthOptions] = useState(false);
   const [showYearOptions, setShowYearOptions] = useState(false);
-
-  const [superAdminToolsIsexpanded, setSuperAdminToolsIsexpanded] =
-    useState(false);
 
   // Set if the dashboard request fails, so we stop showing the skeleton.
   const [loadFailed, setLoadFailed] = useState(false);
@@ -64,22 +58,20 @@ export default function Home() {
     currYear,
     setCurrYear,
     setCurrMonth,
-    currMonthIndex,
     currDayIndex,
     currMonthlyData,
     setCurrDayIndex,
-    setCurrMonthIndex,
     setCurrMonthlyData,
   } = useDashboardStore();
 
   const { user } = useAuthUser();
+  const isSuperAdmin = user?.role === "super_admin";
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
       let URL = process.env.NEXT_PUBLIC_API_URL + "/user/dashboard";
       const response = await axiosInstance.get(URL);
-      console.log(response.data);
       setCustomers(response.data.data.users);
       setData(response.data);
       setCurrDay(response.data?.summary.last7Days.refilling[currDayIndex].date);
@@ -163,60 +155,6 @@ export default function Home() {
     setShowYearOptions(false);
   };
 
-  function calculatePercentageDifference(
-    a: number | undefined,
-    b: number | undefined
-  ): number {
-    if (a === undefined || b === undefined) return 0;
-    let result = ((b - a) / a) * 100;
-    return result;
-  }
-
-
-  useEffect(() => {
-    let jarsToday = data?.summary?.last7Days?.refilling?.find(
-      (data) => data?.date === currDay
-    )?.jars;
-
-    let salesToday = data?.summary?.last7Days?.refilling?.find(
-      (data) => data?.date === currDay
-    )?.sales;
-
-    let jarsYesterday =
-      data?.summary?.last7Days?.refilling[
-        data?.summary?.last7Days?.refilling.indexOf(
-          data?.summary?.last7Days?.refilling?.filter(
-            (data) => data?.date === currDay
-          )[0]
-        ) + 1
-      ]?.jars;
-
-    let salesYesterday =
-      data?.summary?.last7Days?.refilling[
-        data?.summary?.last7Days?.refilling.indexOf(
-          data?.summary?.last7Days?.refilling?.filter(
-            (data) => data?.date === currDay
-          )[0]
-        ) + 1
-      ]?.sales;
-
-    let jarPercentageChange = calculatePercentageDifference(
-      jarsYesterday,
-      jarsToday
-    );
-
-    let salePercentageChange = calculatePercentageDifference(
-      salesYesterday,
-      salesToday
-    );
-
-    setJarPercertageChange(jarPercentageChange);
-    setSalePercertageChange(salePercentageChange);
-  }, [currDay]);
-
-
-  console.log(data)
-
   // The store starts empty; the daily series is the first thing the page needs.
   const isLoading = !data?.summary?.last7Days?.refilling?.length && !loadFailed;
 
@@ -224,367 +162,177 @@ export default function Home() {
     return (
       <Wrapper>
         <Greetings name={user?.name} />
-        <DashboardSkeleton showAdminTools={user?.role === "super_admin"} />
+        <DashboardSkeleton showAdminTools={isSuperAdmin} />
       </Wrapper>
     );
   }
 
+  // Selected day and the one before it (the series is newest first).
+  const days = data?.summary?.last7Days?.refilling || [];
+  const dayIdx = days.findIndex((d) => d?.date === currDay);
+  const day = dayIdx >= 0 ? (days[dayIdx] as (typeof days)[number] & { d2cSales?: number; b2bSales?: number }) : undefined;
+  const prev = dayIdx >= 0 ? days[dayIdx + 1] : undefined;
+  const prevLabel = prev?.date || "previous day";
+  const collectedPct = day?.sales ? Math.min(100, Math.round((day.collected / day.sales) * 100)) : null;
+
+  // Average/day over the days elapsed in the chosen month (all of them for a past month).
+  const monthIdx = monthsInAnYear.indexOf(currMonth);
+  const now = new Date();
+  const isThisMonth = currYear === now.getFullYear() && monthIdx === now.getMonth();
+  const daysInPeriod = isThisMonth ? now.getDate() : new Date(currYear, monthIdx + 1, 0).getDate();
+
+  const thisYear = data?.summary?.monthly.find((i) => i.year === now.getFullYear())?.data;
+  const salesChartData =
+    salesStatsType === "weekly"
+      ? days
+      : salesStatsType === "monthly"
+        ? thisYear?.slice(-6).reverse()
+        : thisYear?.slice().reverse();
+
   return (
     <Wrapper>
-      {/* <Loader visible /> */}
-      <Greetings name={user?.name} />
-      {/*
-       * DATE SELECTOR
-       */}
-      <DateSelector
-        showYearOptions={showYearOptions}
-        setShowYearOptions={setShowYearOptions}
-        totalDataLength={data?.summary.last7Days.refilling.length}
-        currDay={currDay}
-        handlePrevDay={handlePrevDay}
-        handleNextDay={handleNextDay}
-        handleChangeMonth={handleChangeMonth}
-        handleChangeYear={handleChangeYear}
-        setShowMonthOptions={setShowMonthOptions}
-        showMonthOptions={showMonthOptions}
-        currMonth={currMonth}
-        currDayIndex={currDayIndex}
-        currYear={currYear}
+      <Greetings
+        name={user?.name}
+        right={
+          <DateSelector
+            showYearOptions={showYearOptions}
+            setShowYearOptions={setShowYearOptions}
+            totalDataLength={days.length}
+            currDay={currDay}
+            handlePrevDay={handlePrevDay}
+            handleNextDay={handleNextDay}
+            handleChangeMonth={handleChangeMonth}
+            handleChangeYear={handleChangeYear}
+            setShowMonthOptions={setShowMonthOptions}
+            showMonthOptions={showMonthOptions}
+            currMonth={currMonth}
+            currDayIndex={currDayIndex}
+            currYear={currYear}
+            showPeriod={isSuperAdmin}
+          />
+        }
       />
-      {/*
-       * CARDS
-       */}
-      <div className="flex w-full md:flex-row flex-col">
-        <div className="flex flex-col space-y-5 w-full">
-          {/*
-           * MONTHLY INSIGHT
-           */}
-          {user?.role === "super_admin" && <Accordion
-            onStateChange={({ key, current }) => {
-              if (current.isResolved) {
-                console.log(`${key as string} is expanded: ${current.isEnter}`);
-                setSuperAdminToolsIsexpanded(current.isEnter);
-              }
-            }}
-          // transition
-          // transitionTimeout={250}
-          >
+
+      <div className="flex w-full flex-col gap-6">
+        {/*
+         * SUPER ADMIN: monthly + all-time money figures
+         */}
+        {isSuperAdmin && (
+          <Accordion>
             <AccordionItem
-              header={() => (
-                <span className="font-medium flex items-center justify-center text-gray-400">
-                  Super Admin Tools
-                  {!superAdminToolsIsexpanded ? (
-                    <TbLayoutNavbarExpand
-                      className="ml-2 text-gray-700"
-                      size={19}
-                    />
-                  ) : (
-                    <FaAngleUp className="ml-2 text-gray-700" size={18} />
-                  )}
+              buttonProps={{
+                className:
+                  "w-full rounded-xl border bg-white px-3 py-2.5 shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+              }}
+              header={({ state }) => (
+                <span className="flex items-center gap-2 text-left">
+                  <Landmark size={16} className="text-gray-500" aria-hidden />
+                  <span className="text-sm font-semibold text-gray-900">Business Totals</span>
+                  <span className="text-sm text-gray-500">
+                    {currMonth} {currYear} · super admin only
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    aria-hidden
+                    className={`ml-auto text-gray-500 transition-transform duration-200 ${state.isEnter ? "rotate-180" : ""}`}
+                  />
                 </span>
               )}
             >
-              {user?.role === "super_admin" && (
-                <div className="flex flex-col mt-2 border-b pb-5">
-                  <div className="grid grid-cols-1 w-full md:grid-cols-2 md:grid-rows-31 gap-4 md:gap-3 mt-6 md:mt-0">
-                    {/*
-                     * MONTHLY SALES SUMMARY
-                     */}
-                    <div className="flex flex-col space-y-4 h-full">
-                      {/* Total Sales */}
-                      <Card title="Total Sales">
-                        <div className="flex flex-col">
-                          <span className="text-md text-gray-600 font-light mb-4">
-                            Total Sales
-                          </span>
-
-                          <CurrencyFormat
-                            value={currMonthlyData?.sales}
-                            displayType={"text"}
-                            thousandSeparator={true}
-                            prefix={"₹"}
-                            decimalScale={0}
-                            fixedDecimalScale={true}
-                            renderText={(value) => (
-                              <p className="text-3xl font-semibold">{value}</p>
-                            )}
-                          />
-                        </div>
-
-                        <div className="rounded-2xl bg-gray-100 p-3 flex flex-col items-center">
-                          <span className="text-sm text-gray-600">
-                            Average/day
-                          </span>
-                          <CurrencyFormat
-                            value={
-                              currMonthlyData?.sales &&
-                              currMonthlyData?.sales / new Date().getDate()
-                            }
-                            displayType={"text"}
-                            thousandSeparator={true}
-                            prefix={"₹"}
-                            decimalScale={0}
-                            fixedDecimalScale={true}
-                            renderText={(value) => (
-                              <p className="text-lg text-gray-600 font-semibold">
-                                {value}
-                              </p>
-                            )}
-                          />
-                        </div>
-                      </Card>
-                      {/* Total Receivables */}
-                      <Card title="Receivables">
-                        <div className="flex flex-col">
-                          <span className="text-md text-gray-600 font-light mb-4">
-                            Receivables
-                          </span>
-                          <CurrencyFormat
-                            value={currMonthlyData?.due}
-                            displayType={"text"}
-                            thousandSeparator={true}
-                            prefix={"₹"}
-                            decimalScale={0}
-                            fixedDecimalScale={true}
-                            renderText={(value) => (
-                              <p className="text-3xl font-semibold">{value}</p>
-                            )}
-                          />
-                        </div>
-                      </Card>
-                    </div>
-
-                    {/*
-                     * SALES SUMMARY
-                     */}
-                    <div className="w-full">
-                      <SalesSummary
-                        totalSales={data?.summary.total.sales || 0}
-                        totalDue={data?.summary.total.due || 0}
-                        totalCollected={data?.summary.total.collected || 0}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </AccordionItem>
-          </Accordion>}
-          <div className="grid md:grid-cols-12 gap-3">
-            <div className="md:col-span-3">
-              {/*
-           * DAY SUMMARY SECTION
-           */}
-              <div className="w-full grid md:grid-cols-1 gap-5 rounded-3xl">
-                {/*
-             * JARS
-             */}
-                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
-                  <span style={{
-                    fontSize: '15px',
-                  }} className="text-gray-700 font-medium">Jars Processed</span>
-                  <span className="text-4xl font-bold">
-                    {
-                      data?.summary?.last7Days?.refilling?.find(
-                        (data) => data?.date === currDay
-                      )?.jars
-                    }
-                  </span>
-                  {/* Performance Stats */}
-                  {jarPercertageChange === -100 ? (
-                    <div>
-                      <div className="w-[70%] h-3.5 bg-gray-200 rounded-full dark:bg-gray-700"></div>
-                    </div>
-                  ) : (
-                    <div className="flex space-x-2">
-                      {jarPercertageChange > 0 ? (
-                        <IoIosTrendingUp className="text-green-500" size={22} />
-                      ) : (
-                        <IoIosTrendingDown className="text-red-500" size={22} />
-                      )}
-                      <span
-                        className={`${jarPercertageChange > 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                          } text-sm font-semibold`}
-                      >
-                        {jarPercertageChange.toFixed(0)}%
-                      </span>
-                      <span className="text-sm">from yesterday</span>
-                    </div>
-                  )}
-                  {/* <span className="text-xl mt-2 text-white">
-                      {(data?.summary.last7Days.refilling.filter(
-                        (data) => data?.date === currDay
-                      )[0]?.jars || 0) * 20}{" "}
-                      L
-                      <span className="text-sm text-gray-300 px-2">
-                        water displaced
-                      </span>
-                    </span> */}
-                </div>
-                {/*
-             * TOTAL SALES
-             */}
-                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
-                  <span style={{
-                    fontSize: '15px',
-                  }} className="text-gray-700 font-medium">Total Sales</span>
-                  <CurrencyFormat
-                    value={
-                      data?.summary?.last7Days?.refilling?.find(
-                        (data) => data?.date === currDay
-                      )?.sales
-                    }
-                    displayType={"text"}
-                    thousandSeparator={true}
-                    prefix={"₹"}
-                    renderText={(value) => (
-                      <span className="text-4xl font-bold">{value}</span>
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="contents">
+                  <StatCard title={`Sales in ${currMonth}`} icon={Receipt} value={inr(currMonthlyData?.sales)}>
+                    {currMonthlyData ? (
+                      <>
+                        About <Em>{inr(currMonthlyData.sales / daysInPeriod)}</Em> a day, with <Em>{num(currMonthlyData.jars)}</Em> jars.
+                      </>
+                    ) : (
+                      <>No sales recorded for this month.</>
                     )}
-                    decimalScale={0}
-                    fixedDecimalScale={true}
-                  />
-                  {/* D2C / B2B split of the day's sales */}
-                  <div className="flex items-center gap-4 pt-1">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                        D2C
-                      </span>
-                      <CurrencyFormat
-                        value={
-                          data?.summary?.last7Days?.refilling?.find(
-                            (d) => d?.date === currDay
-                          )?.d2cSales || 0
-                        }
-                        displayType={"text"}
-                        thousandSeparator={true}
-                        prefix={"₹"}
-                        decimalScale={0}
-                        fixedDecimalScale={true}
-                        renderText={(value) => (
-                          <span className="text-base font-semibold text-gray-800">
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </div>
-                    <div className="h-8 w-px bg-gray-200" />
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                        B2B
-                      </span>
-                      <CurrencyFormat
-                        value={
-                          data?.summary?.last7Days?.refilling?.find(
-                            (d) => d?.date === currDay
-                          )?.b2bSales || 0
-                        }
-                        displayType={"text"}
-                        thousandSeparator={true}
-                        prefix={"₹"}
-                        decimalScale={0}
-                        fixedDecimalScale={true}
-                        renderText={(value) => (
-                          <span className="text-base font-semibold text-gray-800">
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </div>
-                  </div>
+                  </StatCard>
+                  <StatCard title={`Receivables from ${currMonth}`} icon={Wallet} value={inr(currMonthlyData?.due)}>
+                    Still to be collected from this month&apos;s sales.
+                  </StatCard>
                 </div>
-                {/*
-             * TOTAL COLLECTION
-             */}
-                <div className="flex flex-col space-y-3 p-4 bg-white  border  shadow-sm rounded-2xl">
-                  <span style={{
-                    fontSize: '15px',
-                  }} className="text-gray-700 font-medium">Total Collection</span>
-                  <CurrencyFormat
-                    value={
-                      data?.summary?.last7Days?.refilling?.find(
-                        (data) => data?.date === currDay
-                      )?.collected
-                    }
-                    displayType={"text"}
-                    thousandSeparator={true}
-                    prefix={"₹"}
-                    renderText={(value) => (
-                      <span className="text-4xl font-bold">{value}</span>
-                    )}
-                    decimalScale={0}
-                    fixedDecimalScale={true}
-                  />
-                  <div className="flex space-x-1 items-center">
-                    <span className="text-sm">See Statictics</span>
-                    <FaChevronRight size={12} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="md:col-span-9 grid md:grid-cols-2 gap-3">
-              <RefillBarChart chartData={data?.summary?.last7Days?.refilling} />
-              {/* @ts-ignore */}
-              {data?.summary?.last7Days?.refilling && data?.summary?.monthly.find((i) => i.year === new Date().getFullYear())?.data && <SalesAreaChart setSalesStatsType={setSalesStatsType} salesStatsType={salesStatsType} chartData={salesStatsType === "weekly" ? data?.summary?.last7Days?.refilling : data?.summary?.monthly.find((i) => i.year === new Date().getFullYear())?.data.slice(-6).reverse()} />}
-            </div>
-          </div>
-
-          {/*
-           * LEVEL 2
-           */}
-          <div className="grid md:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-5">
-              {/*
-               * SUGGESTION
-               */}
-              {/* <Suggestions data={data?.suggestion} />
-
-              <div className="w-full">
-                <CustomerInsight
-                  // top={data?.customers.top}
-                  total={data?.customers.total}
-                  regular={data?.customers.regular}
-                  newCustomers={data?.customers?.new}
+                <SalesSummary
+                  totalSales={data?.summary.total.sales || 0}
+                  totalDue={data?.summary.total.due || 0}
+                  totalCollected={data?.summary.total.collected || 0}
                 />
-              </div> */}
-            </div>
+              </div>
+            </AccordionItem>
+          </Accordion>
+        )}
 
-            {/*
-             * LEVEL 3
-             */}
-            <div className="flex flex-col gap-5">
-              {/*
-               * DRIVER SALES STATS
-               */}
-              {/* <DriverSalesCollection
-                data={
-                  data?.summary?.last7Days?.refilling?.filter(
-                    (data) => data?.date === currDay
-                  )[0]?.driverSummary
-                }
-              /> */}
-
-              {/*
-               * DRIVER SALES BAR GRAPH
-               */}
-              {/* <DriverSalesBarGraph
-                data={
-                  data?.summary?.last7Days?.refilling?.filter(
-                    (data) => data?.date === currDay
-                  )[0]?.driverSummary
-                }
-              /> */}
-            </div>
+        {/*
+         * SELECTED DAY
+         */}
+        <section className="flex flex-col gap-3" aria-label="Day summary">
+          <SectionTitle title="Day Summary" sub={currDay} />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <StatCard title="Jars Processed" icon={Droplets} value={num(day?.jars)} unit="jars">
+              <Trend pct={pctChange(prev?.jars, day?.jars)} vs={prevLabel} />
+            </StatCard>
+            <StatCard title="Total Sales" icon={IndianRupee} value={inr(day?.sales)}>
+              <div className="flex flex-col gap-1">
+                <span>
+                  <Em>{inr(day?.d2cSales || 0)}</Em> from D2C and <Em>{inr(day?.b2bSales || 0)}</Em> from B2B.
+                </span>
+                <Trend pct={pctChange(prev?.sales, day?.sales)} vs={prevLabel} />
+              </div>
+            </StatCard>
+            <StatCard title="Total Collection" icon={Wallet} value={inr(day?.collected)}>
+              <div className="flex flex-col gap-2">
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100"
+                  role="progressbar"
+                  aria-label="Share of sales collected"
+                  aria-valuenow={collectedPct ?? 0}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-500" style={{ width: `${collectedPct ?? 0}%` }} />
+                </div>
+                <span>
+                  {collectedPct == null ? (
+                    <>No sales on this day.</>
+                  ) : !day?.due ? (
+                    <>Everything has been collected.</>
+                  ) : collectedPct === 0 ? (
+                    <>
+                      Nothing collected yet, <Em>{inr(day.due)}</Em> still due.
+                    </>
+                  ) : (
+                    <>
+                      <Em>{collectedPct}%</Em> collected, <Em>{inr(day.due)}</Em> still due.
+                    </>
+                  )}
+                </span>
+              </div>
+            </StatCard>
           </div>
-          {/*
-           * SALES AREA CHART
-           */}
-          {/* <div className="rounded-2xl h-96 p-5 shadow-md bg-white relative">
-            {data?.summary.last7Days.refilling && (
-              <SalesAreaChart data={data?.summary.last7Days.refilling} />
-            )}
-          </div> */}
-        </div>
+        </section>
+
+        {/*
+         * LIVE UPDATES
+         */}
+        <section className="flex flex-col gap-3" aria-label="Live updates">
+          <SectionTitle title="Live Updates" sub="Today, from tracking, HR and vehicle logs" live />
+          <QuickStats axiosInstance={axiosInstance} />
+        </section>
+
+        {/*
+         * TRENDS
+         */}
+        <section className="flex flex-col gap-3" aria-label="Trends">
+          <SectionTitle title="Trends" />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <RefillBarChart chartData={days} />
+            {/* @ts-ignore month rows have no date/driverSummary; the chart switches its x-axis key */}
+            {salesChartData && <SalesAreaChart setSalesStatsType={setSalesStatsType} salesStatsType={salesStatsType} chartData={salesChartData} />}
+          </div>
+        </section>
+
       </div>
     </Wrapper>
   );
