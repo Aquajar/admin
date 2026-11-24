@@ -1,5 +1,6 @@
 import { SidebarItems } from "@/lib/constants";
-import { signOut } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
+import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect } from "react";
@@ -129,7 +130,15 @@ const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Logout"
-              onClick={() => signOut()}
+              onClick={async () => {
+                // Revoke the refresh token on the server too; clearing the cookie alone leaves it valid for 45 days.
+                const refreshToken = (await getSession())?.user.refreshToken;
+                if (refreshToken)
+                  await axios
+                    .delete(process.env.NEXT_PUBLIC_API_URL + "/auth/logout", { data: { refreshToken } })
+                    .catch(() => {});
+                signOut();
+              }}
               className="text-sidebar-foreground/80 hover:bg-red-50 hover:text-red-600"
             >
               <LogOut />

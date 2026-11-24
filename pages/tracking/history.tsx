@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 const TrackMap = dynamic(() => import("@/components/Tracking/TrackMap"), { ssr: false, loading: MapLoading });
 
-type Ping = { ts: number; lat: number; lng: number; acc?: number; spd?: number; mode?: string; mocked?: boolean; ev?: string };
+type Ping = { ts: number; lat: number | null; lng: number | null; acc?: number; spd?: number; mode?: string; mocked?: boolean; ev?: string };
 type History = {
   staff: { id: string; name: string; employeeID: number; active: boolean }[];
   pings: Ping[];
@@ -46,16 +46,18 @@ const GpsHistory = () => {
   }, [ready, api, staffId, day, from, to]);
 
   const pings = useMemo(() => data?.pings || [], [data]);
+  // Some pings (app events) carry no fix; only located ones go on the map.
+  const located = useMemo(() => pings.filter((p): p is Ping & { lat: number; lng: number } => p.lat != null && p.lng != null), [pings]);
   const layers = useMemo(() => {
-    if (!pings.length) return { lines: [], markers: [] };
-    const first = pings[0];
-    const last = pings[pings.length - 1];
+    if (!located.length) return { lines: [], markers: [] };
+    const first = located[0];
+    const last = located[located.length - 1];
     return {
-      lines: [{ points: pings.map((p) => [p.lat, p.lng] as [number, number]), color: "#2563eb" }],
+      lines: [{ points: located.map((p) => [p.lat, p.lng] as [number, number]), color: "#2563eb" }],
       markers: [
         { lat: first.lat, lng: first.lng, color: "#16a34a", label: `Start ${fmtTime(first.ts)}` },
         { lat: last.lat, lng: last.lng, color: "#dc2626", label: `Last ${fmtTime(last.ts)}` },
-        ...pings.filter((p) => p.ev || p.mocked).map((p) => ({
+        ...located.filter((p) => p.ev || p.mocked).map((p) => ({
           lat: p.lat,
           lng: p.lng,
           color: p.mocked ? "#9333ea" : "#f59e0b",
@@ -64,7 +66,7 @@ const GpsHistory = () => {
         })),
       ],
     };
-  }, [pings]);
+  }, [located]);
   const rows = pings.slice(page * PAGE, (page + 1) * PAGE);
   const pages = Math.ceil(pings.length / PAGE);
   const selectCls = "h-10 rounded-md border border-gray-300 bg-white px-3 text-sm";
@@ -148,9 +150,13 @@ const GpsHistory = () => {
                     <tr key={p.ts} className="border-t">
                       <td className="px-4 py-2">{new Date(p.ts).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
                       <td className="px-4 py-2">
-                        <a href={`https://maps.google.com/?q=${p.lat},${p.lng}`} target="_blank" rel="noreferrer" className="text-blue-600">
-                          {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
-                        </a>
+                        {p.lat != null && p.lng != null ? (
+                          <a href={`https://maps.google.com/?q=${p.lat},${p.lng}`} target="_blank" rel="noreferrer" className="text-blue-600">
+                            {p.lat.toFixed(5)}, {p.lng.toFixed(5)}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-4 py-2">{p.acc != null ? `${Math.round(p.acc)} m` : "—"}</td>
                       <td className="px-4 py-2">{p.spd != null ? `${Math.round(p.spd * 3.6)} km/h` : "—"}</td>
