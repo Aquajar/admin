@@ -25,16 +25,13 @@ const QuickStats: FC<{ axiosInstance: AxiosInstance }> = ({ axiosInstance }) => 
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL;
-    Promise.allSettled([
-      axiosInstance.get(`${base}/admin/live`),
-      axiosInstance.get(`${base}/attendance?year=${y}&month=${m}`),
-      axiosInstance.get(`${base}/vehicle-log?from=2000-01-01&status=pending`),
-    ]).then(([l, a, v]) => {
-      if (l.status === "fulfilled") setLive(l.value.data);
-      if (a.status === "fulfilled") setHr(a.value.data.rows || []);
-      if (v.status === "fulfilled")
-        setPendingLogs((v.value.data.logs || []).filter((x: { status: string }) => x.status === "pending").length);
-    });
+    // Each card fills in as its own request returns; a slow or failed one never holds up the others.
+    const skip = () => {};
+    axiosInstance.get(`${base}/admin/live`).then((r) => setLive(r.data), skip);
+    axiosInstance.get(`${base}/attendance?year=${y}&month=${m}`).then((r) => setHr(r.data.rows || []), skip);
+    axiosInstance
+      .get(`${base}/vehicle-log?from=2000-01-01&status=pending`)
+      .then((r) => setPendingLogs((r.data.logs || []).filter((x: { status: string }) => x.status === "pending").length), skip);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
